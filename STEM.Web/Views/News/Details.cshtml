@@ -1,0 +1,129 @@
+@model STEM.Web.Models.NewsDetailViewModel
+@{
+    ViewData["Title"] = "Chi tiết bài viết";
+}
+
+<main class="news-detail-page">
+    <nav class="container breadcrumb">
+        <a asp-controller="Home" asp-action="Index">Trang chủ</a>
+        <span class="material-symbols-outlined" aria-hidden="true">chevron_right</span>
+        <a asp-controller="News" asp-action="Index">Tin tức</a>
+        <span class="material-symbols-outlined" aria-hidden="true">chevron_right</span>
+        <span>@Model.Article.Title</span>
+    </nav>
+
+    <section class="container news-detail-layout">
+        <div class="news-detail-main">
+            <header class="news-detail-header">
+                <div class="news-detail-meta">
+                    <span class="news-category-badge">@Model.Article.Category</span>
+                    <span><span class="material-symbols-outlined" aria-hidden="true">calendar_today</span>@Model.Article.PublishedDateText</span>
+                    <span><span class="material-symbols-outlined" aria-hidden="true">person</span>@Model.Article.AuthorName</span>
+                    <span><span class="material-symbols-outlined" aria-hidden="true">schedule</span>@Model.Article.ReadTimeText</span>
+                </div>
+                <h1>@Model.Article.Title</h1>
+            </header>
+
+            <div class="news-detail-hero">
+                <img src="@Model.HeroImageUrl" alt="@Model.Article.Title" />
+            </div>
+
+            <article class="news-article-content">
+                @foreach (var contentSection in Model.Sections)
+                {
+                    <section class="news-content-section">
+                        <h2>@contentSection.Heading</h2>
+                        @foreach (var paragraph in contentSection.Paragraphs)
+                        {
+                            <p>@paragraph</p>
+                        }
+                    </section>
+                }
+
+                <ul class="news-key-points">
+                    @foreach (var point in Model.KeyPoints)
+                    {
+                        <li>
+                            <span class="material-symbols-outlined" aria-hidden="true">check_circle</span>
+                            <span>@point</span>
+                        </li>
+                    }
+                </ul>
+
+                <div class="news-share-row">
+                    <span>Chia sẻ bài viết:</span>
+                    <button type="button">Facebook</button>
+                    <button type="button">Twitter</button>
+                </div>
+
+                <div class="news-author-box">
+                    <div class="news-author-box-avatar">
+                        <img src="@Model.Article.AuthorAvatarUrl" alt="@Model.Article.AuthorName" />
+                    </div>
+                    <div>
+                        <h3>@Model.Article.AuthorName</h3>
+                        <p>@Model.AuthorBio</p>
+                    </div>
+                </div>
+            </article>
+
+            <section class="news-related-section">
+                <div class="section-heading section-heading-left">
+                    <h2>Bài viết liên quan</h2>
+                </div>
+
+                <div class="news-related-grid">
+                    @foreach (var article in Model.RelatedArticles)
+                    {
+                        <article class="news-related-card">
+                            <div class="news-related-image">
+                                <img src="@article.ImageUrl" alt="@article.Title" />
+                            </div>
+                            <div class="news-related-body">
+                                <h3>@article.Title</h3>
+                                <span>@article.PublishedDateText</span>
+                            </div>
+                        </article>
+                    }
+                </div>
+            </section>
+        </div>
+
+        <aside class="news-detail-sidebar">
+            <section class="news-sidebar-card">
+                <h3>Bài viết nổi bật</h3>
+                <div class="news-featured-list">
+                    @foreach (var article in Model.FeaturedArticles)
+                    {
+                        <article class="news-featured-item">
+                            <div class="news-featured-thumb">
+                                <img src="@article.ImageUrl" alt="@article.Title" />
+                            </div>
+                            <div>
+                                <h4>@article.Title</h4>
+                                <span>@article.PublishedDateText</span>
+                            </div>
+                        </article>
+                    }
+                </div>
+            </section>
+
+            <section class="news-newsletter-card">
+                <h3>Đăng ký nhận tin</h3>
+                <p>Cập nhật những kiến thức giáo dục STEM mới nhất mỗi tuần.</p>
+                <input type="email" placeholder="Email của bạn..." />
+                <button type="button" class="button button-block news-newsletter-button">Đăng ký</button>
+            </section>
+
+            <section class="news-sidebar-card">
+                <h3>Tags</h3>
+                <div class="news-tag-list">
+                    @foreach (var tag in Model.Tags)
+                    {
+                        <span class="news-tag">@tag</span>
+                    }
+                </div>
+            </section>
+        </aside>
+    </section>
+</main>

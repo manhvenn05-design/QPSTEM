@@ -1,0 +1,88 @@
+@{
+    ViewData["Title"] = "Tài chính";
+}
+
+<section class="admin-page">
+    <div class="admin-page-header">
+        <div>
+            <h1 class="admin-page-title">Quản lý tài chính</h1>
+            <p class="admin-page-subtitle">Tổ chức giao diện theo đúng hai nhóm dữ liệu chính của DB: <code>Invoices</code> và <code>Payments</code>.</p>
+        </div>
+
+        <div class="admin-actions">
+            <button type="button" class="admin-btn-secondary">Xuất công nợ</button>
+            <button type="button" class="admin-btn-primary">Tạo hóa đơn</button>
+        </div>
+    </div>
+
+    <div class="grid gap-6 xl:grid-cols-2">
+        <div class="admin-card overflow-hidden">
+            <div class="admin-card-section">
+                <h2 class="admin-section-title">Danh sách hóa đơn</h2>
+                <p class="admin-section-subtitle">Mẫu cột khớp bảng <code>Invoices</code>.</p>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="admin-table min-w-full">
+                    <thead>
+                        <tr>
+                            <th>InvoiceNo</th>
+                            <th>Học sinh</th>
+                            <th>Lớp</th>
+                            <th>FinalAmount</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>INV-240501</strong></td>
+                            <td>Nguyễn Khánh An</td>
+                            <td>RBX-2405-A</td>
+                            <td>6.500.000đ</td>
+                            <td><span class="admin-tag admin-tag--success">Đã thanh toán</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>INV-240502</strong></td>
+                            <td>Trần Anh Minh</td>
+                            <td>SCR-2405-B</td>
+                            <td>4.200.000đ</td>
+                            <td><span class="admin-tag admin-tag--warning">Còn nợ</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="admin-card overflow-hidden">
+            <div class="admin-card-section">
+                <h2 class="admin-section-title">Lịch sử thanh toán</h2>
+                <p class="admin-section-subtitle">Mẫu cột khớp bảng <code>Payments</code>.</p>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="admin-table min-w-full">
+                    <thead>
+                        <tr>
+                            <th>InvoiceId</th>
+                            <th>Amount</th>
+                            <th>PaymentMethod</th>
+                            <th>TransDate</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>INV-240501</td>
+                            <td>3.000.000đ</td>
+                            <td>Banking</td>
+                            <td>11/05/2026 09:15</td>
+                        </tr>
+                        <tr>
+                            <td>INV-240501</td>
+                            <td>3.500.000đ</td>
+                            <td>Cash</td>
+                            <td>13/05/2026 15:40</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</section>

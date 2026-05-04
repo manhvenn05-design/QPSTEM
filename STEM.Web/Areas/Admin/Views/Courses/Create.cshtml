@@ -1,0 +1,92 @@
+@model STEM.Web.Areas.Admin.Models.CreateCourseViewModel
+
+@{
+    ViewData["Title"] = "Thêm khóa học";
+}
+
+<section class="admin-page">
+    <div class="admin-page-header">
+        <div>
+            <h1 class="admin-page-title">Thêm khóa học mới</h1>
+            <p class="admin-page-subtitle">Tạo khóa học mới, tải ảnh đại diện trực tiếp và nhập các trường dữ liệu đúng với schema hiện tại.</p>
+        </div>
+
+        <div class="admin-actions">
+            <a asp-area="Admin" asp-controller="Courses" asp-action="Index" class="admin-btn-secondary">Quay lại danh sách</a>
+        </div>
+    </div>
+
+    <form asp-area="Admin" asp-controller="Courses" asp-action="Create" method="post" enctype="multipart/form-data" class="admin-page">
+        @Html.AntiForgeryToken()
+        <div asp-validation-summary="ModelOnly" class="admin-alert admin-alert--error"></div>
+
+        <div class="admin-card">
+            <div class="admin-card-section">
+                <div class="mb-6">
+                    <h2 class="admin-section-title">Thông tin khóa học</h2>
+                    <p class="admin-section-subtitle">Nhập mã khóa học, phạm vi độ tuổi, học phí, số buổi, ảnh đại diện và mô tả ngắn.</p>
+                </div>
+
+                <div class="admin-field-grid two-col">
+                    <div>
+                        <label asp-for="Code" class="admin-label"></label>
+                        <input asp-for="Code" class="admin-input uppercase" placeholder="RBX-01" />
+                        <span asp-validation-for="Code" class="admin-validation"></span>
+                    </div>
+
+                    <div>
+                        <label asp-for="Name" class="admin-label"></label>
+                        <input asp-for="Name" class="admin-input" placeholder="Robotics Explorer" />
+                        <span asp-validation-for="Name" class="admin-validation"></span>
+                    </div>
+
+                    <div>
+                        <label asp-for="TargetAgeMin" class="admin-label"></label>
+                        <input asp-for="TargetAgeMin" class="admin-input" />
+                        <span asp-validation-for="TargetAgeMin" class="admin-validation"></span>
+                    </div>
+
+                    <div>
+                        <label asp-for="TargetAgeMax" class="admin-label"></label>
+                        <input asp-for="TargetAgeMax" class="admin-input" />
+                        <span asp-validation-for="TargetAgeMax" class="admin-validation"></span>
+                    </div>
+
+                    <div>
+                        <label asp-for="Price" class="admin-label"></label>
+                        <input asp-for="Price" class="admin-input" placeholder="6500000" />
+                        <span asp-validation-for="Price" class="admin-validation"></span>
+                    </div>
+
+                    <div>
+                        <label asp-for="TotalSessions" class="admin-label"></label>
+                        <input asp-for="TotalSessions" class="admin-input" placeholder="16" />
+                        <span asp-validation-for="TotalSessions" class="admin-validation"></span>
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <label asp-for="ImageFile" class="admin-label"></label>
+                        <input asp-for="ImageFile" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" class="admin-input admin-file" />
+                        <p class="admin-hint">Hỗ trợ JPG, PNG, WEBP. Dung lượng tối đa 5MB.</p>
+                        <span asp-validation-for="ImageFile" class="admin-validation"></span>
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <label asp-for="Summary" class="admin-label"></label>
+                        <textarea asp-for="Summary" rows="5" class="admin-textarea" placeholder="Mô tả ngắn về khóa học, mục tiêu và nội dung chính..."></textarea>
+                        <span asp-validation-for="Summary" class="admin-validation"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="admin-actions justify-end">
+            <button type="submit" class="admin-btn-primary min-w-[192px]">Lưu khóa học</button>
+            <a asp-area="Admin" asp-controller="Courses" asp-action="Index" class="admin-btn-secondary">Hủy</a>
+        </div>
+    </form>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -1,0 +1,86 @@
+@model IReadOnlyList<STEM.Web.Models.CourseSummaryViewModel>
+@{
+    ViewData["Title"] = "Khóa học";
+}
+
+<main class="courses-page">
+    <section class="container course-hero-banner">
+        <div class="course-hero-copy">
+            <h1>Học STEM — Làm chủ tương lai công nghệ</h1>
+            <p>
+                Chương trình thực hành chuyên sâu từ Robotics, Lập trình đến Điện tử thông minh,
+                được thiết kế riêng cho học sinh Việt Nam bởi đội ngũ giảng viên giàu kinh nghiệm.
+            </p>
+            <div class="course-hero-meta">
+                <span><span class="material-symbols-outlined" aria-hidden="true">verified</span>Chứng chỉ được công nhận</span>
+                <span><span class="material-symbols-outlined" aria-hidden="true">groups</span>Giảng viên tận tâm, kinh nghiệm</span>
+            </div>
+        </div>
+
+        <div class="course-hero-media">
+            <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuB_4pIIRayXSZvlrtUBVimARaqs9JqY53YPZxjrd1xW-bGsrkp2L4GuaGF24w3Nmcfd10xjkOmbf2kdkwr4p00BGEGPRrQRizNbF3M8sMqtgEeuWFcvBZPZNZ7hWs6hVnD09S3ftgPCx-H7lhIV7PzV-inyVvs4uED8v-kE3BXfMQ0uLslwFzhqk7mqEuNOm02yROLT68cado6uY6f_ySUPZ7pL0xNFGiUzN6P02T8KQia3VKN46SjfeEu7ShPXKVyVEUEvy6hZOvCG" alt="Không gian học tập STEM hiện đại" />
+        </div>
+    </section>
+
+    <section class="container course-toolbar">
+        <form class="search-field" method="get" asp-action="Index">
+            <span class="material-symbols-outlined" aria-hidden="true">search</span>
+            <input type="text" name="search" value="@ViewBag.SearchTerm" placeholder="Nhập tên khóa học và nhấn Enter..." />
+        </form>
+    </section>
+
+    <section class="container courses-grid-section">
+        <div class="courses-grid">
+            @foreach (var course in Model)
+            {
+                <article class="course-card">
+                    <div class="course-card-image">
+                        <img src="@course.ImageUrl" alt="@course.Title" />
+                    </div>
+
+                    <div class="course-card-body">
+
+
+                        <h2>@course.Title</h2>
+                        <p>@course.Summary</p>
+
+                        <a class="button button-secondary button-block" asp-controller="Courses" asp-action="Details" asp-route-slug="@course.Slug">
+                            Xem chi tiết
+                        </a>
+                    </div>
+                </article>
+            }
+        </div>
+    </section>
+
+    @if (ViewBag.TotalPages > 1)
+    {
+        <nav class="container pagination-nav" aria-label="Phân trang khóa học">
+            @if (ViewBag.CurrentPage > 1)
+            {
+                <button type="button" aria-label="Trang trước" onclick="window.location.href='?page=@(ViewBag.CurrentPage - 1)&search=@ViewBag.SearchTerm'">
+                    <span class="material-symbols-outlined" aria-hidden="true">chevron_left</span>
+                </button>
+            }
+
+            @for (int i = 1; i <= ViewBag.TotalPages; i++)
+            {
+                if (i == ViewBag.CurrentPage)
+                {
+                    <button type="button" class="is-active" style="background-color: #2e7d32; border-color: #2e7d32; color: white;">@i</button>
+                }
+                else
+                {
+                    <button type="button" onclick="window.location.href='?page=@i&search=@ViewBag.SearchTerm'">@i</button>
+                }
+            }
+
+            @if (ViewBag.CurrentPage < ViewBag.TotalPages)
+            {
+                <button type="button" aria-label="Trang sau" onclick="window.location.href='?page=@(ViewBag.CurrentPage + 1)&search=@ViewBag.SearchTerm'">
+                    <span class="material-symbols-outlined" aria-hidden="true">chevron_right</span>
+                </button>
+            }
+        </nav>
+    }
+</main>

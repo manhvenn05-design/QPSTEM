@@ -1,0 +1,71 @@
+@{
+    ViewData["Title"] = "CMS";
+}
+
+<section class="admin-page">
+    <div class="admin-page-header">
+        <div>
+            <h1 class="admin-page-title">Quản lý CMS</h1>
+            <p class="admin-page-subtitle">Bố cục dựa trên hai nhóm dữ liệu hiện có: <code>Posts</code> cho bài viết và <code>Banners</code> cho banner hiển thị.</p>
+        </div>
+
+        <div class="admin-actions">
+            <button type="button" class="admin-btn-secondary">Thêm banner</button>
+            <button type="button" class="admin-btn-primary">Tạo bài viết</button>
+        </div>
+    </div>
+
+    <div class="grid gap-6 xl:grid-cols-[1.5fr_1fr]">
+        <div class="admin-card overflow-hidden">
+            <div class="admin-card-section">
+                <h2 class="admin-section-title">Bài viết</h2>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="admin-table min-w-full">
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Slug</th>
+                            <th>Author</th>
+                            <th>IsPublished</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>5 lợi ích của học Robotics từ sớm</strong></td>
+                            <td>5-loi-ich-robotics</td>
+                            <td>admin</td>
+                            <td><span class="admin-tag admin-tag--success">Đang hiển thị</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Lịch khai giảng tháng 6</strong></td>
+                            <td>lich-khai-giang-thang-6</td>
+                            <td>admin</td>
+                            <td><span class="admin-tag admin-tag--neutral">Bản nháp</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="admin-card">
+            <div class="admin-card-section">
+                <h2 class="admin-section-title">Banner trang chủ</h2>
+                <div class="mt-5 space-y-4">
+                    <div class="admin-card-soft p-4">
+                        <p class="font-semibold text-[#1a1c19]">Khóa Robotics hè 2026</p>
+                        <p class="mt-2 text-sm text-[#73796b]">ImageUrl: /images/banners/robotics-summer.jpg</p>
+                        <p class="mt-1 text-sm text-[#73796b]">LinkUrl: /courses/robotics-explorer</p>
+                        <span class="admin-tag admin-tag--success mt-3">Đang bật</span>
+                    </div>
+                    <div class="admin-card-soft p-4">
+                        <p class="font-semibold text-[#1a1c19]">Workshop AI cho thiếu nhi</p>
+                        <p class="mt-2 text-sm text-[#73796b]">ImageUrl: /images/banners/ai-workshop.jpg</p>
+                        <p class="mt-1 text-sm text-[#73796b]">LinkUrl: /contact</p>
+                        <span class="admin-tag admin-tag--neutral mt-3">Tạm ẩn</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

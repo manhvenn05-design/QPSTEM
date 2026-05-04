@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - QPSTEM</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:FILL@0..1" rel="stylesheet" />
+    <link rel="stylesheet" href="~/assets/css/site.css" asp-append-version="true" />
+</head>
+<body>
+    @{
+        var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
+        var currentAction = ViewContext.RouteData.Values["action"]?.ToString();
+        var isHome = string.Equals(currentController, "Home", StringComparison.OrdinalIgnoreCase)
+            && string.Equals(currentAction, "Index", StringComparison.OrdinalIgnoreCase);
+        var isCourses = string.Equals(currentController, "Courses", StringComparison.OrdinalIgnoreCase);
+        var isNews = string.Equals(currentController, "News", StringComparison.OrdinalIgnoreCase);
+        var isAbout = string.Equals(currentController, "Home", StringComparison.OrdinalIgnoreCase)
+            && string.Equals(currentAction, "About", StringComparison.OrdinalIgnoreCase);
+        var isContact = string.Equals(currentController, "Home", StringComparison.OrdinalIgnoreCase)
+            && string.Equals(currentAction, "Contact", StringComparison.OrdinalIgnoreCase);
+    }
+
+    <header class="site-header">
+        <div class="container header-inner">
+            <a class="brand" asp-controller="Home" asp-action="Index">QPSTEM</a>
+
+            <nav class="main-nav" id="main-nav" aria-label="Điều hướng chính">
+                <a class="@(isHome ? "is-active" : null)" asp-controller="Home" asp-action="Index">Trang chủ</a>
+                <a class="@(isCourses ? "is-active" : null)" asp-controller="Courses" asp-action="Index">Khóa học</a>
+                <a class="@(isNews ? "is-active" : null)" asp-controller="News" asp-action="Index">Tin tức</a>
+                <a class="@(isAbout ? "is-active" : null)" asp-controller="Home" asp-action="About">Về chúng tôi</a>
+                <a class="@(isContact ? "is-active" : null)" asp-controller="Home" asp-action="Contact">Liên hệ</a>
+            </nav>
+
+            <div class="header-actions">
+                <a class="text-link" asp-controller="Account" asp-action="Login">Đăng nhập</a>
+                <a class="button button-primary button-sm" asp-controller="Leads" asp-action="Consultation">Nhận tư vấn</a>
+                <button class="hamburger-btn" id="hamburger-btn" type="button"
+                        aria-label="Mở menu" aria-expanded="false" aria-controls="mobile-nav">
+                    <span class="material-symbols-outlined" aria-hidden="true">menu</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <div class="mobile-nav-overlay" id="mobile-nav-overlay" aria-hidden="true"></div>
+
+    <nav class="mobile-nav" id="mobile-nav" aria-label="Menu di động">
+        <div class="mobile-nav-header">
+            <span class="brand">QPSTEM</span>
+            <button class="mobile-nav-close" id="mobile-nav-close" type="button" aria-label="Đóng menu">
+                <span class="material-symbols-outlined" aria-hidden="true">close</span>
+            </button>
+        </div>
+        <div class="mobile-nav-links">
+            <a class="@(isHome ? "is-active" : null)" asp-controller="Home" asp-action="Index">Trang chủ</a>
+            <a class="@(isCourses ? "is-active" : null)" asp-controller="Courses" asp-action="Index">Khóa học</a>
+            <a class="@(isNews ? "is-active" : null)" asp-controller="News" asp-action="Index">Tin tức</a>
+            <a class="@(isAbout ? "is-active" : null)" asp-controller="Home" asp-action="About">Về chúng tôi</a>
+            <a class="@(isContact ? "is-active" : null)" asp-controller="Home" asp-action="Contact">Liên hệ</a>
+        </div>
+        <div class="mobile-nav-actions">
+            <a class="button button-secondary button-block" asp-controller="Account" asp-action="Login">Đăng nhập</a>
+            <a class="button button-primary button-block" asp-controller="Leads" asp-action="Consultation">Nhận tư vấn</a>
+        </div>
+    </nav>
+
+    @RenderBody()
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="toast-notification success">
+            <span class="material-symbols-outlined" aria-hidden="true">check_circle</span>
+            <div class="toast-content">
+                @TempData["SuccessMessage"]
+            </div>
+            <button type="button" class="toast-close" onclick="this.parentElement.remove();">&times;</button>
+        </div>
+
+        <style>
+            .toast-notification {
+                position: fixed;
+                bottom: 30px;
+                right: 30px;
+                background-color: #2e7d32;
+                color: white;
+                padding: 16px 24px;
+                border-radius: 8px;
+                box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                z-index: 9999;
+                font-weight: 500;
+                animation: slideIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards, fadeOut 0.5s ease-in 4.5s forwards;
+            }
+
+            .toast-notification .material-symbols-outlined {
+                font-size: 24px;
+            }
+
+            .toast-close {
+                background: none;
+                border: none;
+                color: white;
+                font-size: 24px;
+                cursor: pointer;
+                padding: 0;
+                line-height: 1;
+                margin-left: 12px;
+                opacity: 0.8;
+            }
+
+            .toast-close:hover {
+                opacity: 1;
+            }
+
+            @@keyframes slideIn {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+
+            @@keyframes fadeOut {
+                from { opacity: 1; }
+                to { opacity: 0; visibility: hidden; }
+            }
+        </style>
+
+        <script>
+            setTimeout(function () {
+                var toast = document.querySelector('.toast-notification');
+                if (toast) {
+                    toast.remove();
+                }
+            }, 5000);
+        </script>
+    }
+
+    <footer class="site-footer">
+        <div class="container footer-main">
+            <div class="footer-brand">
+                <a class="brand" href="/">QPSTEM</a>
+                <p>
+                    © 2024 QPSTEM. Nền tảng giáo dục STEM hàng đầu Việt Nam. Tầm nhìn của chúng tôi là
+                    trang bị cho thế hệ trẻ những kỹ năng thiết yếu để thành công trong tương lai.
+                </p>
+                <div class="footer-social">
+                    <span class="material-symbols-outlined" aria-hidden="true">social_leaderboard</span>
+                    <span class="material-symbols-outlined" aria-hidden="true">alternate_email</span>
+                    <span class="material-symbols-outlined" aria-hidden="true">call</span>
+                </div>
+            </div>
+
+            <div class="footer-links">
+                <div>
+                    <h3>Hỗ trợ</h3>
+                    <a href="#">Điều khoản dịch vụ</a>
+                    <a href="#">Chính sách bảo mật</a>
+                </div>
+                <div>
+                    <h3>Khám phá</h3>
+                    <a asp-controller="Home" asp-action="About">Về chúng tôi</a>
+                    <a asp-controller="Home" asp-action="Contact">Liên hệ</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="container footer-bottom">
+            Trụ sở: 199 Lê Hoàn, Trường Vinh, Nghệ An
+        </div>
+    </footer>
+
+    <script src="~/assets/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

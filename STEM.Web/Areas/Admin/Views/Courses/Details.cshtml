@@ -1,0 +1,139 @@
+@model STEM.Web.Areas.Admin.Models.CourseDetailsViewModel
+
+@{
+    ViewData["Title"] = "Chi tiết khóa học";
+}
+
+<section class="admin-page">
+    <div class="admin-page-header">
+        <div>
+            <h1 class="admin-page-title">Chi tiết khóa học</h1>
+            <p class="admin-page-subtitle">Xem đầy đủ dữ liệu khóa học và các lớp hiện đang liên kết với khóa học này.</p>
+        </div>
+
+        <div class="admin-actions">
+            <a asp-area="Admin" asp-controller="Courses" asp-action="Edit" asp-route-id="@Model.Id" class="admin-btn-primary">Cập nhật</a>
+            <a asp-area="Admin" asp-controller="Courses" asp-action="Index" class="admin-btn-secondary">Quay lại</a>
+        </div>
+    </div>
+
+    <div class="admin-grid-two">
+        <div class="space-y-6">
+            <div class="admin-card">
+                <div class="admin-card-section">
+                    <h2 class="admin-section-title">Thông tin khóa học</h2>
+
+                    @if (!string.IsNullOrWhiteSpace(Model.ImageUrl))
+                    {
+                        <div class="mt-6">
+                            <img src="@Model.ImageUrl" alt="@Model.Name" class="h-56 w-full rounded-[8px] border border-[#e3e3de] object-cover" />
+                        </div>
+                    }
+
+                    <dl class="admin-data-grid two-col mt-6">
+                        <div class="admin-data-item">
+                            <dt>Mã khóa học</dt>
+                            <dd>@Model.Code</dd>
+                        </div>
+                        <div class="admin-data-item">
+                            <dt>Tên khóa học</dt>
+                            <dd>@Model.Name</dd>
+                        </div>
+                        <div class="admin-data-item">
+                            <dt>Độ tuổi phù hợp</dt>
+                            <dd>@Model.TargetAgeMin - @Model.TargetAgeMax tuổi</dd>
+                        </div>
+                        <div class="admin-data-item">
+                            <dt>Tổng số buổi</dt>
+                            <dd>@Model.TotalSessions buổi</dd>
+                        </div>
+                        <div class="admin-data-item">
+                            <dt>Học phí</dt>
+                            <dd>@($"{Model.Price:N0}đ")</dd>
+                        </div>
+                        <div class="admin-data-item">
+                            <dt>Ảnh đại diện</dt>
+                            <dd>@(string.IsNullOrWhiteSpace(Model.ImageUrl) ? "Chưa cập nhật" : Model.ImageUrl)</dd>
+                        </div>
+                        <div class="admin-data-item md:col-span-2">
+                            <dt>Mô tả ngắn</dt>
+                            <dd>@(string.IsNullOrWhiteSpace(Model.Summary) ? "Chưa cập nhật mô tả." : Model.Summary)</dd>
+                        </div>
+                    </dl>
+                </div>
+            </div>
+
+            <div class="admin-card">
+                <div class="admin-card-section">
+                    <div class="flex items-center justify-between gap-4">
+                        <div>
+                            <h2 class="admin-section-title">Các lớp liên quan</h2>
+                            <p class="admin-section-subtitle">Danh sách lớp hiện đang gắn với khóa học này.</p>
+                        </div>
+                    </div>
+
+                    @if (Model.Classes.Count == 0)
+                    {
+                        <div class="admin-empty">Khóa học này chưa có lớp nào được tạo.</div>
+                    }
+                    else
+                    {
+                        <div class="mt-6 overflow-hidden rounded-[8px] border border-[#e3e3de]">
+                            <table class="admin-table min-w-full">
+                                <thead>
+                                    <tr>
+                                        <th>Mã lớp</th>
+                                        <th>Giáo viên</th>
+                                        <th>Thời gian</th>
+                                        <th>Học viên</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in Model.Classes)
+                                    {
+                                        <tr>
+                                            <td><strong>@item.ClassCode</strong></td>
+                                            <td>@item.TeacherName</td>
+                                            <td>@item.StartDate.ToString("dd/MM/yyyy") - @(item.EndDate?.ToString("dd/MM/yyyy") ?? "Đang mở")</td>
+                                            <td>@item.EnrollmentCount</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <aside class="space-y-6">
+            <div class="admin-card">
+                <div class="admin-card-section">
+                    <h2 class="admin-section-title">Trạng thái</h2>
+                    <div class="mt-5">
+                        <span class="inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-semibold @Model.StatusBadgeClass">
+                            <span class="h-2 w-2 rounded-full @(Model.StatusLabel == "Đang diễn ra" ? "bg-[#6a994e]" : Model.StatusLabel == "Sắp khai giảng" ? "bg-[#9b682f]" : Model.StatusLabel == "Đã kết thúc" ? "bg-[#73796b]" : "bg-[#c2c9b9]")"></span>
+                            @Model.StatusLabel
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="admin-card">
+                <div class="admin-card-section">
+                    <h2 class="admin-section-title">Tổng quan</h2>
+                    <dl class="mt-5 space-y-4">
+                        <div>
+                            <dt class="admin-label !mb-0">Số lớp</dt>
+                            <dd class="mt-1 text-[32px] font-semibold leading-10 text-[#1a1c19]">@Model.TotalClasses</dd>
+                        </div>
+                        <div>
+                            <dt class="admin-label !mb-0">Số học viên đã ghi danh</dt>
+                            <dd class="mt-1 text-[32px] font-semibold leading-10 text-[#1a1c19]">@Model.TotalEnrollments</dd>
+                        </div>
+                    </dl>
+                </div>
+            </div>
+        </aside>
+    </div>
+</section>

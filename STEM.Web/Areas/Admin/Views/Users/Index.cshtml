@@ -1,0 +1,152 @@
+@model STEM.Web.Areas.Admin.Models.UserManagementViewModel
+
+@{
+    ViewData["Title"] = "Người dùng";
+}
+
+<section class="admin-page">
+    <div class="admin-page-header">
+        <div>
+            <h1 class="admin-page-title">Quản lý người dùng</h1>
+            <p class="admin-page-subtitle">Quản lý tài khoản, phân quyền và trạng thái truy cập của người dùng trong hệ thống.</p>
+        </div>
+
+        <div class="admin-actions">
+            <a asp-area="Admin" asp-controller="Users" asp-action="Create" class="admin-btn-primary">
+                <span class="material-symbols-outlined text-[18px]">add</span>
+                <span>Thêm người dùng mới</span>
+            </a>
+        </div>
+    </div>
+
+    @if (TempData["SuccessMessage"] is string successMessage)
+    {
+        <div class="admin-alert admin-alert--success">@successMessage</div>
+    }
+
+    @if (TempData["ErrorMessage"] is string errorMessage)
+    {
+        <div class="admin-alert admin-alert--error">@errorMessage</div>
+    }
+
+    <form method="get" asp-area="Admin" asp-controller="Users" asp-action="Index" class="admin-card">
+        <div class="admin-card-section">
+            <div class="admin-toolbar">
+                <div class="admin-chip-group">
+                    @foreach (var filter in Model.Filters)
+                    {
+                        var isActive = filter.Key == Model.SelectedRole;
+                        <a asp-area="Admin"
+                           asp-controller="Users"
+                           asp-action="Index"
+                           asp-route-role="@filter.Key"
+                           asp-route-q="@Model.SearchTerm"
+                           class="@(isActive ? "admin-chip is-active" : "admin-chip")">
+                            @filter.Label
+                        </a>
+                    }
+                </div>
+
+                <div class="w-full lg:max-w-sm">
+                    <input type="hidden" name="role" value="@Model.SelectedRole" />
+                    <label class="relative block">
+                        <span class="material-symbols-outlined pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[20px] text-[#73796b]">search</span>
+                        <input type="text" name="q" value="@Model.SearchTerm" placeholder="Tìm kiếm người dùng..." class="admin-input pl-12" />
+                    </label>
+                </div>
+            </div>
+        </div>
+    </form>
+
+    <div class="admin-card overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="admin-table min-w-full">
+                <thead>
+                    <tr>
+                        <th>Người dùng</th>
+                        <th>Vai trò</th>
+                        <th>Trạng thái</th>
+                        <th>Ngày tham gia</th>
+                        <th class="text-right">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var user in Model.Users)
+                    {
+                        <tr>
+                            <td>
+                                <div class="flex items-center gap-4">
+                                    @if (!string.IsNullOrWhiteSpace(user.AvatarUrl))
+                                    {
+                                        <img src="@user.AvatarUrl" alt="@user.Name" class="h-11 w-11 rounded-full border border-[#e3e3de] object-cover" />
+                                    }
+                                    else
+                                    {
+                                        <div class="flex h-11 w-11 items-center justify-center rounded-full text-lg font-semibold @user.AvatarClass">
+                                            @user.AvatarText
+                                        </div>
+                                    }
+
+                                    <div>
+                                        <p class="font-semibold text-[#1a1c19]">@user.Name</p>
+                                        <p class="mt-1 text-sm text-[#73796b]">@user.Email</p>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="inline-flex rounded-full px-3 py-2 text-xs font-semibold @user.RoleBadgeClass">@user.Role</span>
+                            </td>
+                            <td>
+                                <span class="inline-flex items-center gap-2 rounded-full px-3 py-2 text-xs font-semibold @user.StatusBadgeClass">
+                                    <span class="h-2 w-2 rounded-full @(user.Status == "Hoạt động" ? "bg-[#6a994e]" : "bg-[#ba1a1a]")"></span>
+                                    @user.Status
+                                </span>
+                            </td>
+                            <td class="text-[#42493d]">@user.JoinedAt</td>
+                            <td>
+                                <div class="flex justify-end">
+                                    <details class="relative">
+                                        <summary class="admin-menu-button cursor-pointer list-none">
+                                            <span class="material-symbols-outlined text-[18px]">more_horiz</span>
+                                        </summary>
+                                        <div class="admin-dropdown absolute right-0 top-11 z-20 w-44 overflow-hidden">
+                                            <a asp-area="Admin" asp-controller="Users" asp-action="Details" asp-route-id="@user.Id" class="admin-menu-item">
+                                                <span class="material-symbols-outlined text-[18px]">visibility</span>
+                                                <span>Chi tiết</span>
+                                            </a>
+                                            <a asp-area="Admin" asp-controller="Users" asp-action="Edit" asp-route-id="@user.Id" class="admin-menu-item">
+                                                <span class="material-symbols-outlined text-[18px]">edit</span>
+                                                <span>Cập nhật</span>
+                                            </a>
+                                            <form asp-area="Admin" asp-controller="Users" asp-action="Delete" asp-route-id="@user.Id" method="post" data-confirm-title="Xóa người dùng" data-confirm-message="Xóa người dùng này? Hành động này không thể hoàn tác." data-confirm-submit-text="Xóa người dùng">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="admin-menu-item admin-menu-item--danger w-full text-left">
+                                                    <span class="material-symbols-outlined text-[18px]">delete</span>
+                                                    <span>Xóa</span>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </details>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="admin-divider flex flex-col gap-4 px-6 py-5 text-sm text-[#73796b] lg:flex-row lg:items-center lg:justify-between">
+            <p>Hiển thị 1-@Model.Users.Count trong số @Model.TotalUsers người dùng</p>
+
+            <div class="admin-pagination">
+                <button type="button" class="admin-page-link">
+                    <span class="material-symbols-outlined text-[18px]">chevron_left</span>
+                </button>
+                <span class="admin-page-link is-active">1</span>
+                <button type="button" class="admin-page-link">
+                    <span class="material-symbols-outlined text-[18px]">chevron_right</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</section>

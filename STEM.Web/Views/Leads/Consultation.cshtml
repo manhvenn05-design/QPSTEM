@@ -1,0 +1,88 @@
+@model STEM.Web.Models.LeadViewModel
+@{
+    ViewData["Title"] = "Đăng ký tư vấn";
+    Layout = "_AuthLayout";
+}
+
+<main class="reg-page">
+    <div class="reg-shell">
+
+        <aside class="reg-left">
+            <a class="reg-brand" asp-controller="Home" asp-action="Index">QPSTEM Education</a>
+
+            <div class="reg-left-body">
+                <h1>Mở khóa tiềm năng sáng tạo cùng STEM</h1>
+                <p>Gia nhập cộng đồng học tập hiện đại, nơi kiến thức đi đôi với thực hành và sáng tạo không giới hạn.</p>
+            </div>
+
+            <div class="reg-features">
+                <div class="reg-feature-item">
+                    <div class="reg-feature-icon">
+                        <span class="material-symbols-outlined" aria-hidden="true">route</span>
+                    </div>
+                    <div>
+                        <strong>Lộ trình rõ ràng</strong>
+                        <span>Từ cơ bản đến chuyên sâu</span>
+                    </div>
+                </div>
+                <div class="reg-feature-item">
+                    <div class="reg-feature-icon">
+                        <span class="material-symbols-outlined" aria-hidden="true">groups</span>
+                    </div>
+                    <div>
+                        <strong>Cộng đồng sôi nổi</strong>
+                        <span>Kết nối cùng bạn bè năm châu</span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <section class="reg-right">
+            <div class="reg-form-card">
+                <header class="reg-form-header">
+                    <h2>Đăng ký tư vấn</h2>
+                    <p>Chúng tôi sẽ liên hệ với bạn trong thời gian sớm nhất</p>
+                </header>
+
+                <form class="reg-form" asp-controller="Leads" asp-action="Consultation" method="post">
+                    <div asp-validation-summary="All" style="color: #dc3545; font-size: 0.9rem; margin-bottom: 16px; padding: 10px; background: #f8d7da; border-radius: 4px; display: @(ViewData.ModelState.IsValid ? "none" : "block")"></div>
+                    
+                    <div class="form-field">
+                        <label for="ParentName">Họ và tên (Phụ huynh hoặc Học sinh)</label>
+                        <input id="ParentName" name="ParentName" type="text"
+                               placeholder="Nguyễn Văn A" value="@Model?.ParentName" autocomplete="name" />
+                    </div>
+
+                    <div class="reg-form-row">
+                        <div class="form-field">
+                            <label for="Phone">Số điện thoại</label>
+                            <input id="Phone" name="Phone" type="tel"
+                                   placeholder="0901234567" value="@Model?.Phone" autocomplete="tel" />
+                        </div>
+                        <div class="form-field">
+                            <label for="InterestedId">Khóa học quan tâm</label>
+                            <select asp-for="InterestedId" asp-items="@(new SelectList(ViewBag.Courses, "Id", "Name"))" class="form-control" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px;">
+                                <option value="">-- Chọn khóa học --</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <label class="checkbox-row checkbox-row-start">
+                        <input id="terms" name="AcceptTerms" type="checkbox" value="true" @(Model.AcceptTerms ? "checked" : null) />
+                        <span>
+                            Tôi đồng ý với các <a class="auth-link" href="#">Điều khoản dịch vụ</a> và
+                            <a class="auth-link" href="#">Chính sách bảo mật</a>.
+                        </span>
+                    </label>
+
+                    <button class="button button-primary button-block" type="submit">Gửi yêu cầu tư vấn</button>
+
+                    <p class="reg-switch">
+                        <a asp-controller="Home" asp-action="Index">Quay về trang chủ</a>
+                    </p>
+                </form>
+            </div>
+        </section>
+
+    </div>
+</main>

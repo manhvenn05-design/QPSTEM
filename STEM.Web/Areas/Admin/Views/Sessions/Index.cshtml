@@ -1,0 +1,81 @@
+@{
+    ViewData["Title"] = "Buổi học";
+}
+
+<section class="admin-page">
+    <div class="admin-page-header">
+        <div>
+            <h1 class="admin-page-title">Quản lý buổi học</h1>
+            <p class="admin-page-subtitle">Bố cục quản lý theo bảng <code>Sessions</code>: số buổi, ngày học, khung giờ, chủ đề, tài liệu và ghi chú trợ giảng.</p>
+        </div>
+
+        <div class="admin-actions">
+            <button type="button" class="admin-btn-primary">
+                <span class="material-symbols-outlined text-[18px]">add</span>
+                <span>Thêm buổi học</span>
+            </button>
+        </div>
+    </div>
+
+    <div class="admin-card">
+        <div class="admin-card-section">
+            <div class="admin-toolbar">
+                <div class="admin-chip-group">
+                    <button type="button" class="admin-chip is-active">Hôm nay</button>
+                    <button type="button" class="admin-chip">Tuần này</button>
+                    <button type="button" class="admin-chip">Sắp tới</button>
+                </div>
+
+                <div class="w-full lg:max-w-sm">
+                    <label class="relative block">
+                        <span class="material-symbols-outlined pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[20px] text-[#73796b]">search</span>
+                        <input type="text" placeholder="Tìm theo lớp hoặc chủ đề..." class="admin-input pl-12" />
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="admin-card overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="admin-table min-w-full">
+                <thead>
+                    <tr>
+                        <th>Buổi</th>
+                        <th>Lớp</th>
+                        <th>Ngày học</th>
+                        <th>Khung giờ</th>
+                        <th>Chủ đề</th>
+                        <th>Tài liệu</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Buổi 01</strong></td>
+                        <td>RBX-2405-A</td>
+                        <td>12/05/2026</td>
+                        <td>08:00 - 10:00</td>
+                        <td>Làm quen cảm biến cơ bản</td>
+                        <td>teaching-material.pdf</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Buổi 04</strong></td>
+                        <td>SCR-2405-B</td>
+                        <td>18/05/2026</td>
+                        <td>14:00 - 16:00</td>
+                        <td>Tạo game tương tác</td>
+                        <td>scratch-lab-04.pptx</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Buổi 02</strong></td>
+                        <td>AIJ-2406-C</td>
+                        <td>21/05/2026</td>
+                        <td>09:00 - 11:00</td>
+                        <td>Nhập môn mô hình AI</td>
+                        <td>Chưa gắn</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>

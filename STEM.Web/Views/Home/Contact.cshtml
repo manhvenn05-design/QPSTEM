@@ -1,0 +1,114 @@
+@{
+    ViewData["Title"] = "Liên hệ";
+}
+
+<main>
+    <section class="hero-section" style="padding-bottom: 64px;">
+        <div class="container" style="text-align: center; max-width: 680px;">
+            <p style="font-size: 0.85rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-primary); margin: 0 0 16px;">
+                Liên hệ với chúng tôi
+            </p>
+            <h1 style="font-size: clamp(2.2rem, 4vw, 3.2rem); margin: 0 0 20px; letter-spacing: -0.03em;">
+                Chúng tôi luôn sẵn sàng lắng nghe
+            </h1>
+            <p style="color: var(--color-text-muted); font-size: 1rem; margin: 0;">
+                Có thắc mắc về khóa học? Cần tư vấn lộ trình học? Đội ngũ QPSTEM
+                sẽ phản hồi trong vòng 24 giờ làm việc.
+            </p>
+        </div>
+    </section>
+
+    <section class="section section-surface-white" style="padding-top: 0;">
+        <div class="container">
+            <div class="contact-layout">
+
+                <div class="contact-info">
+                    <div class="contact-info-card">
+                        <div class="contact-info-icon">
+                            <span class="material-symbols-outlined" aria-hidden="true">location_on</span>
+                        </div>
+                        <div>
+                            <strong>Địa chỉ</strong>
+                            <span>199 Lê Hoàn, Trường Vinh, Nghệ An</span>
+                        </div>
+                    </div>
+                    <div class="contact-info-card">
+                        <div class="contact-info-icon">
+                            <span class="material-symbols-outlined" aria-hidden="true">call</span>
+                        </div>
+                        <div>
+                            <strong>Điện thoại</strong>
+                            <span>0901 234 567</span>
+                        </div>
+                    </div>
+                    <div class="contact-info-card">
+                        <div class="contact-info-icon">
+                            <span class="material-symbols-outlined" aria-hidden="true">mail</span>
+                        </div>
+                        <div>
+                            <strong>Email</strong>
+                            <span>hello@qpstem.edu.vn</span>
+                        </div>
+                    </div>
+                    <div class="contact-info-card">
+                        <div class="contact-info-icon">
+                            <span class="material-symbols-outlined" aria-hidden="true">schedule</span>
+                        </div>
+                        <div>
+                            <strong>Giờ làm việc</strong>
+                            <span>Thứ 2 – Thứ 7, 8:00 – 17:30</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="contact-form-card">
+                    <header style="margin-bottom: 24px;">
+                        <h2 style="margin: 0 0 6px; font-size: 1.4rem; letter-spacing: -0.02em;">Gửi tin nhắn cho chúng tôi</h2>
+                        <p style="margin: 0; color: var(--color-text-muted); font-size: 0.9rem;">Điền thông tin và chúng tôi sẽ liên hệ sớm nhất.</p>
+                    </header>
+
+                    <form class="contact-form" method="post" action="#">
+                        <div class="reg-form-row">
+                            <div class="form-field">
+                                <label for="contactName">Họ và tên</label>
+                                <input id="contactName" name="name" type="text" placeholder="Nguyễn Văn A" />
+                            </div>
+                            <div class="form-field">
+                                <label for="contactPhone">Số điện thoại</label>
+                                <input id="contactPhone" name="phone" type="tel" placeholder="0901 234 567" />
+                            </div>
+                        </div>
+
+                        <div class="form-field">
+                            <label for="contactEmail">Email</label>
+                            <input id="contactEmail" name="email" type="email" placeholder="example@email.com" />
+                        </div>
+
+                        <div class="form-field">
+                            <label for="contactSubject">Chủ đề</label>
+                            <select id="contactSubject" name="subject" class="contact-select">
+                                <option value="">Chọn chủ đề...</option>
+                                <option>Tư vấn khóa học</option>
+                                <option>Hỗ trợ kỹ thuật</option>
+                                <option>Hợp tác kinh doanh</option>
+                                <option>Khác</option>
+                            </select>
+                        </div>
+
+                        <div class="form-field">
+                            <label for="contactMessage">Nội dung</label>
+                            <textarea id="contactMessage" name="message" rows="4"
+                                      placeholder="Mô tả nhu cầu của bạn..."></textarea>
+                        </div>
+
+                        <button class="button button-primary button-block" type="submit">
+                            Gửi tin nhắn
+                            <span class="material-symbols-outlined" aria-hidden="true">send</span>
+                        </button>
+                    </form>
+                </div>
+
+            </div>
+        </div>
+    </section>
+</main>

@@ -1,0 +1,72 @@
+@{
+    ViewData["Title"] = "Điểm danh";
+}
+
+<section class="admin-page">
+    <div class="admin-page-header">
+        <div>
+            <h1 class="admin-page-title">Quản lý điểm danh</h1>
+            <p class="admin-page-subtitle">Giao diện mô phỏng theo bảng <code>Attendances</code> với trạng thái có mặt, ghi chú giáo viên, xử lý AI và tệp media sản phẩm.</p>
+        </div>
+
+        <div class="admin-actions">
+            <button type="button" class="admin-btn-primary">
+                <span class="material-symbols-outlined text-[18px]">task_alt</span>
+                <span>Chốt điểm danh</span>
+            </button>
+        </div>
+    </div>
+
+    <div class="admin-card">
+        <div class="admin-card-section">
+            <div class="grid gap-3 md:grid-cols-4">
+                <label class="relative block">
+                    <span class="material-symbols-outlined pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[20px] text-[#73796b]">search</span>
+                    <input type="text" placeholder="Tìm học sinh..." class="admin-input pl-12" />
+                </label>
+                <input type="text" value="RBX-2405-A" class="admin-input" />
+                <input type="text" value="Buổi 01" class="admin-input" />
+                <button type="button" class="admin-btn-secondary">Lọc dữ liệu</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="admin-card overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="admin-table min-w-full">
+                <thead>
+                    <tr>
+                        <th>Học sinh</th>
+                        <th>Có mặt</th>
+                        <th>Ghi chú giáo viên</th>
+                        <th>AI Process</th>
+                        <th>Media sản phẩm</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Nguyễn Khánh An</strong></td>
+                        <td><span class="admin-tag admin-tag--success">Có mặt</span></td>
+                        <td>Lắp ráp nhanh, chủ động hợp tác nhóm.</td>
+                        <td class="text-[#456c3f]">completed</td>
+                        <td>2 tệp media</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Trần Anh Minh</strong></td>
+                        <td><span class="admin-tag admin-tag--warning">Đi muộn</span></td>
+                        <td>Cần hỗ trợ thêm ở phần cài cảm biến.</td>
+                        <td class="text-[#9b682f]">processing</td>
+                        <td>Chưa có</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Lê Gia Hân</strong></td>
+                        <td><span class="admin-tag admin-tag--danger">Vắng</span></td>
+                        <td>Phụ huynh đã báo nghỉ.</td>
+                        <td class="text-[#73796b]">pending</td>
+                        <td>Không áp dụng</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>

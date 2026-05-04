@@ -1,0 +1,500 @@
+@using System.Security.Claims
+@using Microsoft.EntityFrameworkCore
+@using STEM.Web.Data
+@inject ApplicationDbContext DbContext
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - QPSTEM Student</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+    <style>
+        :root {
+            --student-bg: #fafaf4;
+            --student-surface: #ffffff;
+            --student-surface-soft: #f4f4ee;
+            --student-border: #e3e3de;
+            --student-border-strong: #c2c9b9;
+            --student-text: #1a1c19;
+            --student-text-muted: #42493d;
+            --student-text-soft: #73796b;
+            --student-primary: #6a994e;
+            --student-primary-strong: #3b6722;
+            --student-primary-soft: #f2f7f0;
+            --student-warning: #9b682f;
+            --student-warning-soft: #fff4e8;
+            --student-success: #456c3f;
+            --student-success-soft: #edf7e8;
+            --student-shadow: 0 20px 40px rgba(26, 28, 25, 0.08);
+        }
+
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        html, body {
+            background: var(--student-bg);
+            color: var(--student-text);
+            font-family: 'Inter', sans-serif;
+        }
+
+        .student-shell {
+            min-height: 100vh;
+            background: linear-gradient(180deg, #f8f8f1 0%, #fafaf4 100%);
+        }
+
+        .student-sidebar {
+            background: rgba(255, 255, 255, 0.9);
+            border-right: 1px solid var(--student-border);
+            backdrop-filter: blur(12px);
+        }
+
+        .student-logo {
+            align-items: center;
+            display: inline-flex;
+            gap: 12px;
+        }
+
+        .student-logo-mark {
+            align-items: center;
+            background: var(--student-primary-strong);
+            border-radius: 12px;
+            color: #fff;
+            display: inline-flex;
+            height: 52px;
+            justify-content: center;
+            width: 52px;
+        }
+
+        .student-logo-wordmark {
+            color: var(--student-primary);
+            font-size: 2rem;
+            font-weight: 700;
+            letter-spacing: -0.04em;
+            line-height: 1;
+        }
+
+        .student-logo-subtitle {
+            color: #8b8f85;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.14em;
+            line-height: 16px;
+            margin-top: 4px;
+        }
+
+        .student-nav-link,
+        .student-nav-muted {
+            align-items: center;
+            border-radius: 8px;
+            display: flex;
+            gap: 12px;
+            min-height: 48px;
+            padding: 12px 16px;
+        }
+
+        .student-nav-link {
+            color: var(--student-text-muted);
+            transition: background-color 0.2s ease, color 0.2s ease;
+        }
+
+        .student-nav-link:hover {
+            background: var(--student-surface-soft);
+            color: var(--student-primary-strong);
+        }
+
+        .student-nav-link.is-active {
+            background: var(--student-primary-soft);
+            box-shadow: inset 3px 0 0 var(--student-primary);
+            color: var(--student-primary-strong);
+            font-weight: 600;
+        }
+
+        .student-nav-muted {
+            color: var(--student-text-soft);
+            justify-content: space-between;
+        }
+
+        .student-badge {
+            background: var(--student-primary-soft);
+            border-radius: 9999px;
+            color: var(--student-primary-strong);
+            font-size: 12px;
+            font-weight: 600;
+            padding: 6px 10px;
+        }
+
+        .student-body {
+            margin-left: 18rem;
+            min-height: 100vh;
+        }
+
+        .student-header {
+            background: rgba(255, 255, 255, 0.92);
+            border-bottom: 1px solid var(--student-border);
+            backdrop-filter: blur(12px);
+        }
+
+        .student-container {
+            padding: 96px 32px 48px;
+        }
+
+        @@media (min-width: 1440px) {
+            .student-container {
+                padding-left: 40px;
+                padding-right: 40px;
+            }
+        }
+
+        .student-page {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .student-page-header {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            justify-content: space-between;
+        }
+
+        @@media (min-width: 1024px) {
+            .student-page-header {
+                align-items: flex-start;
+                flex-direction: row;
+            }
+        }
+
+        .student-page-title {
+            font-size: 32px;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+            line-height: 40px;
+            margin: 0;
+        }
+
+        .student-page-subtitle {
+            color: var(--student-text-soft);
+            font-size: 16px;
+            line-height: 24px;
+            margin-top: 8px;
+            max-width: 760px;
+        }
+
+        .student-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .student-btn-primary,
+        .student-btn-secondary {
+            align-items: center;
+            border-radius: 8px;
+            display: inline-flex;
+            font-size: 14px;
+            font-weight: 600;
+            gap: 8px;
+            height: 48px;
+            justify-content: center;
+            padding: 0 20px;
+        }
+
+        .student-btn-primary {
+            background: var(--student-primary);
+            color: #fff;
+        }
+
+        .student-btn-secondary {
+            background: #fff;
+            border: 1px solid var(--student-border-strong);
+            color: var(--student-text-muted);
+        }
+
+        .student-card {
+            background: var(--student-surface);
+            border: 1px solid var(--student-border);
+            border-radius: 8px;
+        }
+
+        .student-card-section {
+            padding: 24px;
+        }
+
+        .student-stat-grid {
+            display: grid;
+            gap: 24px;
+        }
+
+        @@media (min-width: 768px) {
+            .student-stat-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @@media (min-width: 1280px) {
+            .student-stat-grid {
+                grid-template-columns: repeat(4, minmax(0, 1fr));
+            }
+        }
+
+        .student-stat-card {
+            background: var(--student-surface);
+            border: 1px solid var(--student-border);
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 160px;
+            padding: 24px;
+        }
+
+        .student-stat-label {
+            color: var(--student-text-soft);
+            font-size: 14px;
+            font-weight: 500;
+            line-height: 20px;
+        }
+
+        .student-stat-value {
+            font-size: 32px;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+            line-height: 40px;
+            margin-top: 24px;
+        }
+
+        .student-kicker {
+            color: var(--student-text-soft);
+            font-size: 14px;
+            line-height: 20px;
+            margin-top: 8px;
+        }
+
+        .student-grid-two {
+            display: grid;
+            gap: 24px;
+        }
+
+        @@media (min-width: 1280px) {
+            .student-grid-two {
+                grid-template-columns: minmax(0, 1.55fr) minmax(340px, 1fr);
+            }
+        }
+
+        .student-section-title {
+            font-size: 20px;
+            font-weight: 600;
+            line-height: 28px;
+            margin: 0;
+        }
+
+        .student-section-subtitle {
+            color: var(--student-text-soft);
+            font-size: 14px;
+            line-height: 20px;
+            margin-top: 4px;
+        }
+
+        .student-list {
+            display: grid;
+            gap: 16px;
+            margin-top: 24px;
+        }
+
+        .student-list-item {
+            background: var(--student-surface-soft);
+            border: 1px solid var(--student-border);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .student-tag {
+            border-radius: 9999px;
+            display: inline-flex;
+            font-size: 12px;
+            font-weight: 600;
+            line-height: 16px;
+            padding: 8px 12px;
+        }
+
+        .student-tag--success {
+            background: var(--student-success-soft);
+            color: var(--student-success);
+        }
+
+        .student-tag--warning {
+            background: var(--student-warning-soft);
+            color: var(--student-warning);
+        }
+
+        .student-tag--neutral {
+            background: #eeeee9;
+            color: #42493d;
+        }
+
+        .student-media-grid {
+            display: grid;
+            gap: 16px;
+            margin-top: 24px;
+        }
+
+        @@media (min-width: 768px) {
+            .student-media-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        .student-media-card {
+            border: 1px solid var(--student-border);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .student-media-thumb {
+            background: linear-gradient(135deg, #dfead7 0%, #eef6ec 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 168px;
+            color: var(--student-primary-strong);
+        }
+
+        .student-media-body {
+            padding: 16px;
+        }
+
+        .student-progress {
+            background: #eeeee9;
+            border-radius: 9999px;
+            height: 8px;
+            overflow: hidden;
+        }
+
+        .student-progress-bar {
+            background: var(--student-primary);
+            border-radius: 9999px;
+            height: 8px;
+        }
+    </style>
+</head>
+<body class="student-shell">
+    @{
+        var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
+        var currentUserIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var currentUserId = int.TryParse(currentUserIdClaim, out var parsedUserId) ? parsedUserId : (int?)null;
+        var currentStudentProfile = currentUserId.HasValue
+            ? await DbContext.Users.AsNoTracking()
+                .Where(x => x.Id == currentUserId.Value)
+                .Select(x => new { x.FullName, x.AvatarUrl })
+                .FirstOrDefaultAsync()
+            : null;
+        var currentStudentName = currentStudentProfile?.FullName ?? User.FindFirstValue(ClaimTypes.GivenName) ?? User.Identity?.Name ?? "Học sinh";
+        var currentStudentAvatarUrl = currentStudentProfile?.AvatarUrl;
+        string NavClass(string controller) => currentController == controller ? "student-nav-link is-active" : "student-nav-link";
+    }
+
+    <aside class="student-sidebar fixed left-0 top-0 flex h-screen w-72 flex-col py-6">
+        <div class="mb-8 px-6">
+            <div class="student-logo">
+                <div class="student-logo-mark">
+                    <span class="material-symbols-outlined text-[24px]">school</span>
+                </div>
+                <div>
+                    <div class="student-logo-wordmark">QPSTEM</div>
+                    <div class="student-logo-subtitle">CỔNG HỌC SINH</div>
+                </div>
+            </div>
+        </div>
+
+        <nav class="flex-1 overflow-y-auto px-4">
+            <div class="flex flex-col gap-1">
+                <a class="@NavClass("StudentPortal")" asp-controller="StudentPortal" asp-action="Index">
+                    <span class="material-symbols-outlined text-[20px]">dashboard</span>
+                    <span>Tổng quan</span>
+                </a>
+                <div class="student-nav-muted">
+                    <div class="flex items-center gap-3">
+                        <span class="material-symbols-outlined text-[20px]">calendar_month</span>
+                        <span>Lịch học</span>
+                    </div>
+                    <span class="student-badge">Sắp làm</span>
+                </div>
+                <div class="student-nav-muted">
+                    <div class="flex items-center gap-3">
+                        <span class="material-symbols-outlined text-[20px]">photo_library</span>
+                        <span>Thư viện sản phẩm</span>
+                    </div>
+                    <span class="student-badge">Sắp làm</span>
+                </div>
+                <div class="student-nav-muted">
+                    <div class="flex items-center gap-3">
+                        <span class="material-symbols-outlined text-[20px]">rate_review</span>
+                        <span>Đánh giá buổi học</span>
+                    </div>
+                    <span class="student-badge">Sắp làm</span>
+                </div>
+                <div class="student-nav-muted">
+                    <div class="flex items-center gap-3">
+                        <span class="material-symbols-outlined text-[20px]">receipt_long</span>
+                        <span>Học phí</span>
+                    </div>
+                    <span class="student-badge">Sắp làm</span>
+                </div>
+            </div>
+        </nav>
+
+        <div class="mt-auto border-t border-[#e3e3de] px-4 pt-6">
+            <div class="flex items-center gap-3 px-2">
+                @if (!string.IsNullOrWhiteSpace(currentStudentAvatarUrl))
+                {
+                    <img alt="@currentStudentName" class="h-10 w-10 rounded-full border border-[#c2c9b9] object-cover" src="@currentStudentAvatarUrl" />
+                }
+                else
+                {
+                    <div class="flex h-10 w-10 items-center justify-center rounded-full border border-[#c2c9b9] bg-[#f2f7f0] text-sm font-semibold text-[#3b6722]">
+                        @currentStudentName.Trim()[0].ToString().ToUpperInvariant()
+                    </div>
+                }
+                <div class="min-w-0">
+                    <p class="truncate text-sm font-semibold text-[#1a1c19]">@currentStudentName</p>
+                    <p class="text-xs text-[#73796b]">Học sinh / Phụ huynh</p>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <main class="student-body">
+        <header class="student-header fixed right-0 top-0 z-40 flex h-16 w-[calc(100%-18rem)] items-center justify-between px-8 text-sm">
+            <div class="flex items-center gap-2 text-[#73796b]">
+                <span>Student</span>
+                <span class="material-symbols-outlined text-[16px]">chevron_right</span>
+                <span class="font-semibold text-[#3b6722]">@ViewData["Title"]</span>
+            </div>
+
+            <div class="flex items-center gap-5">
+                <button type="button" class="text-[#73796b] transition hover:text-[#3b6722]" title="Thông báo">
+                    <span class="material-symbols-outlined text-[22px]">notifications</span>
+                </button>
+                <form asp-controller="Account" asp-action="Logout" method="post">
+                    <button type="submit" class="text-[#73796b] transition hover:text-[#ba1a1a]" title="Đăng xuất">
+                        <span class="material-symbols-outlined text-[22px]">logout</span>
+                    </button>
+                </form>
+            </div>
+        </header>
+
+        <div class="student-container">
+            @RenderBody()
+        </div>
+    </main>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

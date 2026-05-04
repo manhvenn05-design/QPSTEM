@@ -1,0 +1,180 @@
+@{
+    ViewData["Title"] = "Tổng quan";
+}
+
+<section class="admin-page">
+    <div class="admin-page-header">
+        <div>
+            <h1 class="admin-page-title">Tổng quan quản trị</h1>
+            <p class="admin-page-subtitle">Theo dõi nhanh tình hình học viên, khóa học, lịch vận hành và doanh thu trong một màn hình gọn, dễ đọc.</p>
+        </div>
+
+        <div class="admin-actions">
+            <button type="button" class="admin-btn-secondary">
+                <span class="material-symbols-outlined text-[18px]">download</span>
+                <span>Xuất báo cáo</span>
+            </button>
+            <button type="button" class="admin-btn-primary">
+                <span class="material-symbols-outlined text-[18px]">add</span>
+                <span>Tạo nhanh</span>
+            </button>
+        </div>
+    </div>
+
+    <div class="admin-stat-grid four-col">
+        <article class="admin-stat-card">
+            <div class="flex items-start justify-between gap-4">
+                <span class="admin-stat-label">Tổng học viên</span>
+                <span class="material-symbols-outlined text-[20px] text-[#6a994e]">group</span>
+            </div>
+            <div>
+                <div class="admin-stat-value">234</div>
+                <p class="admin-kicker">Tăng 5% so với tháng trước.</p>
+            </div>
+        </article>
+
+        <article class="admin-stat-card">
+            <div class="flex items-start justify-between gap-4">
+                <span class="admin-stat-label">Khóa học đang mở</span>
+                <span class="material-symbols-outlined text-[20px] text-[#6a994e]">school</span>
+            </div>
+            <div>
+                <div class="admin-stat-value">18</div>
+                <p class="admin-kicker">Phân bổ đều giữa Robotics, Scratch và AI.</p>
+            </div>
+        </article>
+
+        <article class="admin-stat-card">
+            <div class="flex items-start justify-between gap-4">
+                <span class="admin-stat-label">Doanh thu tháng</span>
+                <span class="material-symbols-outlined text-[20px] text-[#6a994e]">payments</span>
+            </div>
+            <div>
+                <div class="admin-stat-value">45,6tr</div>
+                <p class="admin-kicker">Đã thu 82% kế hoạch tháng hiện tại.</p>
+            </div>
+        </article>
+
+        <article class="admin-stat-card">
+            <div class="flex items-start justify-between gap-4">
+                <span class="admin-stat-label">Buổi học hôm nay</span>
+                <span class="material-symbols-outlined text-[20px] text-[#6a994e]">event_note</span>
+            </div>
+            <div>
+                <div class="admin-stat-value">12</div>
+                <p class="admin-kicker">3 lớp bắt đầu sau 16:00.</p>
+            </div>
+        </article>
+    </div>
+
+    <div class="admin-grid-two">
+        <div class="admin-card">
+            <div class="admin-card-section">
+                <div class="flex items-center justify-between gap-4">
+                    <div>
+                        <h2 class="admin-section-title">Doanh thu 6 tháng</h2>
+                        <p class="admin-section-subtitle">Biểu đồ mô phỏng cho phần thống kê tài chính.</p>
+                    </div>
+                    <div class="admin-chip-group">
+                        <span class="admin-chip is-active">Theo tháng</span>
+                        <span class="admin-chip">Theo quý</span>
+                    </div>
+                </div>
+
+                <div class="mt-8 grid grid-cols-6 items-end gap-4">
+                    @{
+                        var revenueBars = new[] { 52, 40, 68, 84, 58, 74 };
+                        var revenueMonths = new[] { "Thg 1", "Thg 2", "Thg 3", "Thg 4", "Thg 5", "Thg 6" };
+                    }
+                    @for (var i = 0; i < revenueBars.Length; i++)
+                    {
+                        <div class="flex flex-col items-center gap-3">
+                            <div class="flex h-56 w-full items-end rounded-[8px] bg-[#f4f4ee] p-2">
+                                <div class="w-full rounded-[6px] bg-[#6a994e]" style="height:@(revenueBars[i])%;"></div>
+                            </div>
+                            <span class="text-xs font-medium text-[#73796b]">@revenueMonths[i]</span>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="space-y-6">
+            <div class="admin-card">
+                <div class="admin-card-section">
+                    <h2 class="admin-section-title">Buổi học hôm nay</h2>
+                    <p class="admin-section-subtitle">Danh sách nhanh để điều phối vận hành trong ngày.</p>
+
+                    <div class="mt-6 space-y-3">
+                        <div class="admin-card-soft p-4">
+                            <div class="flex items-start justify-between gap-4">
+                                <div>
+                                    <p class="text-sm font-semibold text-[#1a1c19]">Robotics A1</p>
+                                    <p class="mt-1 text-sm text-[#73796b]">08:00 - 10:00 · Nguyễn Hoàng Nam</p>
+                                </div>
+                                <span class="admin-tag admin-tag--success">12 học viên</span>
+                            </div>
+                        </div>
+
+                        <div class="admin-card-soft p-4">
+                            <div class="flex items-start justify-between gap-4">
+                                <div>
+                                    <p class="text-sm font-semibold text-[#1a1c19]">Scratch Creative Lab</p>
+                                    <p class="mt-1 text-sm text-[#73796b]">13:30 - 15:30 · Trần Thu Hà</p>
+                                </div>
+                                <span class="admin-tag admin-tag--neutral">15 học viên</span>
+                            </div>
+                        </div>
+
+                        <div class="admin-card-soft p-4">
+                            <div class="flex items-start justify-between gap-4">
+                                <div>
+                                    <p class="text-sm font-semibold text-[#1a1c19]">Arduino IoT B2</p>
+                                    <p class="mt-1 text-sm text-[#73796b]">16:00 - 18:00 · Lê Xuân Trường</p>
+                                </div>
+                                <span class="admin-tag admin-tag--warning">8 học viên</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="admin-card">
+                <div class="admin-card-section">
+                    <h2 class="admin-section-title">Phân bổ học viên</h2>
+                    <p class="admin-section-subtitle">Ước lượng theo nhóm độ tuổi hiện có.</p>
+
+                    <div class="mt-6 space-y-4">
+                        <div>
+                            <div class="mb-2 flex items-center justify-between text-sm text-[#42493d]">
+                                <span>6 - 8 tuổi</span>
+                                <span>50%</span>
+                            </div>
+                            <div class="h-2 rounded-full bg-[#eeeee9]">
+                                <div class="h-2 rounded-full bg-[#6a994e]" style="width:50%;"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="mb-2 flex items-center justify-between text-sm text-[#42493d]">
+                                <span>9 - 11 tuổi</span>
+                                <span>35%</span>
+                            </div>
+                            <div class="h-2 rounded-full bg-[#eeeee9]">
+                                <div class="h-2 rounded-full bg-[#8db36f]" style="width:35%;"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="mb-2 flex items-center justify-between text-sm text-[#42493d]">
+                                <span>12+ tuổi</span>
+                                <span>15%</span>
+                            </div>
+                            <div class="h-2 rounded-full bg-[#eeeee9]">
+                                <div class="h-2 rounded-full bg-[#c2c9b9]" style="width:15%;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

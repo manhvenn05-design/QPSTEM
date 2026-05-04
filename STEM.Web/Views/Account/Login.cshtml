@@ -1,0 +1,56 @@
+@model STEM.Web.Models.LoginViewModel
+@{
+    ViewData["Title"] = "Đăng nhập";
+    Layout = "_AuthLayout";
+}
+
+<main class="auth-page auth-page-login">
+    <section class="auth-card auth-card-login">
+        <header class="auth-header auth-header-center">
+            <span class="material-symbols-outlined auth-school-icon" aria-hidden="true">school</span>
+            <h1>Chào mừng trở lại!</h1>
+            <p>Đăng nhập để tiếp tục học tập cùng QPSTEM.</p>
+        </header>
+
+        <form class="auth-form" asp-controller="Account" asp-action="Login" asp-route-returnUrl="@ViewData["ReturnUrl"]" method="post">
+            <div asp-validation-summary="All" style="color: #dc3545; font-size: 0.9rem; margin-bottom: 16px; padding: 10px; background: #f8d7da; border-radius: 4px; display: @(ViewData.ModelState.IsValid ? "none" : "block")"></div>
+
+            <div class="form-field">
+                <label asp-for="UsernameOrEmail"></label>
+                <div class="input-with-icon">
+                    <span class="material-symbols-outlined" aria-hidden="true">person</span>
+                    <input asp-for="UsernameOrEmail" type="text" placeholder="Nhập email hoặc tên đăng nhập của bạn" />
+                </div>
+            </div>
+
+            <div class="form-field">
+                <div class="form-field-row">
+                    <label asp-for="Password"></label>
+                    <a class="auth-link" href="#">Quên mật khẩu?</a>
+                </div>
+                <div class="input-with-icon">
+                    <span class="material-symbols-outlined" aria-hidden="true">lock</span>
+                    <input asp-for="Password" type="password" placeholder="Nhập mật khẩu" data-password-input />
+                    <button class="password-toggle" type="button" data-toggle-password aria-label="Hiện hoặc ẩn mật khẩu">
+                        <span class="material-symbols-outlined" aria-hidden="true">visibility_off</span>
+                    </button>
+                </div>
+            </div>
+
+            <label class="checkbox-row">
+                <input asp-for="RememberMe" type="checkbox" />
+                <span>Ghi nhớ đăng nhập</span>
+            </label>
+
+            <button class="button button-primary button-block auth-submit" type="submit">Đăng nhập</button>
+
+            <p class="auth-switch">
+                <a asp-controller="Home" asp-action="Index">Quay về trang chủ</a>
+            </p>
+        </form>
+    </section>
+
+    <footer class="auth-footer auth-footer-simple">
+        <p>© 2024 QPSTEM Education. All rights reserved.</p>
+    </footer>
+</main>

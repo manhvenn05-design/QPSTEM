@@ -1,0 +1,104 @@
+@model STEM.Web.Areas.Admin.Models.EditCourseViewModel
+
+@{
+    ViewData["Title"] = "Cập nhật khóa học";
+}
+
+<section class="admin-page">
+    <div class="admin-page-header">
+        <div>
+            <h1 class="admin-page-title">Cập nhật khóa học</h1>
+            <p class="admin-page-subtitle">Chỉnh sửa dữ liệu khóa học và thay ảnh đại diện khi cần.</p>
+        </div>
+
+        <div class="admin-actions">
+            <a asp-area="Admin" asp-controller="Courses" asp-action="Details" asp-route-id="@Model.Id" class="admin-btn-secondary">Xem chi tiết</a>
+            <a asp-area="Admin" asp-controller="Courses" asp-action="Index" class="admin-btn-secondary">Quay lại danh sách</a>
+        </div>
+    </div>
+
+    <form asp-area="Admin" asp-controller="Courses" asp-action="Edit" method="post" enctype="multipart/form-data" class="admin-page">
+        @Html.AntiForgeryToken()
+        <input asp-for="Id" type="hidden" />
+        <div asp-validation-summary="ModelOnly" class="admin-alert admin-alert--error"></div>
+
+        <div class="admin-card">
+            <div class="admin-card-section">
+                <div class="mb-6">
+                    <h2 class="admin-section-title">Thông tin khóa học</h2>
+                    <p class="admin-section-subtitle">Cập nhật các trường dữ liệu chính và thay ảnh nếu cần.</p>
+                </div>
+
+                <div class="admin-field-grid two-col">
+                    <div>
+                        <label asp-for="Code" class="admin-label"></label>
+                        <input asp-for="Code" class="admin-input uppercase" />
+                        <span asp-validation-for="Code" class="admin-validation"></span>
+                    </div>
+
+                    <div>
+                        <label asp-for="Name" class="admin-label"></label>
+                        <input asp-for="Name" class="admin-input" />
+                        <span asp-validation-for="Name" class="admin-validation"></span>
+                    </div>
+
+                    <div>
+                        <label asp-for="TargetAgeMin" class="admin-label"></label>
+                        <input asp-for="TargetAgeMin" class="admin-input" />
+                        <span asp-validation-for="TargetAgeMin" class="admin-validation"></span>
+                    </div>
+
+                    <div>
+                        <label asp-for="TargetAgeMax" class="admin-label"></label>
+                        <input asp-for="TargetAgeMax" class="admin-input" />
+                        <span asp-validation-for="TargetAgeMax" class="admin-validation"></span>
+                    </div>
+
+                    <div>
+                        <label asp-for="Price" class="admin-label"></label>
+                        <input asp-for="Price" class="admin-input" />
+                        <span asp-validation-for="Price" class="admin-validation"></span>
+                    </div>
+
+                    <div>
+                        <label asp-for="TotalSessions" class="admin-label"></label>
+                        <input asp-for="TotalSessions" class="admin-input" />
+                        <span asp-validation-for="TotalSessions" class="admin-validation"></span>
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <label asp-for="ImageFile" class="admin-label"></label>
+                        <input asp-for="ImageFile" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" class="admin-input admin-file" />
+                        @if (!string.IsNullOrWhiteSpace(Model.CurrentImageUrl))
+                        {
+                            <div class="admin-preview mt-4">
+                                <img src="@Model.CurrentImageUrl" alt="@Model.Name" class="h-20 w-20 rounded-[8px] object-cover" />
+                                <div class="text-sm text-[#42493d]">
+                                    <p class="font-semibold text-[#1a1c19]">Ảnh hiện tại</p>
+                                    <p class="mt-1 break-all">@Model.CurrentImageUrl</p>
+                                </div>
+                            </div>
+                        }
+                        <p class="admin-hint">Nếu không chọn ảnh mới, hệ thống sẽ giữ ảnh hiện tại.</p>
+                        <span asp-validation-for="ImageFile" class="admin-validation"></span>
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <label asp-for="Summary" class="admin-label"></label>
+                        <textarea asp-for="Summary" rows="5" class="admin-textarea"></textarea>
+                        <span asp-validation-for="Summary" class="admin-validation"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="admin-actions justify-end">
+            <button type="submit" class="admin-btn-primary min-w-[192px]">Lưu cập nhật</button>
+            <a asp-area="Admin" asp-controller="Courses" asp-action="Index" class="admin-btn-secondary">Hủy</a>
+        </div>
+    </form>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

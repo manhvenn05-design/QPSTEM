@@ -1,0 +1,501 @@
+@using System.Security.Claims
+@using Microsoft.EntityFrameworkCore
+@using STEM.Web.Data
+@inject ApplicationDbContext DbContext
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>@ViewData["Title"] - QPSTEM Teacher</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+    <style>
+        :root {
+            --teacher-bg: #fafaf4;
+            --teacher-surface: #ffffff;
+            --teacher-surface-soft: #f4f4ee;
+            --teacher-border: #e3e3de;
+            --teacher-border-strong: #c2c9b9;
+            --teacher-text: #1a1c19;
+            --teacher-text-muted: #42493d;
+            --teacher-text-soft: #73796b;
+            --teacher-primary: #6a994e;
+            --teacher-primary-strong: #3b6722;
+            --teacher-primary-soft: #f2f7f0;
+            --teacher-accent: #eef6ec;
+            --teacher-shadow: 0 20px 40px rgba(26, 28, 25, 0.08);
+        }
+
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        html, body {
+            background: var(--teacher-bg);
+            color: var(--teacher-text);
+            font-family: 'Inter', sans-serif;
+        }
+
+        .teacher-shell {
+            min-height: 100vh;
+            background: linear-gradient(180deg, #f8f8f1 0%, #fafaf4 100%);
+        }
+
+        .teacher-sidebar {
+            background: rgba(255, 255, 255, 0.9);
+            border-right: 1px solid var(--teacher-border);
+            backdrop-filter: blur(12px);
+        }
+
+        .teacher-logo {
+            align-items: center;
+            display: inline-flex;
+            gap: 12px;
+        }
+
+        .teacher-logo-mark {
+            align-items: center;
+            background: var(--teacher-primary-strong);
+            border-radius: 12px;
+            color: #fff;
+            display: inline-flex;
+            height: 52px;
+            justify-content: center;
+            width: 52px;
+        }
+
+        .teacher-logo-wordmark {
+            color: var(--teacher-primary);
+            font-size: 2rem;
+            font-weight: 700;
+            letter-spacing: -0.04em;
+            line-height: 1;
+        }
+
+        .teacher-logo-subtitle {
+            color: #8b8f85;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.14em;
+            line-height: 16px;
+            margin-top: 4px;
+        }
+
+        .teacher-nav-link,
+        .teacher-nav-muted {
+            align-items: center;
+            border-radius: 8px;
+            display: flex;
+            gap: 12px;
+            min-height: 48px;
+            padding: 12px 16px;
+        }
+
+        .teacher-nav-link {
+            color: var(--teacher-text-muted);
+            transition: background-color 0.2s ease, color 0.2s ease;
+        }
+
+        .teacher-nav-link:hover {
+            background: var(--teacher-surface-soft);
+            color: var(--teacher-primary-strong);
+        }
+
+        .teacher-nav-link.is-active {
+            background: var(--teacher-primary-soft);
+            box-shadow: inset 3px 0 0 var(--teacher-primary);
+            color: var(--teacher-primary-strong);
+            font-weight: 600;
+        }
+
+        .teacher-nav-muted {
+            color: var(--teacher-text-soft);
+            justify-content: space-between;
+        }
+
+        .teacher-badge {
+            background: var(--teacher-primary-soft);
+            border-radius: 9999px;
+            color: var(--teacher-primary-strong);
+            font-size: 12px;
+            font-weight: 600;
+            padding: 6px 10px;
+        }
+
+        .teacher-body {
+            margin-left: 18rem;
+            min-height: 100vh;
+        }
+
+        .teacher-header {
+            background: rgba(255, 255, 255, 0.92);
+            border-bottom: 1px solid var(--teacher-border);
+            backdrop-filter: blur(12px);
+        }
+
+        .teacher-container {
+            padding: 96px 32px 48px;
+        }
+
+        @@media (min-width: 1440px) {
+            .teacher-container {
+                padding-left: 40px;
+                padding-right: 40px;
+            }
+        }
+
+        .teacher-page {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .teacher-page-header {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            justify-content: space-between;
+        }
+
+        @@media (min-width: 1024px) {
+            .teacher-page-header {
+                align-items: flex-start;
+                flex-direction: row;
+            }
+        }
+
+        .teacher-page-title {
+            font-size: 32px;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+            line-height: 40px;
+            margin: 0;
+        }
+
+        .teacher-page-subtitle {
+            color: var(--teacher-text-soft);
+            font-size: 16px;
+            line-height: 24px;
+            margin-top: 8px;
+            max-width: 760px;
+        }
+
+        .teacher-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .teacher-btn-primary,
+        .teacher-btn-secondary {
+            align-items: center;
+            border-radius: 8px;
+            display: inline-flex;
+            font-size: 14px;
+            font-weight: 600;
+            gap: 8px;
+            height: 48px;
+            justify-content: center;
+            padding: 0 20px;
+        }
+
+        .teacher-btn-primary {
+            background: var(--teacher-primary);
+            color: #fff;
+        }
+
+        .teacher-btn-secondary {
+            background: #fff;
+            border: 1px solid var(--teacher-border-strong);
+            color: var(--teacher-text-muted);
+        }
+
+        .teacher-stat-grid {
+            display: grid;
+            gap: 24px;
+        }
+
+        @@media (min-width: 768px) {
+            .teacher-stat-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @@media (min-width: 1280px) {
+            .teacher-stat-grid {
+                grid-template-columns: repeat(4, minmax(0, 1fr));
+            }
+        }
+
+        .teacher-card {
+            background: var(--teacher-surface);
+            border: 1px solid var(--teacher-border);
+            border-radius: 8px;
+        }
+
+        .teacher-card-section {
+            padding: 24px;
+        }
+
+        .teacher-stat-card {
+            background: var(--teacher-surface);
+            border: 1px solid var(--teacher-border);
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 160px;
+            padding: 24px;
+        }
+
+        .teacher-stat-label {
+            color: var(--teacher-text-soft);
+            font-size: 14px;
+            font-weight: 500;
+            line-height: 20px;
+        }
+
+        .teacher-stat-value {
+            font-size: 32px;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+            line-height: 40px;
+            margin-top: 24px;
+        }
+
+        .teacher-kicker {
+            color: var(--teacher-text-soft);
+            font-size: 14px;
+            line-height: 20px;
+            margin-top: 8px;
+        }
+
+        .teacher-grid-two {
+            display: grid;
+            gap: 24px;
+        }
+
+        @@media (min-width: 1280px) {
+            .teacher-grid-two {
+                grid-template-columns: minmax(0, 1.5fr) minmax(340px, 1fr);
+            }
+        }
+
+        .teacher-section-title {
+            font-size: 20px;
+            font-weight: 600;
+            line-height: 28px;
+            margin: 0;
+        }
+
+        .teacher-section-subtitle {
+            color: var(--teacher-text-soft);
+            font-size: 14px;
+            line-height: 20px;
+            margin-top: 4px;
+        }
+
+        .teacher-list {
+            display: grid;
+            gap: 16px;
+            margin-top: 24px;
+        }
+
+        .teacher-list-item {
+            background: var(--teacher-surface-soft);
+            border: 1px solid var(--teacher-border);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .teacher-tag {
+            border-radius: 9999px;
+            display: inline-flex;
+            font-size: 12px;
+            font-weight: 600;
+            line-height: 16px;
+            padding: 8px 12px;
+        }
+
+        .teacher-tag--success {
+            background: #edf7e8;
+            color: #456c3f;
+        }
+
+        .teacher-tag--warning {
+            background: #fff4e8;
+            color: #9b682f;
+        }
+
+        .teacher-tag--neutral {
+            background: #eeeee9;
+            color: #42493d;
+        }
+
+        .teacher-progress {
+            background: #eeeee9;
+            border-radius: 9999px;
+            height: 8px;
+            overflow: hidden;
+        }
+
+        .teacher-progress-bar {
+            background: var(--teacher-primary);
+            border-radius: 9999px;
+            height: 8px;
+        }
+
+        .teacher-quick-grid {
+            display: grid;
+            gap: 16px;
+            margin-top: 24px;
+        }
+
+        @@media (min-width: 768px) {
+            .teacher-quick-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        .teacher-quick-card {
+            background: linear-gradient(180deg, #ffffff 0%, #fafaf4 100%);
+            border: 1px solid var(--teacher-border);
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            min-height: 176px;
+            padding: 20px;
+        }
+
+        .teacher-quick-card p {
+            color: var(--teacher-text-soft);
+            font-size: 14px;
+            line-height: 20px;
+            margin: 0;
+        }
+    </style>
+</head>
+<body class="teacher-shell">
+    @{
+        var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
+        var currentUserIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var currentUserId = int.TryParse(currentUserIdClaim, out var parsedUserId) ? parsedUserId : (int?)null;
+        var currentTeacherProfile = currentUserId.HasValue
+            ? await DbContext.Users.AsNoTracking()
+                .Where(x => x.Id == currentUserId.Value)
+                .Select(x => new { x.FullName, x.AvatarUrl })
+                .FirstOrDefaultAsync()
+            : null;
+        var currentTeacherName = currentTeacherProfile?.FullName ?? User.FindFirstValue(ClaimTypes.GivenName) ?? User.Identity?.Name ?? "Giáo viên";
+        var currentTeacherAvatarUrl = currentTeacherProfile?.AvatarUrl;
+        string NavClass(string controller) => currentController == controller ? "teacher-nav-link is-active" : "teacher-nav-link";
+    }
+
+    <aside class="teacher-sidebar fixed left-0 top-0 flex h-screen w-72 flex-col py-6">
+        <div class="mb-8 px-6">
+            <div class="teacher-logo">
+                <div class="teacher-logo-mark">
+                    <span class="material-symbols-outlined text-[24px]">school</span>
+                </div>
+                <div>
+                    <div class="teacher-logo-wordmark">QPSTEM</div>
+                    <div class="teacher-logo-subtitle">GIÁO VIÊN</div>
+                </div>
+            </div>
+        </div>
+
+        <nav class="flex-1 overflow-y-auto px-4">
+            <div class="flex flex-col gap-1">
+                <a class="@NavClass("Dashboard")" asp-area="Teacher" asp-controller="Dashboard" asp-action="Index">
+                    <span class="material-symbols-outlined text-[20px]">dashboard</span>
+                    <span>Bảng điều khiển</span>
+                </a>
+                <div class="teacher-nav-muted">
+                    <div class="flex items-center gap-3">
+                        <span class="material-symbols-outlined text-[20px]">calendar_month</span>
+                        <span>Lịch dạy</span>
+                    </div>
+                    <span class="teacher-badge">Sắp làm</span>
+                </div>
+                <div class="teacher-nav-muted">
+                    <div class="flex items-center gap-3">
+                        <span class="material-symbols-outlined text-[20px]">fact_check</span>
+                        <span>Điểm danh</span>
+                    </div>
+                    <span class="teacher-badge">Sắp làm</span>
+                </div>
+                <div class="teacher-nav-muted">
+                    <div class="flex items-center gap-3">
+                        <span class="material-symbols-outlined text-[20px]">photo_library</span>
+                        <span>Minh chứng</span>
+                    </div>
+                    <span class="teacher-badge">Sắp làm</span>
+                </div>
+                <div class="teacher-nav-muted">
+                    <div class="flex items-center gap-3">
+                        <span class="material-symbols-outlined text-[20px]">auto_awesome</span>
+                        <span>AI Copilot</span>
+                    </div>
+                    <span class="teacher-badge">Sắp làm</span>
+                </div>
+                <div class="teacher-nav-muted">
+                    <div class="flex items-center gap-3">
+                        <span class="material-symbols-outlined text-[20px]">inventory_2</span>
+                        <span>Mượn / Trả thiết bị</span>
+                    </div>
+                    <span class="teacher-badge">Sắp làm</span>
+                </div>
+            </div>
+        </nav>
+
+        <div class="mt-auto border-t border-[#e3e3de] px-4 pt-6">
+            <div class="flex items-center gap-3 px-2">
+                @if (!string.IsNullOrWhiteSpace(currentTeacherAvatarUrl))
+                {
+                    <img alt="@currentTeacherName" class="h-10 w-10 rounded-full border border-[#c2c9b9] object-cover" src="@currentTeacherAvatarUrl" />
+                }
+                else
+                {
+                    <div class="flex h-10 w-10 items-center justify-center rounded-full border border-[#c2c9b9] bg-[#f2f7f0] text-sm font-semibold text-[#3b6722]">
+                        @currentTeacherName.Trim()[0].ToString().ToUpperInvariant()
+                    </div>
+                }
+                <div class="min-w-0">
+                    <p class="truncate text-sm font-semibold text-[#1a1c19]">@currentTeacherName</p>
+                    <p class="text-xs text-[#73796b]">Giáo viên</p>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <main class="teacher-body">
+        <header class="teacher-header fixed right-0 top-0 z-40 flex h-16 w-[calc(100%-18rem)] items-center justify-between px-8 text-sm">
+            <div class="flex items-center gap-2 text-[#73796b]">
+                <span>Teacher</span>
+                <span class="material-symbols-outlined text-[16px]">chevron_right</span>
+                <span class="font-semibold text-[#3b6722]">@ViewData["Title"]</span>
+            </div>
+
+            <div class="flex items-center gap-5">
+                <button type="button" class="text-[#73796b] transition hover:text-[#3b6722]" title="Thông báo">
+                    <span class="material-symbols-outlined text-[22px]">notifications</span>
+                </button>
+                <form asp-area="" asp-controller="Account" asp-action="Logout" method="post">
+                    <button type="submit" class="text-[#73796b] transition hover:text-[#ba1a1a]" title="Đăng xuất">
+                        <span class="material-symbols-outlined text-[22px]">logout</span>
+                    </button>
+                </form>
+            </div>
+        </header>
+
+        <div class="teacher-container">
+            @RenderBody()
+        </div>
+    </main>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

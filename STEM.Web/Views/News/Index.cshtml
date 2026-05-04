@@ -1,0 +1,134 @@
+@model STEM.Web.Models.NewsIndexViewModel
+@{
+    ViewData["Title"] = "Tin tức";
+}
+
+<main class="news-page">
+    <section class="container news-hero">
+        <h1>Tin tức & Kiến thức STEM</h1>
+        <p>
+            Khám phá những bài viết mới nhất về công nghệ, phương pháp giáo dục hiện đại và
+            những đột phá trong lĩnh vực STEM từ các chuyên gia hàng đầu.
+        </p>
+
+        <div class="news-search">
+            <span class="material-symbols-outlined" aria-hidden="true">search</span>
+            <input type="text" placeholder="Tìm kiếm bài viết..." />
+        </div>
+    </section>
+
+    <section class="container news-layout">
+        <div class="news-main">
+            <div class="news-grid">
+                @foreach (var article in Model.Articles)
+                {
+                    <article class="news-card">
+                        <div class="news-card-image">
+                            <img src="@article.ImageUrl" alt="@article.Title" />
+                            <span class="news-category-badge">@article.Category</span>
+                        </div>
+
+                        <div class="news-card-body">
+                            <h2>@article.Title</h2>
+                            <p>@article.Excerpt</p>
+
+                            <div class="news-card-meta">
+                                <div class="news-author">
+                                    <div class="news-author-avatar">
+                                        <img src="@article.AuthorAvatarUrl" alt="@article.AuthorName" />
+                                    </div>
+                                    <div>
+                                        <span>@article.AuthorName</span>
+                                        <small>@article.PublishedDateText</small>
+                                    </div>
+                                </div>
+                                <span class="news-read-time">
+                                    <span class="material-symbols-outlined" aria-hidden="true">schedule</span>
+                                    @article.ReadTimeText
+                                </span>
+                            </div>
+
+                            <a class="news-read-more" asp-controller="News" asp-action="Details" asp-route-slug="@article.Slug">
+                                Đọc thêm
+                                <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+                            </a>
+                        </div>
+                    </article>
+                }
+            </div>
+
+            <nav class="pagination-nav news-pagination" aria-label="Phân trang tin tức">
+                <button type="button" aria-label="Trang trước" disabled>
+                    <span class="material-symbols-outlined" aria-hidden="true">chevron_left</span>
+                </button>
+                <button type="button" class="is-active">1</button>
+                <button type="button">2</button>
+                <button type="button">3</button>
+                <span class="news-pagination-dots">...</span>
+                <button type="button">12</button>
+                <button type="button" aria-label="Trang sau">
+                    <span class="material-symbols-outlined" aria-hidden="true">chevron_right</span>
+                </button>
+            </nav>
+        </div>
+
+        <aside class="news-sidebar">
+            <section class="news-sidebar-card">
+                <h3>Bài viết nổi bật</h3>
+                <div class="news-featured-list">
+                    @foreach (var article in Model.FeaturedArticles)
+                    {
+                        <article class="news-featured-item">
+                            <div class="news-featured-thumb">
+                                <img src="@article.ImageUrl" alt="@article.Title" />
+                            </div>
+                            <div>
+                                <h4>@article.Title</h4>
+                                <span>@article.PublishedDateText</span>
+                            </div>
+                        </article>
+                    }
+                </div>
+            </section>
+
+            <section class="news-sidebar-card">
+                <h3>Danh mục</h3>
+                <ul class="news-category-list">
+                    @foreach (var category in Model.Categories)
+                    {
+                        <li>
+                            <span>@category.Name</span>
+                            <strong>@category.Count</strong>
+                        </li>
+                    }
+                </ul>
+            </section>
+
+            <section class="news-sidebar-card">
+                <h3>Tags phổ biến</h3>
+                <div class="news-tag-list">
+                    @foreach (var tag in Model.Tags)
+                    {
+                        <span class="news-tag">@tag</span>
+                    }
+                </div>
+            </section>
+        </aside>
+    </section>
+
+    <section class="section" style="padding-block: 2rem;">
+        <div class="container">
+            <div style="display:flex; align-items:center; gap:1.5rem; flex-wrap:wrap; background:var(--surface-card,#f8f8f6); border:1px solid var(--border,#e5e4df); border-radius:1rem; padding:1.25rem 1.75rem;">
+                <span class="material-symbols-outlined" aria-hidden="true" style="font-size:2rem; color:var(--primary,#3d6b3b); flex-shrink:0;">school</span>
+                <div style="flex:1; min-width:200px;">
+                    <strong style="display:block; font-size:1rem; color:var(--text-primary,#1a1a18);">Khám phá các khóa học STEM tại QPSTEM</strong>
+                    <span style="font-size:0.875rem; color:var(--text-secondary,#6b6b63);">Robotics · Lập trình · Điện tử — dành cho học sinh tiểu học đến trung học</span>
+                </div>
+                <a class="button button-primary button-sm" asp-controller="Courses" asp-action="Index">
+                    Xem khóa học
+                    <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+                </a>
+            </div>
+        </div>
+    </section>
+</main>

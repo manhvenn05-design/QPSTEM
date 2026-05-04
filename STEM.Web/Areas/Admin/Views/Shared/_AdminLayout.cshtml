@@ -1,0 +1,910 @@
+@using System.Security.Claims
+@using Microsoft.EntityFrameworkCore
+@using STEM.Web.Data
+@inject ApplicationDbContext DbContext
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>@ViewData["Title"] - QPSTEM Admin</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+    <style>
+        :root {
+            --admin-bg: #fafaf4;
+            --admin-surface: #ffffff;
+            --admin-surface-soft: #f4f4ee;
+            --admin-surface-muted: #eeeee9;
+            --admin-border: #e3e3de;
+            --admin-border-strong: #c2c9b9;
+            --admin-text: #1a1c19;
+            --admin-text-muted: #42493d;
+            --admin-text-soft: #73796b;
+            --admin-primary: #6a994e;
+            --admin-primary-strong: #3b6722;
+            --admin-primary-soft: #f2f7f0;
+            --admin-danger: #ba1a1a;
+            --admin-danger-soft: #ffdad6;
+            --admin-warning: #9b682f;
+            --admin-warning-soft: #fff4e8;
+            --admin-success: #456c3f;
+            --admin-success-soft: #edf7e8;
+            --admin-shadow: 0 20px 40px rgba(26, 28, 25, 0.08);
+        }
+
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        html, body {
+            background: var(--admin-bg);
+            color: var(--admin-text);
+            font-family: 'Inter', sans-serif;
+        }
+
+        .admin-shell {
+            min-height: 100vh;
+            background: var(--admin-bg);
+        }
+
+        .admin-sidebar {
+            border-right: 1px solid var(--admin-border);
+            background: var(--admin-surface);
+        }
+
+        .admin-logo {
+            align-items: center;
+            display: inline-flex;
+            gap: 12px;
+        }
+
+        .admin-logo-mark {
+            align-items: center;
+            background: var(--admin-primary-strong);
+            border-radius: 12px;
+            color: #fff;
+            display: inline-flex;
+            height: 52px;
+            justify-content: center;
+            width: 52px;
+        }
+
+        .admin-logo-wordmark {
+            color: var(--admin-primary);
+            font-size: 2rem;
+            font-weight: 700;
+            letter-spacing: -0.04em;
+            line-height: 1;
+        }
+
+        .admin-logo-subtitle {
+            color: #8b8f85;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.14em;
+            line-height: 16px;
+            margin-top: 4px;
+        }
+
+        .admin-nav-link {
+            align-items: center;
+            border-radius: 8px;
+            color: var(--admin-text-muted);
+            display: flex;
+            gap: 12px;
+            min-height: 48px;
+            padding: 12px 16px;
+            transition: background-color 0.2s ease, color 0.2s ease;
+        }
+
+        .admin-nav-link:hover {
+            background: var(--admin-surface-soft);
+            color: var(--admin-primary-strong);
+        }
+
+        .admin-nav-link.is-active {
+            background: var(--admin-primary-soft);
+            box-shadow: inset 3px 0 0 var(--admin-primary);
+            color: var(--admin-primary-strong);
+            font-weight: 600;
+        }
+
+        .admin-header {
+            background: rgba(255, 255, 255, 0.92);
+            border-bottom: 1px solid var(--admin-border);
+            backdrop-filter: blur(12px);
+        }
+
+        .admin-body {
+            margin-left: 16rem;
+            min-height: 100vh;
+        }
+
+        .admin-container {
+            margin: 0 auto;
+            max-width: none;
+            padding: 96px 32px 48px;
+            width: 100%;
+        }
+
+        .admin-page {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .admin-page-header {
+            align-items: flex-start;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            justify-content: space-between;
+        }
+
+        @@media (min-width: 1024px) {
+            .admin-page-header {
+                flex-direction: row;
+            }
+        }
+
+        .admin-page-title {
+            color: var(--admin-text);
+            font-size: 32px;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+            line-height: 40px;
+            margin: 0;
+        }
+
+        .admin-page-subtitle {
+            color: var(--admin-text-soft);
+            font-size: 16px;
+            line-height: 24px;
+            margin-top: 8px;
+            max-width: 720px;
+        }
+
+        .admin-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .admin-card,
+        .admin-card-soft,
+        .admin-stat-card {
+            border-radius: 8px;
+        }
+
+        .admin-card {
+            background: var(--admin-surface);
+            border: 1px solid var(--admin-border);
+        }
+
+        .admin-card-soft {
+            background: var(--admin-surface-soft);
+            border: 1px solid var(--admin-border);
+        }
+
+        .admin-card-section {
+            padding: 24px;
+        }
+
+        .admin-section-title {
+            color: var(--admin-text);
+            font-size: 20px;
+            font-weight: 600;
+            line-height: 28px;
+            margin: 0;
+        }
+
+        .admin-section-subtitle {
+            color: var(--admin-text-soft);
+            font-size: 14px;
+            line-height: 20px;
+            margin-top: 4px;
+        }
+
+        .admin-divider {
+            border-top: 1px solid var(--admin-border);
+        }
+
+        .admin-btn-primary,
+        .admin-btn-secondary,
+        .admin-btn-danger {
+            align-items: center;
+            border-radius: 8px;
+            display: inline-flex;
+            font-size: 14px;
+            font-weight: 600;
+            gap: 8px;
+            height: 48px;
+            justify-content: center;
+            padding: 0 20px;
+            transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .admin-btn-primary {
+            background: var(--admin-primary);
+            color: #fff;
+        }
+
+        .admin-btn-primary:hover {
+            background: var(--admin-primary-strong);
+        }
+
+        .admin-btn-secondary {
+            background: transparent;
+            border: 1px solid var(--admin-border-strong);
+            color: var(--admin-text-muted);
+        }
+
+        .admin-btn-secondary:hover {
+            background: var(--admin-surface-soft);
+            border-color: var(--admin-primary);
+            color: var(--admin-primary-strong);
+        }
+
+        .admin-btn-danger {
+            background: var(--admin-danger);
+            color: #fff;
+        }
+
+        .admin-btn-danger:hover {
+            background: #93000a;
+        }
+
+        .admin-chip-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .admin-chip {
+            align-items: center;
+            background: transparent;
+            border-radius: 9999px;
+            color: var(--admin-text-soft);
+            display: inline-flex;
+            font-size: 14px;
+            font-weight: 500;
+            height: 40px;
+            padding: 0 16px;
+            transition: background-color 0.2s ease, color 0.2s ease;
+        }
+
+        .admin-chip:hover {
+            background: var(--admin-surface-soft);
+            color: var(--admin-primary-strong);
+        }
+
+        .admin-chip.is-active {
+            background: var(--admin-primary-soft);
+            color: var(--admin-primary-strong);
+            font-weight: 600;
+        }
+
+        .admin-toolbar {
+            align-items: center;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            justify-content: space-between;
+        }
+
+        @@media (min-width: 1024px) {
+            .admin-toolbar {
+                flex-direction: row;
+            }
+        }
+
+        .admin-input,
+        .admin-select,
+        .admin-textarea {
+            background: var(--admin-surface);
+            border: 1px solid var(--admin-border);
+            border-radius: 8px;
+            color: var(--admin-text);
+            font-size: 14px;
+            line-height: 20px;
+            width: 100%;
+        }
+
+        .admin-input,
+        .admin-select {
+            height: 48px;
+            padding: 0 16px;
+        }
+
+        .admin-textarea {
+            min-height: 128px;
+            padding: 12px 16px;
+            resize: vertical;
+        }
+
+        .admin-input:focus,
+        .admin-select:focus,
+        .admin-textarea:focus {
+            border-color: var(--admin-primary);
+            box-shadow: 0 0 0 2px rgba(106, 153, 78, 0.12);
+            outline: none;
+        }
+
+        .admin-file {
+            padding: 10px 12px;
+        }
+
+        .admin-file::file-selector-button {
+            background: var(--admin-primary-soft);
+            border: 0;
+            border-radius: 8px;
+            color: var(--admin-primary-strong);
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            margin-right: 12px;
+            padding: 10px 14px;
+        }
+
+        .admin-label {
+            color: var(--admin-text-muted);
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            letter-spacing: 0.01em;
+            line-height: 20px;
+            margin-bottom: 8px;
+        }
+
+        .admin-hint,
+        .admin-validation {
+            font-size: 14px;
+            line-height: 20px;
+            margin-top: 8px;
+        }
+
+        .admin-hint {
+            color: var(--admin-text-soft);
+        }
+
+        .admin-validation {
+            color: var(--admin-danger);
+        }
+
+        .admin-field-grid {
+            display: grid;
+            gap: 24px;
+        }
+
+        @@media (min-width: 768px) {
+            .admin-field-grid.two-col {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        .admin-table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        .admin-table thead {
+            background: var(--admin-surface-soft);
+        }
+
+        .admin-table th {
+            color: var(--admin-text-soft);
+            font-size: 14px;
+            font-weight: 600;
+            line-height: 20px;
+            padding: 16px 24px;
+            text-align: left;
+        }
+
+        .admin-table td {
+            border-top: 1px solid var(--admin-border);
+            color: var(--admin-text-muted);
+            font-size: 14px;
+            line-height: 20px;
+            padding: 20px 24px;
+            vertical-align: top;
+        }
+
+        .admin-table strong {
+            color: var(--admin-text);
+        }
+
+        .admin-tag {
+            border-radius: 9999px;
+            display: inline-flex;
+            font-size: 12px;
+            font-weight: 600;
+            gap: 8px;
+            line-height: 16px;
+            padding: 8px 12px;
+        }
+
+        .admin-tag--success {
+            background: var(--admin-success-soft);
+            color: var(--admin-success);
+        }
+
+        .admin-tag--warning {
+            background: var(--admin-warning-soft);
+            color: var(--admin-warning);
+        }
+
+        .admin-tag--neutral {
+            background: var(--admin-surface-muted);
+            color: var(--admin-text-muted);
+        }
+
+        .admin-tag--danger {
+            background: var(--admin-danger-soft);
+            color: var(--admin-danger);
+        }
+
+        .admin-stat-grid {
+            display: grid;
+            gap: 24px;
+        }
+
+        @@media (min-width: 768px) {
+            .admin-stat-grid.four-col {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @@media (min-width: 1200px) {
+            .admin-stat-grid.four-col {
+                grid-template-columns: repeat(4, minmax(0, 1fr));
+            }
+        }
+
+        .admin-stat-card {
+            background: var(--admin-surface);
+            border: 1px solid var(--admin-border);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 152px;
+            padding: 24px;
+        }
+
+        .admin-stat-label {
+            color: var(--admin-text-soft);
+            font-size: 14px;
+            font-weight: 500;
+            line-height: 20px;
+        }
+
+        .admin-stat-value {
+            color: var(--admin-text);
+            font-size: 32px;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+            line-height: 40px;
+            margin-top: 24px;
+        }
+
+        .admin-kicker {
+            color: var(--admin-text-soft);
+            font-size: 14px;
+            line-height: 20px;
+            margin-top: 8px;
+        }
+
+        .admin-empty {
+            color: var(--admin-text-soft);
+            font-size: 14px;
+            line-height: 24px;
+            padding: 48px 24px;
+            text-align: center;
+        }
+
+        .admin-modal {
+            background: rgba(26, 28, 25, 0.38);
+        }
+
+        .admin-modal-panel,
+        .admin-dropdown {
+            background: var(--admin-surface);
+            border: 1px solid var(--admin-border);
+            border-radius: 8px;
+            box-shadow: var(--admin-shadow);
+        }
+
+        .admin-grid-two {
+            display: grid;
+            gap: 24px;
+        }
+
+        @@media (min-width: 1200px) {
+            .admin-grid-two {
+                grid-template-columns: minmax(0, 1.65fr) minmax(320px, 1fr);
+            }
+        }
+
+        @@media (min-width: 1440px) {
+            .admin-container {
+                padding-left: 40px;
+                padding-right: 40px;
+            }
+        }
+
+        .admin-note-list {
+            color: var(--admin-text-muted);
+            display: grid;
+            gap: 12px;
+            font-size: 14px;
+            line-height: 24px;
+        }
+
+        .admin-alert {
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            line-height: 20px;
+            padding: 16px 20px;
+        }
+
+        .admin-alert--success {
+            background: var(--admin-success-soft);
+            border: 1px solid #cfe2c1;
+            color: var(--admin-success);
+        }
+
+        .admin-alert--error {
+            background: #fff4f3;
+            border: 1px solid #f0c9c7;
+            color: #b54740;
+        }
+
+        .admin-data-grid {
+            display: grid;
+            gap: 24px;
+        }
+
+        @@media (min-width: 768px) {
+            .admin-data-grid.two-col {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        .admin-data-item dt {
+            color: var(--admin-text-muted);
+            font-size: 14px;
+            font-weight: 500;
+            line-height: 20px;
+        }
+
+        .admin-data-item dd {
+            background: var(--admin-surface-soft);
+            border: 1px solid var(--admin-border);
+            border-radius: 8px;
+            color: var(--admin-text);
+            font-size: 14px;
+            line-height: 20px;
+            margin-top: 8px;
+            padding: 14px 16px;
+        }
+
+        .admin-menu-button {
+            align-items: center;
+            border: 1px solid var(--admin-border);
+            border-radius: 8px;
+            color: var(--admin-text-soft);
+            display: inline-flex;
+            height: 40px;
+            justify-content: center;
+            width: 40px;
+        }
+
+        .admin-menu-button:hover {
+            border-color: var(--admin-primary);
+            color: var(--admin-primary-strong);
+        }
+
+        .admin-menu-item {
+            align-items: center;
+            color: var(--admin-text-muted);
+            display: flex;
+            gap: 12px;
+            padding: 12px 16px;
+            transition: background-color 0.2s ease, color 0.2s ease;
+        }
+
+        .admin-menu-item:hover {
+            background: var(--admin-primary-soft);
+            color: var(--admin-primary-strong);
+        }
+
+        .admin-menu-item--danger {
+            color: #c94d48;
+        }
+
+        .admin-menu-item--danger:hover {
+            background: #fff4f3;
+            color: #b54740;
+        }
+
+        .admin-checkbox-card {
+            align-items: flex-start;
+            background: var(--admin-surface-soft);
+            border: 1px solid var(--admin-border);
+            border-radius: 8px;
+            display: flex;
+            gap: 12px;
+            padding: 16px;
+        }
+
+        .admin-checkbox-card input[type="checkbox"] {
+            border-radius: 4px;
+            border-color: var(--admin-border-strong);
+            color: var(--admin-primary);
+            margin-top: 3px;
+        }
+
+        .admin-checkbox-card input[type="checkbox"]:focus {
+            --tw-ring-color: rgba(106, 153, 78, 0.16);
+        }
+
+        .admin-preview {
+            align-items: center;
+            background: var(--admin-surface-soft);
+            border: 1px solid var(--admin-border);
+            border-radius: 8px;
+            display: flex;
+            gap: 16px;
+            padding: 16px;
+        }
+
+        .admin-pagination {
+            display: flex;
+            gap: 8px;
+        }
+
+        .admin-page-link {
+            align-items: center;
+            border: 1px solid var(--admin-border);
+            border-radius: 8px;
+            color: var(--admin-text-soft);
+            display: inline-flex;
+            font-size: 14px;
+            font-weight: 600;
+            height: 40px;
+            justify-content: center;
+            min-width: 40px;
+            padding: 0 12px;
+        }
+
+        .admin-page-link:hover {
+            border-color: var(--admin-primary);
+            color: var(--admin-primary-strong);
+        }
+
+        .admin-page-link.is-active {
+            background: var(--admin-primary);
+            border-color: var(--admin-primary);
+            color: #fff;
+        }
+
+        .admin-page-link.is-disabled {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body class="admin-shell">
+    @{
+        var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
+        var currentUserIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var currentUserId = int.TryParse(currentUserIdClaim, out var parsedUserId) ? parsedUserId : (int?)null;
+        var currentAdminProfile = currentUserId.HasValue
+            ? await DbContext.Users.AsNoTracking()
+                .Where(x => x.Id == currentUserId.Value)
+                .Select(x => new { x.FullName, x.AvatarUrl })
+                .FirstOrDefaultAsync()
+            : null;
+        var currentAdminName = currentAdminProfile?.FullName ?? User.FindFirstValue(ClaimTypes.GivenName) ?? User.Identity?.Name ?? "Quản trị viên";
+        var currentAdminAvatarUrl = currentAdminProfile?.AvatarUrl;
+        string NavClass(string controller) => currentController == controller ? "admin-nav-link is-active" : "admin-nav-link";
+    }
+
+    <aside class="admin-sidebar fixed left-0 top-0 flex h-screen w-64 flex-col py-6">
+        <div class="mb-8 px-6">
+            <div class="admin-logo">
+                <div class="admin-logo-mark">
+                    <span class="material-symbols-outlined text-[24px]">school</span>
+                </div>
+                <div>
+                </div>
+            </div>
+        </div>
+
+        <nav class="flex-1 overflow-y-auto px-4">
+            <div class="flex flex-col gap-1">
+                <a class="@NavClass("Dashboard")" asp-area="Admin" asp-controller="Dashboard" asp-action="Index">
+                    <span class="material-symbols-outlined text-[20px]">dashboard</span>
+                    <span>Tổng quan</span>
+                </a>
+                <a class="@NavClass("Users")" asp-area="Admin" asp-controller="Users" asp-action="Index">
+                    <span class="material-symbols-outlined text-[20px]">group</span>
+                    <span>Người dùng</span>
+                </a>
+                <a class="@NavClass("Courses")" asp-area="Admin" asp-controller="Courses" asp-action="Index">
+                    <span class="material-symbols-outlined text-[20px]">school</span>
+                    <span>Khóa học</span>
+                </a>
+                <a class="@NavClass("Classes")" asp-area="Admin" asp-controller="Classes" asp-action="Index">
+                    <span class="material-symbols-outlined text-[20px]">class</span>
+                    <span>Lớp học</span>
+                </a>
+                <a class="@NavClass("Sessions")" asp-area="Admin" asp-controller="Sessions" asp-action="Index">
+                    <span class="material-symbols-outlined text-[20px]">event_note</span>
+                    <span>Buổi học</span>
+                </a>
+                <a class="@NavClass("Attendances")" asp-area="Admin" asp-controller="Attendances" asp-action="Index">
+                    <span class="material-symbols-outlined text-[20px]">fact_check</span>
+                    <span>Điểm danh</span>
+                </a>
+                <a class="@NavClass("Finance")" asp-area="Admin" asp-controller="Finance" asp-action="Index">
+                    <span class="material-symbols-outlined text-[20px]">payments</span>
+                    <span>Tài chính</span>
+                </a>
+                <a class="@NavClass("Inventory")" asp-area="Admin" asp-controller="Inventory" asp-action="Index">
+                    <span class="material-symbols-outlined text-[20px]">inventory_2</span>
+                    <span>Kho thiết bị</span>
+                </a>
+                <a class="@NavClass("Cms")" asp-area="Admin" asp-controller="Cms" asp-action="Index">
+                    <span class="material-symbols-outlined text-[20px]">article</span>
+                    <span>CMS</span>
+                </a>
+                <a class="@NavClass("Settings")" asp-area="Admin" asp-controller="Settings" asp-action="Index">
+                    <span class="material-symbols-outlined text-[20px]">settings</span>
+                    <span>Cài đặt</span>
+                </a>
+            </div>
+        </nav>
+
+        <div class="mt-auto border-t border-[#e3e3de] px-4 pt-6">
+            <div class="flex items-center gap-3 px-2">
+                @if (!string.IsNullOrWhiteSpace(currentAdminAvatarUrl))
+                {
+                    <img alt="@currentAdminName" class="h-10 w-10 rounded-full border border-[#c2c9b9] object-cover" src="@currentAdminAvatarUrl" />
+                }
+                else
+                {
+                    <div class="flex h-10 w-10 items-center justify-center rounded-full border border-[#c2c9b9] bg-[#f2f7f0] text-sm font-semibold text-[#3b6722]">
+                        @currentAdminName.Trim()[0].ToString().ToUpperInvariant()
+                    </div>
+                }
+                <div class="min-w-0">
+                    <p class="truncate text-sm font-semibold text-[#1a1c19]">@currentAdminName</p>
+                    <p class="text-xs text-[#73796b]">Quản trị viên</p>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <main class="admin-body">
+        <header class="admin-header fixed right-0 top-0 z-40 flex h-16 w-[calc(100%-16rem)] items-center justify-between px-8 text-sm">
+            <div class="flex items-center gap-2 text-[#73796b]">
+                <span>Admin</span>
+                <span class="material-symbols-outlined text-[16px]">chevron_right</span>
+                <span class="font-semibold text-[#3b6722]">@ViewData["Title"]</span>
+            </div>
+
+            <div class="flex items-center gap-5">
+                <button type="button" class="text-[#73796b] transition hover:text-[#3b6722]" title="Thông báo">
+                    <span class="material-symbols-outlined text-[22px]">notifications</span>
+                </button>
+                <button type="button" class="text-[#73796b] transition hover:text-[#3b6722]" title="Trợ giúp">
+                    <span class="material-symbols-outlined text-[22px]">help</span>
+                </button>
+                <form asp-area="" asp-controller="Account" asp-action="Logout" method="post">
+                    <button type="submit" class="text-[#73796b] transition hover:text-[#ba1a1a]" title="Đăng xuất">
+                        <span class="material-symbols-outlined text-[22px]">logout</span>
+                    </button>
+                </form>
+            </div>
+        </header>
+
+        <div class="admin-container">
+            @RenderBody()
+        </div>
+    </main>
+
+    <div id="admin-confirm-modal" class="admin-modal fixed inset-0 z-[100] hidden items-center justify-center px-4">
+        <div class="admin-modal-panel w-full max-w-md p-6">
+            <div class="flex items-start justify-between gap-4">
+                <div>
+                    <h2 id="admin-confirm-title" class="admin-section-title">Xác nhận xóa</h2>
+                    <p id="admin-confirm-message" class="admin-section-subtitle !mt-2">Bạn có chắc muốn thực hiện hành động này?</p>
+                </div>
+                <button id="admin-confirm-close" type="button" class="admin-btn-secondary !h-10 !w-10 !px-0">
+                    <span class="material-symbols-outlined text-[18px]">close</span>
+                </button>
+            </div>
+
+            <div class="mt-6 flex justify-end gap-3">
+                <button id="admin-confirm-cancel" type="button" class="admin-btn-secondary">Hủy</button>
+                <button id="admin-confirm-submit" type="button" class="admin-btn-danger">Xóa bản ghi</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (() => {
+            const modal = document.getElementById("admin-confirm-modal");
+            const title = document.getElementById("admin-confirm-title");
+            const message = document.getElementById("admin-confirm-message");
+            const submitButton = document.getElementById("admin-confirm-submit");
+            const cancelButton = document.getElementById("admin-confirm-cancel");
+            const closeButton = document.getElementById("admin-confirm-close");
+
+            if (!modal || !title || !message || !submitButton || !cancelButton || !closeButton) {
+                return;
+            }
+
+            let pendingForm = null;
+
+            const closeModal = () => {
+                modal.classList.add("hidden");
+                modal.classList.remove("flex");
+                pendingForm = null;
+            };
+
+            document.addEventListener("submit", (event) => {
+                const form = event.target;
+                if (!(form instanceof HTMLFormElement) || !form.hasAttribute("data-confirm-message")) {
+                    return;
+                }
+
+                if (form.dataset.confirmApproved === "true") {
+                    form.dataset.confirmApproved = "false";
+                    return;
+                }
+
+                event.preventDefault();
+                pendingForm = form;
+                title.textContent = form.getAttribute("data-confirm-title") || "Xác nhận xóa";
+                message.textContent = form.getAttribute("data-confirm-message") || "Bạn có chắc muốn thực hiện hành động này?";
+                submitButton.textContent = form.getAttribute("data-confirm-submit-text") || "Xóa bản ghi";
+                modal.classList.remove("hidden");
+                modal.classList.add("flex");
+            });
+
+            submitButton.addEventListener("click", () => {
+                if (!pendingForm) {
+                    closeModal();
+                    return;
+                }
+
+                pendingForm.dataset.confirmApproved = "true";
+                pendingForm.requestSubmit();
+            });
+
+            cancelButton.addEventListener("click", closeModal);
+            closeButton.addEventListener("click", closeModal);
+
+            modal.addEventListener("click", (event) => {
+                if (event.target === modal) {
+                    closeModal();
+                }
+            });
+
+            document.addEventListener("keydown", (event) => {
+                if (event.key === "Escape" && !modal.classList.contains("hidden")) {
+                    closeModal();
+                }
+            });
+        })();
+    </script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

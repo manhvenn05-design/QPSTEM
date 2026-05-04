@@ -1,0 +1,208 @@
+@{
+    ViewData["Title"] = "Cổng học sinh";
+    Layout = "_StudentLayout";
+}
+
+<section class="student-page">
+    <div class="student-page-header">
+        <div>
+            <h1 class="student-page-title">Bảng điều khiển học sinh</h1>
+            <p class="student-page-subtitle">Giao diện này bám đúng use case của tài khoản học sinh/phụ huynh: xem lịch học, xem thư viện ảnh sản phẩm, đọc đánh giá buổi học và theo dõi học phí.</p>
+        </div>
+
+        <div class="student-actions">
+            <button type="button" class="student-btn-secondary">
+                <span class="material-symbols-outlined text-[18px]">calendar_month</span>
+                <span>Xem lịch tuần này</span>
+            </button>
+            <button type="button" class="student-btn-primary">
+                <span class="material-symbols-outlined text-[18px]">photo_library</span>
+                <span>Mở thư viện sản phẩm</span>
+            </button>
+        </div>
+    </div>
+
+    <div class="student-stat-grid">
+        <article class="student-stat-card">
+            <div class="flex items-start justify-between gap-4">
+                <span class="student-stat-label">Buổi học tuần này</span>
+                <span class="material-symbols-outlined text-[20px] text-[#6a994e]">calendar_month</span>
+            </div>
+            <div>
+                <div class="student-stat-value">3</div>
+                <p class="student-kicker">1 buổi Robotics và 2 buổi Scratch trong tuần hiện tại.</p>
+            </div>
+        </article>
+
+        <article class="student-stat-card">
+            <div class="flex items-start justify-between gap-4">
+                <span class="student-stat-label">Minh chứng mới</span>
+                <span class="material-symbols-outlined text-[20px] text-[#6a994e]">photo_library</span>
+            </div>
+            <div>
+                <div class="student-stat-value">8</div>
+                <p class="student-kicker">Ảnh và video sản phẩm mới được cập nhật từ 2 buổi gần nhất.</p>
+            </div>
+        </article>
+
+        <article class="student-stat-card">
+            <div class="flex items-start justify-between gap-4">
+                <span class="student-stat-label">Đánh giá mới từ giáo viên</span>
+                <span class="material-symbols-outlined text-[20px] text-[#6a994e]">rate_review</span>
+            </div>
+            <div>
+                <div class="student-stat-value">2</div>
+                <p class="student-kicker">Đã có nhận xét AI hoàn chỉnh gửi cho phụ huynh trong tuần.</p>
+            </div>
+        </article>
+
+        <article class="student-stat-card">
+            <div class="flex items-start justify-between gap-4">
+                <span class="student-stat-label">Tình trạng học phí</span>
+                <span class="material-symbols-outlined text-[20px] text-[#6a994e]">receipt_long</span>
+            </div>
+            <div>
+                <div class="student-stat-value">1</div>
+                <p class="student-kicker">1 hóa đơn đang chờ hoàn tất thanh toán.</p>
+            </div>
+        </article>
+    </div>
+
+    <div class="student-grid-two">
+        <div class="space-y-6">
+            <div class="student-card">
+                <div class="student-card-section">
+                    <div class="flex items-center justify-between gap-4">
+                        <div>
+                            <h2 class="student-section-title">Lịch học sắp tới</h2>
+                            <p class="student-section-subtitle">Thể hiện use case “Xem lịch học” của học sinh/phụ huynh.</p>
+                        </div>
+                        <span class="student-tag student-tag--neutral">Tuần 03/05/2026</span>
+                    </div>
+
+                    <div class="student-list">
+                        <article class="student-list-item">
+                            <div class="flex items-start justify-between gap-4">
+                                <div>
+                                    <p class="text-sm font-semibold text-[#1a1c19]">Robotics Explorer · Lớp RBX-2405-A</p>
+                                    <p class="mt-1 text-sm text-[#73796b]">Thứ 2, 08:00 - 10:00 · Phòng STEM 01</p>
+                                </div>
+                                <span class="student-tag student-tag--success">Buổi 05</span>
+                            </div>
+                            <div class="mt-4 flex flex-wrap gap-3">
+                                <button type="button" class="student-btn-secondary !h-10">Xem chi tiết buổi học</button>
+                                <button type="button" class="student-btn-secondary !h-10">Mở tài liệu liên quan</button>
+                            </div>
+                        </article>
+
+                        <article class="student-list-item">
+                            <div class="flex items-start justify-between gap-4">
+                                <div>
+                                    <p class="text-sm font-semibold text-[#1a1c19]">Scratch Creative Lab · Lớp SCR-2405-B</p>
+                                    <p class="mt-1 text-sm text-[#73796b]">Thứ 4, 13:30 - 15:30 · Phòng STEM 02</p>
+                                </div>
+                                <span class="student-tag student-tag--warning">Buổi 06</span>
+                            </div>
+                            <div class="mt-4 flex flex-wrap gap-3">
+                                <button type="button" class="student-btn-secondary !h-10">Xem chủ đề buổi học</button>
+                            </div>
+                        </article>
+
+                        <article class="student-list-item">
+                            <div class="flex items-start justify-between gap-4">
+                                <div>
+                                    <p class="text-sm font-semibold text-[#1a1c19]">AI Junior Builder · Lớp AIJ-2406-C</p>
+                                    <p class="mt-1 text-sm text-[#73796b]">Thứ 7, 09:00 - 11:00 · STEM Lab</p>
+                                </div>
+                                <span class="student-tag student-tag--neutral">Sắp khai giảng</span>
+                            </div>
+                            <div class="mt-4 flex flex-wrap gap-3">
+                                <button type="button" class="student-btn-secondary !h-10">Xem chuẩn bị trước buổi học</button>
+                            </div>
+                        </article>
+                    </div>
+                </div>
+            </div>
+
+            <div class="student-card">
+                <div class="student-card-section">
+                    <h2 class="student-section-title">Thư viện sản phẩm gần đây</h2>
+                    <p class="student-section-subtitle">Bám use case “Xem thư viện ảnh sản phẩm của con”.</p>
+
+                    <div class="student-media-grid">
+                        <article class="student-media-card">
+                            <div class="student-media-thumb">
+                                <span class="material-symbols-outlined text-[36px]">smart_toy</span>
+                            </div>
+                            <div class="student-media-body">
+                                <p class="text-sm font-semibold text-[#1a1c19]">Robot dò line - Buổi 04</p>
+                                <p class="mt-1 text-sm text-[#73796b]">4 ảnh, 1 video · Cập nhật bởi giáo viên sau buổi học.</p>
+                            </div>
+                        </article>
+
+                        <article class="student-media-card">
+                            <div class="student-media-thumb">
+                                <span class="material-symbols-outlined text-[36px]">brush</span>
+                            </div>
+                            <div class="student-media-body">
+                                <p class="text-sm font-semibold text-[#1a1c19]">Game Scratch tương tác - Buổi 05</p>
+                                <p class="mt-1 text-sm text-[#73796b]">3 ảnh sản phẩm, 1 ảnh không khí lớp.</p>
+                            </div>
+                        </article>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <aside class="space-y-6">
+            <div class="student-card">
+                <div class="student-card-section">
+                    <h2 class="student-section-title">Đánh giá buổi học</h2>
+                    <p class="student-section-subtitle">Nơi hiển thị bản nhận xét giáo viên đã được AI làm mượt.</p>
+
+                    <div class="student-list">
+                        <article class="student-list-item">
+                            <p class="text-sm font-semibold text-[#1a1c19]">Robotics Explorer · Buổi 04</p>
+                            <p class="mt-2 text-sm leading-6 text-[#42493d]">Hôm nay bé tham gia lớp rất chủ động, hoàn thành mô hình robot khá nhanh và hợp tác tốt với các bạn trong nhóm. Giáo viên ghi nhận tinh thần học tập tích cực và sự tự tin khi trình bày sản phẩm.</p>
+                        </article>
+                        <article class="student-list-item">
+                            <p class="text-sm font-semibold text-[#1a1c19]">Scratch Creative Lab · Buổi 05</p>
+                            <p class="mt-2 text-sm leading-6 text-[#42493d]">Bé nắm tốt cấu trúc lệnh cơ bản, đã biết áp dụng tư duy sáng tạo vào phần nhân vật và hiệu ứng. Cần luyện thêm về trình tự logic để sản phẩm chạy ổn định hơn ở buổi tới.</p>
+                        </article>
+                    </div>
+                </div>
+            </div>
+
+            <div class="student-card">
+                <div class="student-card-section">
+                    <h2 class="student-section-title">Học phí và công nợ</h2>
+                    <p class="student-section-subtitle">Bám use case “Theo dõi hóa đơn học phí”.</p>
+
+                    <div class="mt-6 space-y-5">
+                        <div>
+                            <div class="mb-2 flex items-center justify-between text-sm text-[#42493d]">
+                                <span>Khóa Robotics Explorer</span>
+                                <span>70%</span>
+                            </div>
+                            <div class="student-progress">
+                                <div class="student-progress-bar" style="width:70%;"></div>
+                            </div>
+                            <p class="mt-2 text-sm text-[#73796b]">Đã thanh toán 4.550.000đ / 6.500.000đ</p>
+                        </div>
+
+                        <div class="student-list-item !mt-4">
+                            <div class="flex items-start justify-between gap-4">
+                                <div>
+                                    <p class="text-sm font-semibold text-[#1a1c19]">INV-240502</p>
+                                    <p class="mt-1 text-sm text-[#73796b]">Hạn thanh toán: 10/05/2026</p>
+                                </div>
+                                <span class="student-tag student-tag--warning">Còn nợ</span>
+                            </div>
+                            <p class="mt-3 text-sm text-[#42493d]">Số tiền còn lại: 1.950.000đ</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+    </div>
+</section>

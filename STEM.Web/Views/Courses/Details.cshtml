@@ -1,0 +1,126 @@
+@model STEM.Web.Models.CourseDetailViewModel
+@{
+    ViewData["Title"] = "Chi tiết khóa học";
+}
+
+<main class="course-detail-page">
+    <nav class="container breadcrumb">
+        <a asp-controller="Home" asp-action="Index">Trang chủ</a>
+        <span class="material-symbols-outlined" aria-hidden="true">chevron_right</span>
+        <a asp-controller="Courses" asp-action="Index">Khóa học</a>
+        <span class="material-symbols-outlined" aria-hidden="true">chevron_right</span>
+        <span>@Model.BreadcrumbTitle</span>
+    </nav>
+
+    <section class="container course-detail-layout">
+        <div class="course-detail-main">
+            <div class="course-detail-hero">
+                <img src="@Model.HeroImageUrl" alt="@Model.Course.Title" />
+            </div>
+
+            <div class="course-tabs">
+                <button type="button" class="is-active">Tổng quan</button>
+                
+            </div>
+
+            <section class="detail-section">
+                <h2>Tại sao nên chọn khóa học này?</h2>
+                <div class="benefit-grid">
+                    @foreach (var benefit in Model.Benefits)
+                    {
+                        <article class="benefit-card">
+                            <div class="benefit-icon">
+                                <span class="material-symbols-outlined" aria-hidden="true">@benefit.Icon</span>
+                            </div>
+                            <h3>@benefit.Title</h3>
+                            <p>@benefit.Description</p>
+                        </article>
+                    }
+                </div>
+            </section>
+
+            <section class="detail-section">
+                <h2>Lộ trình học tập (@Model.LessonCount)</h2>
+                <div class="curriculum-list">
+                    @for (var index = 0; index < Model.CurriculumItems.Count; index++)
+                    {
+                        <details class="curriculum-item" @(index == 0 ? "open" : null)>
+                            <summary>
+                                <span class="curriculum-index">@($"{index + 1:00}")</span>
+                                <span>@Model.CurriculumItems[index]</span>
+                            </summary>
+                            <div class="curriculum-content">
+                                Bài học tập trung vào thực hành, dự án nhỏ và phản hồi cá nhân để học sinh tiếp cận công nghệ một cách tự nhiên.
+                            </div>
+                        </details>
+                    }
+                </div>
+            </section>
+
+        </div>
+
+        <aside class="course-detail-sidebar">
+            <div class="price-card">
+                <h1>@Model.Course.Title</h1>
+
+                <div class="price-card-meta">
+                    <div>
+                        <span class="material-symbols-outlined" aria-hidden="true">school</span>
+                        <span>Cấp học:</span>
+                        <strong>@Model.SchoolLevel</strong>
+                    </div>
+                    <div>
+                        <span class="material-symbols-outlined" aria-hidden="true">calendar_today</span>
+                        <span>Số buổi:</span>
+                        <strong>@Model.LessonCount</strong>
+                    </div>
+                    <div>
+                        <span class="material-symbols-outlined" aria-hidden="true">payments</span>
+                        <span>Học phí:</span>
+                        <strong class="price-highlight">@Model.PriceText</strong>
+                    </div>
+                </div>
+
+                <a class="button button-primary button-block" asp-controller="Leads" asp-action="Consultation" asp-route-courseId="@Model.Course.Id">Liên hệ tư vấn</a>
+
+                <div class="price-note">
+                    Hỗ trợ trả góp 0% qua thẻ tín dụng
+                </div>
+            </div>
+
+            <div class="quality-badge">
+                <span class="material-symbols-outlined" aria-hidden="true">verified_user</span>
+                <span>Cam kết chất lượng đầu ra theo chuẩn quốc tế</span>
+            </div>
+        </aside>
+    </section>
+
+    <section class="container related-courses">
+        <div class="section-heading">
+            <h2>Khóa học liên quan</h2>
+        </div>
+
+        <div class="courses-grid related-grid">
+            @foreach (var course in Model.RelatedCourses)
+            {
+                <article class="course-card compact-card">
+                    <div class="course-card-image">
+                        <img src="@course.ImageUrl" alt="@course.Title" />
+                    </div>
+
+                    <div class="course-card-body">
+                        <span class="course-level">@course.Level</span>
+                        <h3>@course.Title</h3>
+                        <div class="course-card-meta">
+                            <span>@course.DurationText</span>
+                            <strong>@course.PriceText</strong>
+                        </div>
+                        <a class="button button-secondary button-block" asp-controller="Courses" asp-action="Details" asp-route-slug="@course.Slug">
+                            Xem chi tiết
+                        </a>
+                    </div>
+                </article>
+            }
+        </div>
+    </section>
+</main>

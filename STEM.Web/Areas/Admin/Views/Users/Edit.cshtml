@@ -1,0 +1,195 @@
+@model STEM.Web.Areas.Admin.Models.EditUserViewModel
+
+@{
+    ViewData["Title"] = "Cập nhật người dùng";
+}
+
+<section class="admin-page">
+    <div class="admin-page-header">
+        <div>
+            <h1 class="admin-page-title">Cập nhật người dùng</h1>
+            <p class="admin-page-subtitle">Điều chỉnh thông tin, ảnh đại diện, quyền truy cập và đặt lại mật khẩu khi cần.</p>
+        </div>
+
+        <div class="admin-actions">
+            <a asp-area="Admin" asp-controller="Users" asp-action="Details" asp-route-id="@Model.Id" class="admin-btn-secondary">Xem chi tiết</a>
+            <a asp-area="Admin" asp-controller="Users" asp-action="Index" class="admin-btn-secondary">Quay lại danh sách</a>
+        </div>
+    </div>
+
+    <form asp-area="Admin" asp-controller="Users" asp-action="Edit" method="post" enctype="multipart/form-data" class="admin-page">
+        @Html.AntiForgeryToken()
+        <input asp-for="Id" type="hidden" />
+        <div asp-validation-summary="ModelOnly" class="admin-alert admin-alert--error"></div>
+
+        <div class="admin-card">
+            <div class="admin-card-section">
+                <div class="mb-6">
+                    <h2 class="admin-section-title">Thông tin tài khoản</h2>
+                    <p class="admin-section-subtitle">Sửa dữ liệu cơ bản và trạng thái của người dùng.</p>
+                </div>
+
+                <div class="admin-field-grid two-col">
+                    <div class="md:col-span-2">
+                        <label asp-for="FullName" class="admin-label"></label>
+                        <input asp-for="FullName" class="admin-input" />
+                        <span asp-validation-for="FullName" class="admin-validation"></span>
+                    </div>
+
+                    <div>
+                        <label asp-for="Username" class="admin-label"></label>
+                        <input asp-for="Username" class="admin-input" />
+                        <span asp-validation-for="Username" class="admin-validation"></span>
+                        @if (Model.SuggestedUsernames.Count > 0)
+                        {
+                            <div class="admin-card-soft mt-3 p-4">
+                                <p class="text-sm font-semibold text-[#3b6722]">Gợi ý tên đăng nhập khả dụng</p>
+                                <div class="mt-3 flex flex-wrap gap-2">
+                                    @foreach (var suggestion in Model.SuggestedUsernames)
+                                    {
+                                        <button type="button" class="admin-chip is-active !h-9 !bg-white !text-[#3b6722] !border !border-[#c2c9b9]" data-username-suggestion="@suggestion">
+                                            @suggestion
+                                        </button>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+
+                    <div>
+                        <label asp-for="RoleId" class="admin-label"></label>
+                        <select asp-for="RoleId" asp-items="Model.RoleOptions" class="admin-select">
+                            <option value="">Chọn vai trò</option>
+                        </select>
+                        <span asp-validation-for="RoleId" class="admin-validation"></span>
+                    </div>
+
+                    <div>
+                        <label asp-for="Email" class="admin-label"></label>
+                        <input asp-for="Email" class="admin-input" />
+                        <span asp-validation-for="Email" class="admin-validation"></span>
+                    </div>
+
+                    <div>
+                        <label asp-for="Phone" class="admin-label"></label>
+                        <input asp-for="Phone" class="admin-input" />
+                        <span asp-validation-for="Phone" class="admin-validation"></span>
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <label asp-for="AvatarFile" class="admin-label"></label>
+                        <input asp-for="AvatarFile" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" class="admin-input admin-file" />
+                        @if (!string.IsNullOrWhiteSpace(Model.AvatarUrl))
+                        {
+                            <div class="admin-preview mt-4">
+                                <img src="@Model.AvatarUrl" alt="@Model.FullName" class="h-20 w-20 rounded-full object-cover" />
+                                <div class="text-sm text-[#42493d]">
+                                    <p class="font-semibold text-[#1a1c19]">Ảnh hiện tại</p>
+                                    <p class="mt-1 break-all">@Model.AvatarUrl</p>
+                                </div>
+                            </div>
+                        }
+                        <p class="admin-hint">Nếu không chọn ảnh mới, hệ thống sẽ giữ ảnh hiện tại.</p>
+                        <span asp-validation-for="AvatarFile" class="admin-validation"></span>
+                    </div>
+
+                    <div>
+                        <label asp-for="NewPassword" class="admin-label"></label>
+                        <input asp-for="NewPassword" class="admin-input" />
+                        <span asp-validation-for="NewPassword" class="admin-validation"></span>
+                    </div>
+
+                    <div>
+                        <label asp-for="ConfirmNewPassword" class="admin-label"></label>
+                        <input asp-for="ConfirmNewPassword" class="admin-input" />
+                        <span asp-validation-for="ConfirmNewPassword" class="admin-validation"></span>
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <label class="admin-checkbox-card">
+                            <input asp-for="IsActive" />
+                            <span>
+                                <span class="block text-sm font-semibold text-[#1a1c19]">Cho phép đăng nhập</span>
+                                <span class="mt-1 block text-sm text-[#73796b]">Bỏ chọn nếu muốn khóa tài khoản tạm thời.</span>
+                            </span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="student-profile-card" class="admin-card @(Model.IsStudentRoleSelected ? string.Empty : "hidden")">
+            <div class="admin-card-section">
+                <div class="mb-6">
+                    <h2 class="admin-section-title">Thông tin học sinh</h2>
+                    <p class="admin-section-subtitle">Chỉ hiển thị khi người dùng mang vai trò học sinh.</p>
+                </div>
+
+                <div class="admin-field-grid two-col">
+                    <div class="md:col-span-2">
+                        <label asp-for="CurrentSchool" class="admin-label"></label>
+                        <input asp-for="CurrentSchool" class="admin-input" />
+                        <span asp-validation-for="CurrentSchool" class="admin-validation"></span>
+                    </div>
+
+                    <div>
+                        <label asp-for="GuardianName" class="admin-label"></label>
+                        <input asp-for="GuardianName" class="admin-input" />
+                        <span asp-validation-for="GuardianName" class="admin-validation"></span>
+                    </div>
+
+                    <div>
+                        <label asp-for="GuardianPhone" class="admin-label"></label>
+                        <input asp-for="GuardianPhone" class="admin-input" />
+                        <span asp-validation-for="GuardianPhone" class="admin-validation"></span>
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <label asp-for="MedicalNotes" class="admin-label"></label>
+                        <textarea asp-for="MedicalNotes" rows="4" class="admin-textarea"></textarea>
+                        <span asp-validation-for="MedicalNotes" class="admin-validation"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="admin-actions justify-end">
+            <button type="submit" class="admin-btn-primary min-w-[192px]">Lưu cập nhật</button>
+            <a asp-area="Admin" asp-controller="Users" asp-action="Index" class="admin-btn-secondary">Hủy</a>
+        </div>
+    </form>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (() => {
+            const usernameInput = document.getElementById("Username");
+            const roleSelect = document.getElementById("RoleId");
+            const studentCard = document.getElementById("student-profile-card");
+
+            if (!roleSelect || !studentCard) {
+                return;
+            }
+
+            const updateStudentCard = () => {
+                const selectedText = roleSelect.options[roleSelect.selectedIndex]?.text?.trim().toLowerCase() ?? "";
+                studentCard.classList.toggle("hidden", selectedText !== "học sinh");
+            };
+
+            roleSelect.addEventListener("change", updateStudentCard);
+            updateStudentCard();
+
+            document.querySelectorAll("[data-username-suggestion]").forEach((button) => {
+                button.addEventListener("click", () => {
+                    if (!usernameInput) {
+                        return;
+                    }
+
+                    usernameInput.value = button.getAttribute("data-username-suggestion") ?? "";
+                    usernameInput.focus();
+                });
+            });
+        })();
+    </script>
+}

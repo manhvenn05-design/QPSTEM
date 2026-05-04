@@ -1,0 +1,45 @@
+@{
+    ViewData["Title"] = "Cài đặt";
+}
+
+<section class="admin-page">
+    <div>
+        <h1 class="admin-page-title">Cài đặt hệ thống</h1>
+        <p class="admin-page-subtitle">Trang này hiện là giao diện khung cho cấu hình hệ thống. Vì DB hiện chưa có bảng <code>Settings</code> riêng nên phần này chỉ giữ ở mức shell đồng bộ, không giả lập schema không tồn tại.</p>
+    </div>
+
+    <div class="grid gap-6 xl:grid-cols-3">
+        <div class="admin-card">
+            <div class="admin-card-section">
+                <h2 class="admin-section-title">Phân quyền</h2>
+                <p class="admin-section-subtitle">Khối này sẽ nối sau với quản lý vai trò, quyền admin và điều hướng khu vực nội bộ.</p>
+                <div class="mt-5 space-y-3">
+                    <div class="admin-card-soft px-4 py-3 text-sm text-[#42493d]">Tách quyền quản trị nội dung</div>
+                    <div class="admin-card-soft px-4 py-3 text-sm text-[#42493d]">Kiểm soát quyền kế toán</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="admin-card">
+            <div class="admin-card-section">
+                <h2 class="admin-section-title">Nội dung hiển thị</h2>
+                <p class="admin-section-subtitle">Khu vực gom các thiết lập banner, bài viết nổi bật và nội dung landing page sau này.</p>
+                <div class="mt-5 space-y-3">
+                    <div class="admin-card-soft px-4 py-3 text-sm text-[#42493d]">Banner mặc định</div>
+                    <div class="admin-card-soft px-4 py-3 text-sm text-[#42493d]">Danh mục bài viết</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="admin-card">
+            <div class="admin-card-section">
+                <h2 class="admin-section-title">Vận hành hệ thống</h2>
+                <p class="admin-section-subtitle">Shell cho các cấu hình như thời hạn phiên đăng nhập, thông báo nội bộ và tích hợp ngoài hệ thống.</p>
+                <div class="mt-5 space-y-3">
+                    <div class="admin-card-soft px-4 py-3 text-sm text-[#42493d]">Cookie / phiên đăng nhập</div>
+                    <div class="admin-card-soft px-4 py-3 text-sm text-[#42493d]">Thông báo quản trị</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

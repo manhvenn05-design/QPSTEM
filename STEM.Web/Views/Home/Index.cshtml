@@ -1,0 +1,186 @@
+@{
+    ViewData["Title"] = "Trang chủ";
+}
+
+<main>
+    <section class="hero-section">
+        <div class="container hero-grid">
+            <div class="hero-copy">
+                <h1>Khơi dậy đam mê, kiến tạo tương lai</h1>
+                <p>
+                    Nền tảng giáo dục STEM thông minh giúp học sinh làm chủ kiến thức khoa học
+                    và kỹ thuật — thực hành thực tế, tư duy sáng tạo, nền tảng vững chắc cho tương lai.
+                </p>
+                <div class="hero-actions">
+                    <a class="button button-primary" asp-controller="Courses" asp-action="Index">
+                        Khám phá ngay
+                        <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+                    </a>
+                </div>
+            </div>
+
+            <div class="hero-media">
+                <div class="hero-glow" aria-hidden="true"></div>
+                <img
+                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuBrow8sWiPCtb2NNeEAnPsNTlHlfzCkZZcm44fmznmoQE8HWBgAcXOlg562V8981OVZ1lGMLtcUpP-2I5lkYEFu35BM9n6UroCRzuPyFozIFJ0GEwb4SDowdMv8T2nU92MyoBJS8hUwDFztyc9nuRpxQb6tESh3P2ZdnyHxqIs3iasXuY_JtpJqfW73gG4bt6KVAp-k2MHoSm2BBTrRHKjUp4-Ar6Eu_Cke95f_kJaOSTfsa-9lTppHidasrGXVDMBtmBC4QxeyYhfn"
+                    alt="Học sinh đang học cùng máy tính bảng và mô hình robot trong lớp học STEM hiện đại" />
+            </div>
+        </div>
+    </section>
+
+    <section id="features" class="section section-surface-white">
+        <div class="container">
+            <div class="section-heading">
+                <h2>Tính năng nổi bật</h2>
+                <div class="heading-accent"></div>
+            </div>
+
+            <div class="card-grid card-grid-3">
+                <article class="feature-card">
+                    <div class="feature-icon">
+                        <span class="material-symbols-outlined" aria-hidden="true">analytics</span>
+                    </div>
+                    <h3>Phân tích video AI</h3>
+                    <p>
+                        Hệ thống AI tự động phân tích hành vi và tiến trình học tập của học sinh qua video
+                        bài giảng để đưa ra gợi ý tối ưu.
+                    </p>
+                </article>
+
+                <article class="feature-card">
+                    <div class="feature-icon">
+                        <span class="material-symbols-outlined" aria-hidden="true">biotech</span>
+                    </div>
+                    <h3>Thực hành thực tế</h3>
+                    <p>
+                        Chương trình chú trọng vào các dự án thực tế, giúp học sinh áp dụng kiến thức STEM
+                        vào giải quyết vấn đề.
+                    </p>
+                </article>
+
+                <article class="feature-card">
+                    <div class="feature-icon">
+                        <span class="material-symbols-outlined" aria-hidden="true">groups</span>
+                    </div>
+                    <h3>Quản lý lớp học</h3>
+                    <p>
+                        Hệ thống theo dõi học viên, lịch học và điểm danh tập trung — giúp giáo viên
+                        và phụ huynh nắm bắt tiến độ theo thời gian thực.
+                    </p>
+                </article>
+            </div>
+        </div>
+    </section>
+
+    <section class="section">
+        <div class="container">
+            <div class="section-heading">
+                <h2>Dành cho ai?</h2>
+                <p>Giải pháp giáo dục toàn diện cho mọi đối tượng</p>
+            </div>
+
+            <div class="card-grid card-grid-3">
+                <article class="audience-card">
+                    <div class="audience-image">
+                        <img
+                            src="https://lh3.googleusercontent.com/aida-public/AB6AXuBrBiweQj_01Y1ngbbL_Srm5I8SPU6SFKXT0ub15nJF4JGudwnZJbq6MMV85gzTJckPQIDh5uCFjyWEq8gZZC2V5Wxr6Do9HUG-QOCZUR-6AQJcSPv2t5c6erAiwtEW_z_KOuSceh_sxIeilaEKHSRBwz6cotgpP1v6tkw5yiWaoMsvvGAO2cK_ihiPaqdju9-XYHxWg_e7sCUqdFSYtYIu0IkSNeOmxqZgswC7AxGw5Fvo4HdtvPr_-HM7AMudzAEJjui9NzuYSXwk"
+                            alt="Nhóm học sinh cùng làm thí nghiệm trong lớp học STEM" />
+                    </div>
+                    <div class="audience-content">
+                        <h3>Học sinh</h3>
+                        <p>Khơi dậy niềm đam mê khoa học và phát triển tư duy sáng tạo thông qua các bài học sinh động.</p>
+                    </div>
+                </article>
+
+                <article class="audience-card">
+                    <div class="audience-image">
+                        <img
+                            src="https://lh3.googleusercontent.com/aida-public/AB6AXuDK_ovUbGIrVPgNJwDV6bfrSvAANh06dGS22sSDssFkXbCwy3oh-ypccYBJY1SF2Uf3DLRSunxyp79QlNAYEP4P5djf1CuDAnviecaMIKtFzwCH5Xm9GbQ_YFgaSmhTBSeEPV7Z40yT3YvTLji3Vrb019hsX9S15LtIFn3fFGowGd_CoekTOC2uqQLiGfHm7cfMZrbQlgDchF_BeMzCZI7fL0z6Jg66JYRXfNmKi2bPcql_IflixTUwmLLbRBwO2UzCL7DcibYwfk59"
+                            alt="Phụ huynh đồng hành cùng con học tập tại nhà" />
+                    </div>
+                    <div class="audience-content">
+                        <h3>Phụ huynh</h3>
+                        <p>Dễ dàng theo dõi tiến độ và định hướng tương lai nghề nghiệp cho con trong kỷ nguyên số.</p>
+                    </div>
+                </article>
+
+                <article class="audience-card">
+                    <div class="audience-image">
+                        <img
+                            src="https://lh3.googleusercontent.com/aida-public/AB6AXuCUcqzKc2FjYt9Uzp4dVdVZmh1-12zbqtEu772bZPMggzCNy0WmcMLFXFPAcDyzpyBsrZR5rx2YehXE2VqUG7C8EX0CIDmUmrI7xgy3RNqGqvW_vsc_vs-mEXF7QbKORwsMJJn-VjKmX3pPb6GGqg-WkWvZUzJz4Ck4G5jtMEN8uIhf5i_g7qj_uUKOJqfFdoi_MLQJqz3mriXpVQ8bm-6Y7_Xng84LsJmBjHXyTk85rIW3ucmEy4dfa3UKzRaTxZiphdishK5WdrLe"
+                            alt="Giảng viên đang trình bày bài giảng trong không gian đào tạo hiện đại" />
+                    </div>
+                    <div class="audience-content">
+                        <h3>Giáo viên</h3>
+                        <p>Kho học liệu phong phú và công cụ quản lý lớp học AI hỗ trợ giảng dạy hiệu quả hơn.</p>
+                    </div>
+                </article>
+            </div>
+        </div>
+    </section>
+
+    <section class="section section-process section-surface-white">
+        <div class="container">
+            <div class="section-heading">
+                <h2>Quy trình 3 bước</h2>
+            </div>
+
+            <div class="process-grid">
+                <article class="process-step">
+                    <div class="process-number">1</div>
+                    <h3>Đăng ký tư vấn</h3>
+                    <p>Để lại thông tin liên hệ của phụ huynh hoặc học sinh để trung tâm nắm bắt nhu cầu ban đầu.</p>
+                </article>
+
+                <article class="process-step">
+                    <div class="process-number">2</div>
+                    <h3>Nhận lộ trình</h3>
+                    <p>Chuyên gia của QPSTEM sẽ liên hệ trực tiếp để xây dựng lộ trình học tập cá nhân hóa phù hợp nhất.</p>
+                </article>
+
+                <article class="process-step">
+                    <div class="process-number">3</div>
+                    <h3>Bắt đầu học</h3>
+                    <p>Trải nghiệm không gian học tập công nghệ cao, thực hành dự án thực tế và nhận chứng chỉ.</p>
+                </article>
+            </div>
+        </div>
+    </section>
+
+    <section id="consultation" class="section">
+        <div class="container">
+            <div class="consultation-panel">
+                <div class="consultation-copy">
+                    <h2>Đăng ký nhận tư vấn</h2>
+                    <p>
+                        Để lại thông tin của bạn, đội ngũ chuyên gia của QPSTEM sẽ liên hệ tư vấn lộ trình
+                        học tập tối ưu nhất cho con em bạn hoàn toàn miễn phí.
+                    </p>
+                </div>
+
+                <div class="consultation-form-card">
+                    <form class="consultation-form" asp-controller="Leads" asp-action="Consultation" method="post">
+                        <div class="form-field">
+                            <label for="FullName">Họ và tên</label>
+                            <input id="FullName" name="FullName" type="text" placeholder="Nhập tên của bạn" required />
+                        </div>
+
+                        <div class="form-grid">
+                            <div class="form-field">
+                                <label for="PhoneNumber">Số điện thoại</label>
+                                <input id="PhoneNumber" name="PhoneNumber" type="tel" placeholder="09xx xxx xxx" required />
+                            </div>
+
+                            <div class="form-field">
+                                <label for="Email">Email</label>
+                                <input id="Email" name="Email" type="email" placeholder="example@gmail.com" required />
+                            </div>
+                        </div>
+
+                        <button class="button button-primary button-block" type="submit">Gửi thông tin</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </section>
+</main>
