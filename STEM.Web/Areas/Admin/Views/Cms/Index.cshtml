@@ -1,3 +1,5 @@
+@model STEM.Web.Areas.Admin.Models.CmsManagementViewModel
+
 @{
     ViewData["Title"] = "CMS";
 }
@@ -6,64 +8,189 @@
     <div class="admin-page-header">
         <div>
             <h1 class="admin-page-title">Quản lý CMS</h1>
-            <p class="admin-page-subtitle">Bố cục dựa trên hai nhóm dữ liệu hiện có: <code>Posts</code> cho bài viết và <code>Banners</code> cho banner hiển thị.</p>
+            <p class="admin-page-subtitle">Quản lý bài viết và banner hiển thị trên website.</p>
         </div>
 
         <div class="admin-actions">
-            <button type="button" class="admin-btn-secondary">Thêm banner</button>
-            <button type="button" class="admin-btn-primary">Tạo bài viết</button>
+            <a asp-area="Admin" asp-controller="Cms" asp-action="CreateBanner" class="admin-btn-secondary">Thêm banner</a>
+            <a asp-area="Admin" asp-controller="Cms" asp-action="CreatePost" class="admin-btn-primary">
+                <span class="material-symbols-outlined text-[18px]">add</span>
+                <span>Tạo bài viết</span>
+            </a>
         </div>
     </div>
 
-    <div class="grid gap-6 xl:grid-cols-[1.5fr_1fr]">
+    @if (TempData["SuccessMessage"] is string successMessage)
+    {
+        <div class="admin-alert admin-alert--success">@successMessage</div>
+    }
+
+    <div class="admin-stat-grid four-col">
+        <article class="admin-stat-card">
+            <span class="admin-stat-label">Bài viết</span>
+            <div class="admin-stat-value">@Model.TotalPosts</div>
+            <p class="admin-kicker">Tổng số bài đang quản lý.</p>
+        </article>
+        <article class="admin-stat-card">
+            <span class="admin-stat-label">Bài đang hiển thị</span>
+            <div class="admin-stat-value">@Model.PublishedPosts</div>
+            <p class="admin-kicker">Đang xuất hiện trên website.</p>
+        </article>
+        <article class="admin-stat-card">
+            <span class="admin-stat-label">Banner</span>
+            <div class="admin-stat-value">@Model.TotalBanners</div>
+            <p class="admin-kicker">Tổng số banner hiện có.</p>
+        </article>
+        <article class="admin-stat-card">
+            <span class="admin-stat-label">Banner đang bật</span>
+            <div class="admin-stat-value">@Model.ActiveBanners</div>
+            <p class="admin-kicker">Đang hiển thị với khách truy cập.</p>
+        </article>
+    </div>
+
+    <form method="get" asp-area="Admin" asp-controller="Cms" asp-action="Index" class="admin-card">
+        <div class="admin-card-section">
+            <div class="admin-toolbar">
+                <div class="admin-chip-group">
+                    @foreach (var filter in Model.Filters)
+                    {
+                        var isActive = filter.Key == Model.SelectedFilter;
+                        <a asp-area="Admin"
+                           asp-controller="Cms"
+                           asp-action="Index"
+                           asp-route-filter="@filter.Key"
+                           asp-route-q="@Model.SearchTerm"
+                           class="@(isActive ? "admin-chip is-active" : "admin-chip")">
+                            @filter.Label
+                        </a>
+                    }
+                </div>
+
+                <div class="w-full lg:max-w-md">
+                    <input type="hidden" name="filter" value="@Model.SelectedFilter" />
+                    <label class="relative block">
+                        <span class="material-symbols-outlined pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[20px] text-[#73796b]">search</span>
+                        <input type="text" name="q" value="@Model.SearchTerm" placeholder="Tìm theo tiêu đề, slug hoặc tác giả..." class="admin-input pl-12" />
+                    </label>
+                </div>
+            </div>
+        </div>
+    </form>
+
+    <div class="grid gap-6 xl:grid-cols-[1.4fr_1fr]">
         <div class="admin-card overflow-hidden">
             <div class="admin-card-section">
-                <h2 class="admin-section-title">Bài viết</h2>
+                <div class="flex items-center justify-between gap-4">
+                    <div>
+                        <h2 class="admin-section-title">Bài viết</h2>
+                        <p class="admin-section-subtitle">Theo dõi nội dung đang xuất bản và bản nháp.</p>
+                    </div>
+                    <a asp-area="Admin" asp-controller="Cms" asp-action="CreatePost" class="admin-btn-secondary !h-10">Thêm</a>
+                </div>
             </div>
             <div class="overflow-x-auto">
                 <table class="admin-table min-w-full">
                     <thead>
                         <tr>
-                            <th>Title</th>
+                            <th>Tiêu đề</th>
                             <th>Slug</th>
-                            <th>Author</th>
-                            <th>IsPublished</th>
+                            <th>Tác giả</th>
+                            <th>Trạng thái</th>
+                            <th class="text-right">Thao tác</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <tr>
-                            <td><strong>5 lợi ích của học Robotics từ sớm</strong></td>
-                            <td>5-loi-ich-robotics</td>
-                            <td>admin</td>
-                            <td><span class="admin-tag admin-tag--success">Đang hiển thị</span></td>
-                        </tr>
-                        <tr>
-                            <td><strong>Lịch khai giảng tháng 6</strong></td>
-                            <td>lich-khai-giang-thang-6</td>
-                            <td>admin</td>
-                            <td><span class="admin-tag admin-tag--neutral">Bản nháp</span></td>
-                        </tr>
+                        @if (Model.Posts.Count == 0)
+                        {
+                            <tr>
+                                <td colspan="5" class="admin-empty">Chưa có bài viết phù hợp với bộ lọc hiện tại.</td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var post in Model.Posts)
+                            {
+                                <tr>
+                                    <td>
+                                        <p class="font-semibold text-[#1a1c19]">@post.Title</p>
+                                    </td>
+                                    <td>@post.Slug</td>
+                                    <td>@post.AuthorName</td>
+                                    <td>
+                                        <span class="inline-flex rounded-full px-3 py-2 text-xs font-semibold @post.StatusBadgeClass">@post.StatusLabel</span>
+                                    </td>
+                                    <td>
+                                        <div class="flex justify-end">
+                                            <details class="relative">
+                                                <summary class="admin-menu-button cursor-pointer list-none">
+                                                    <span class="material-symbols-outlined text-[18px]">more_horiz</span>
+                                                </summary>
+                                                <div class="admin-dropdown absolute right-0 top-11 z-20 w-44 overflow-hidden">
+                                                    <a asp-area="Admin" asp-controller="Cms" asp-action="PostDetails" asp-route-id="@post.Id" class="admin-menu-item">
+                                                        <span class="material-symbols-outlined text-[18px]">visibility</span>
+                                                        <span>Chi tiết</span>
+                                                    </a>
+                                                    <a asp-area="Admin" asp-controller="Cms" asp-action="EditPost" asp-route-id="@post.Id" class="admin-menu-item">
+                                                        <span class="material-symbols-outlined text-[18px]">edit</span>
+                                                        <span>Cập nhật</span>
+                                                    </a>
+                                                    <form asp-area="Admin" asp-controller="Cms" asp-action="DeletePost" asp-route-id="@post.Id" method="post" data-confirm-title="Xóa bài viết" data-confirm-message="Xóa bài viết này? Hành động này không thể hoàn tác." data-confirm-submit-text="Xóa bài viết">
+                                                        @Html.AntiForgeryToken()
+                                                        <button type="submit" class="admin-menu-item admin-menu-item--danger w-full text-left">
+                                                            <span class="material-symbols-outlined text-[18px]">delete</span>
+                                                            <span>Xóa</span>
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            </details>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
                     </tbody>
                 </table>
             </div>
         </div>
 
-        <div class="admin-card">
+        <div class="admin-card overflow-hidden">
             <div class="admin-card-section">
-                <h2 class="admin-section-title">Banner trang chủ</h2>
-                <div class="mt-5 space-y-4">
-                    <div class="admin-card-soft p-4">
-                        <p class="font-semibold text-[#1a1c19]">Khóa Robotics hè 2026</p>
-                        <p class="mt-2 text-sm text-[#73796b]">ImageUrl: /images/banners/robotics-summer.jpg</p>
-                        <p class="mt-1 text-sm text-[#73796b]">LinkUrl: /courses/robotics-explorer</p>
-                        <span class="admin-tag admin-tag--success mt-3">Đang bật</span>
+                <div class="flex items-center justify-between gap-4">
+                    <div>
+                        <h2 class="admin-section-title">Banner</h2>
+                        <p class="admin-section-subtitle">Ảnh nổi bật đang dùng trên website.</p>
                     </div>
-                    <div class="admin-card-soft p-4">
-                        <p class="font-semibold text-[#1a1c19]">Workshop AI cho thiếu nhi</p>
-                        <p class="mt-2 text-sm text-[#73796b]">ImageUrl: /images/banners/ai-workshop.jpg</p>
-                        <p class="mt-1 text-sm text-[#73796b]">LinkUrl: /contact</p>
-                        <span class="admin-tag admin-tag--neutral mt-3">Tạm ẩn</span>
-                    </div>
+                    <a asp-area="Admin" asp-controller="Cms" asp-action="CreateBanner" class="admin-btn-secondary !h-10">Thêm</a>
+                </div>
+
+                <div class="mt-6 space-y-4">
+                    @if (Model.Banners.Count == 0)
+                    {
+                        <div class="admin-empty">Chưa có banner nào.</div>
+                    }
+                    else
+                    {
+                        @foreach (var banner in Model.Banners)
+                        {
+                            <article class="admin-card-soft overflow-hidden">
+                                <img src="@banner.ImageUrl" alt="@banner.Title" class="h-40 w-full object-cover" />
+                                <div class="space-y-3 p-4">
+                                    <div class="flex items-start justify-between gap-3">
+                                        <div>
+                                            <h3 class="font-semibold text-[#1a1c19]">@banner.Title</h3>
+                                            <p class="mt-1 text-sm text-[#73796b]">@(string.IsNullOrWhiteSpace(banner.LinkUrl) ? "Chưa gắn liên kết" : banner.LinkUrl)</p>
+                                        </div>
+                                        <span class="inline-flex rounded-full px-3 py-2 text-xs font-semibold @banner.StatusBadgeClass">@banner.StatusLabel</span>
+                                    </div>
+
+                                    <div class="flex gap-3">
+                                        <a asp-area="Admin" asp-controller="Cms" asp-action="BannerDetails" asp-route-id="@banner.Id" class="admin-btn-secondary !h-10 flex-1">Chi tiết</a>
+                                        <a asp-area="Admin" asp-controller="Cms" asp-action="EditBanner" asp-route-id="@banner.Id" class="admin-btn-secondary !h-10 flex-1">Cập nhật</a>
+                                    </div>
+                                </div>
+                            </article>
+                        }
+                    }
                 </div>
             </div>
         </div>

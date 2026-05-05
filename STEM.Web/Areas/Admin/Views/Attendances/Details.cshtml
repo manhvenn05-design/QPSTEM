@@ -1,0 +1,142 @@
+@model STEM.Web.Areas.Admin.Models.AttendanceDetailsViewModel
+
+@{
+    ViewData["Title"] = "Chi tiết điểm danh";
+}
+
+<section class="admin-page">
+    <div class="admin-page-header">
+        <div>
+            <h1 class="admin-page-title">Chi tiết điểm danh</h1>
+            <p class="admin-page-subtitle">Xem đầy đủ một bản ghi điểm danh, gồm buổi học, học viên, ghi chú giáo viên và dữ liệu minh chứng đi kèm.</p>
+        </div>
+
+        <div class="admin-actions">
+            <a asp-area="Admin" asp-controller="Attendances" asp-action="Edit" asp-route-id="@Model.Id" class="admin-btn-primary">Cập nhật</a>
+            <a asp-area="Admin" asp-controller="Attendances" asp-action="Board" asp-route-sessionId="@Model.SessionId" class="admin-btn-secondary">Quay lại sổ điểm danh</a>
+        </div>
+    </div>
+
+    <div class="admin-grid-two">
+        <div class="space-y-6">
+            <div class="admin-card">
+                <div class="admin-card-section">
+                    <h2 class="admin-section-title">Thông tin học viên và buổi học</h2>
+
+                    <div class="mt-6 flex items-center gap-4">
+                        @if (!string.IsNullOrWhiteSpace(Model.StudentAvatarUrl))
+                        {
+                            <img src="@Model.StudentAvatarUrl" alt="@Model.StudentName" class="h-14 w-14 rounded-full border border-[#e3e3de] object-cover" />
+                        }
+                        else
+                        {
+                            <div class="flex h-14 w-14 items-center justify-center rounded-full border border-[#e3e3de] bg-[#f2f7f0] text-base font-semibold text-[#3b6722]">
+                                @Model.StudentName.Trim()[0].ToString().ToUpperInvariant()
+                            </div>
+                        }
+
+                        <div>
+                            <p class="text-lg font-semibold text-[#1a1c19]">@Model.StudentName</p>
+                            <p class="text-sm text-[#73796b]">@Model.StudentUsername</p>
+                        </div>
+                    </div>
+
+                    <dl class="admin-data-grid two-col mt-6">
+                        <div class="admin-data-item">
+                            <dt>Buổi học</dt>
+                            <dd>@Model.SessionLabel</dd>
+                        </div>
+                        <div class="admin-data-item">
+                            <dt>Lớp học</dt>
+                            <dd>@Model.ClassCode</dd>
+                        </div>
+                        <div class="admin-data-item">
+                            <dt>Khóa học</dt>
+                            <dd>@Model.CourseName</dd>
+                        </div>
+                        <div class="admin-data-item">
+                            <dt>Giáo viên</dt>
+                            <dd>@Model.TeacherName</dd>
+                        </div>
+                        <div class="admin-data-item">
+                            <dt>Ngày học</dt>
+                            <dd>@Model.SessionDate.ToString("dd/MM/yyyy")</dd>
+                        </div>
+                        <div class="admin-data-item">
+                            <dt>Khung giờ</dt>
+                            <dd>@Model.StartTime.ToString("HH:mm") - @Model.EndTime.ToString("HH:mm")</dd>
+                        </div>
+                    </dl>
+                </div>
+            </div>
+
+            <div class="admin-card">
+                <div class="admin-card-section">
+                    <h2 class="admin-section-title">Nội dung đánh giá</h2>
+
+                    <dl class="admin-data-grid mt-6">
+                        <div class="admin-data-item">
+                            <dt>Ghi chú giáo viên</dt>
+                            <dd>@(string.IsNullOrWhiteSpace(Model.TeacherRawNote) ? "Chưa có ghi chú giáo viên." : Model.TeacherRawNote)</dd>
+                        </div>
+                        <div class="admin-data-item">
+                            <dt>Media sản phẩm</dt>
+                            <dd>@(string.IsNullOrWhiteSpace(Model.ProductMediaUrls) ? "Chưa có media sản phẩm." : Model.ProductMediaUrls)</dd>
+                        </div>
+                    </dl>
+                </div>
+            </div>
+
+            @if (!string.IsNullOrWhiteSpace(Model.AiEvaluation) || !string.IsNullOrWhiteSpace(Model.VideoTranscript) || !string.IsNullOrWhiteSpace(Model.SoftSkillJson))
+            {
+                <details class="admin-card">
+                    <summary class="admin-card-section cursor-pointer">
+                        <div>
+                            <h2 class="admin-section-title">Thông tin bổ sung</h2>
+                            <p class="admin-section-subtitle">Chỉ hiển thị khi bản ghi có thêm dữ liệu.</p>
+                        </div>
+                    </summary>
+                    <div class="admin-divider"></div>
+                    <div class="admin-card-section">
+                        <dl class="admin-data-grid">
+                            @if (!string.IsNullOrWhiteSpace(Model.AiEvaluation))
+                            {
+                                <div class="admin-data-item">
+                                    <dt>AI đánh giá</dt>
+                                    <dd>@Model.AiEvaluation</dd>
+                                </div>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(Model.VideoTranscript))
+                            {
+                                <div class="admin-data-item">
+                                    <dt>Video transcript</dt>
+                                    <dd>@Model.VideoTranscript</dd>
+                                </div>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(Model.SoftSkillJson))
+                            {
+                                <div class="admin-data-item">
+                                    <dt>Soft skill JSON</dt>
+                                    <dd>@Model.SoftSkillJson</dd>
+                                </div>
+                            }
+                        </dl>
+                    </div>
+                </details>
+            }
+        </div>
+
+        <aside class="space-y-6">
+            <div class="admin-card">
+                <div class="admin-card-section">
+                    <h2 class="admin-section-title">Trạng thái có mặt</h2>
+                    <div class="mt-5">
+                        <span class="inline-flex rounded-full px-3 py-2 text-sm font-semibold @Model.PresenceBadgeClass">
+                            @Model.PresenceLabel
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+    </div>
+</section>

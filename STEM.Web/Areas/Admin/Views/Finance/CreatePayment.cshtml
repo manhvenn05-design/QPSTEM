@@ -1,0 +1,93 @@
+@model STEM.Web.Areas.Admin.Models.CreatePaymentViewModel
+
+@{
+    ViewData["Title"] = "Ghi nhận thanh toán";
+}
+
+<section class="admin-page">
+    <div class="admin-page-header">
+        <div>
+            <h1 class="admin-page-title">Ghi nhận thanh toán</h1>
+            <p class="admin-page-subtitle">Chọn hóa đơn và nhập số tiền đã nhận.</p>
+        </div>
+
+        <div class="admin-actions">
+            <a asp-area="Admin" asp-controller="Finance" asp-action="Index" class="admin-btn-secondary">Quay lại danh sách</a>
+        </div>
+    </div>
+
+    <form method="post" asp-area="Admin" asp-controller="Finance" asp-action="CreatePayment" class="grid gap-6 xl:grid-cols-[1.45fr_0.95fr]">
+        @Html.AntiForgeryToken()
+
+        <div class="space-y-6">
+            <div class="admin-card">
+                <div class="admin-card-section space-y-5">
+                    <div>
+                        <h2 class="admin-section-title">Thông tin thanh toán</h2>
+                        <p class="admin-section-subtitle">Mỗi lần thu sẽ được lưu thành một giao dịch riêng.</p>
+                    </div>
+
+                    <div asp-validation-summary="ModelOnly" class="admin-validation-summary"></div>
+
+                    <div class="grid gap-5 md:grid-cols-2">
+                        <div class="md:col-span-2">
+                            <label asp-for="InvoiceId" class="admin-label"></label>
+                            <select asp-for="InvoiceId" asp-items="Model.InvoiceOptions" class="admin-select">
+                                <option value="">Chọn hóa đơn</option>
+                            </select>
+                            <span asp-validation-for="InvoiceId" class="admin-field-validation"></span>
+                        </div>
+
+                        <div>
+                            <label asp-for="Amount" class="admin-label"></label>
+                            <input asp-for="Amount" class="admin-input" placeholder="Nhập số tiền" />
+                            <span asp-validation-for="Amount" class="admin-field-validation"></span>
+                        </div>
+
+                        <div>
+                            <label asp-for="PaymentMethod" class="admin-label"></label>
+                            <select asp-for="PaymentMethod" asp-items="Model.PaymentMethodOptions" class="admin-select">
+                                <option value="">Chọn phương thức</option>
+                            </select>
+                            <span asp-validation-for="PaymentMethod" class="admin-field-validation"></span>
+                        </div>
+
+                        <div>
+                            <label asp-for="TransDate" class="admin-label"></label>
+                            <input asp-for="TransDate" type="datetime-local" class="admin-input" />
+                            <span asp-validation-for="TransDate" class="admin-field-validation"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <aside class="space-y-6">
+            <div class="admin-card">
+                <div class="admin-card-section space-y-4">
+                    <h2 class="admin-section-title">Tóm tắt hóa đơn</h2>
+                    <dl class="space-y-3 text-sm text-[#42493d]">
+                        <div class="flex items-center justify-between gap-3">
+                            <dt>Tổng tiền</dt>
+                            <dd>@Model.InvoiceFinalAmount.ToString("N0")đ</dd>
+                        </div>
+                        <div class="flex items-center justify-between gap-3">
+                            <dt>Đã thu</dt>
+                            <dd>@Model.InvoicePaidAmount.ToString("N0")đ</dd>
+                        </div>
+                        <div class="flex items-center justify-between gap-3">
+                            <dt>Còn lại</dt>
+                            <dd class="font-semibold text-[#1a1c19]">@Model.InvoiceDueAmount.ToString("N0")đ</dd>
+                        </div>
+                    </dl>
+
+                    <button type="submit" class="admin-btn-primary w-full">Lưu thanh toán</button>
+                </div>
+            </div>
+        </aside>
+    </form>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

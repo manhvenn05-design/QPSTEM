@@ -1,0 +1,65 @@
+@model STEM.Web.Areas.Admin.Models.PaymentDetailsViewModel
+
+@{
+    ViewData["Title"] = "Chi tiết thanh toán";
+}
+
+<section class="admin-page">
+    <div class="admin-page-header">
+        <div>
+            <h1 class="admin-page-title">Chi tiết thanh toán</h1>
+            <p class="admin-page-subtitle">Xem lại thông tin của một giao dịch đã lưu.</p>
+        </div>
+
+        <div class="admin-actions">
+            <a asp-area="Admin" asp-controller="Finance" asp-action="EditPayment" asp-route-id="@Model.Id" class="admin-btn-primary">Cập nhật</a>
+        </div>
+    </div>
+
+    <div class="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+        <div class="admin-card">
+            <div class="admin-card-section space-y-5">
+                <h2 class="admin-section-title">Thông tin giao dịch</h2>
+
+                <dl class="grid gap-5 md:grid-cols-2">
+                    <div>
+                        <dt class="admin-detail-label">Hóa đơn</dt>
+                        <dd class="admin-detail-value">@Model.InvoiceNo</dd>
+                    </div>
+                    <div>
+                        <dt class="admin-detail-label">Học viên</dt>
+                        <dd class="admin-detail-value">@Model.StudentName</dd>
+                    </div>
+                    <div>
+                        <dt class="admin-detail-label">Lớp học</dt>
+                        <dd class="admin-detail-value">@Model.ClassCode</dd>
+                    </div>
+                    <div>
+                        <dt class="admin-detail-label">Phương thức</dt>
+                        <dd class="admin-detail-value">@Model.PaymentMethod</dd>
+                    </div>
+                    <div>
+                        <dt class="admin-detail-label">Số tiền</dt>
+                        <dd class="admin-detail-value">@Model.AmountText</dd>
+                    </div>
+                    <div>
+                        <dt class="admin-detail-label">Thời gian</dt>
+                        <dd class="admin-detail-value">@Model.TransDateText</dd>
+                    </div>
+                </dl>
+            </div>
+        </div>
+
+        <div class="admin-card">
+            <div class="admin-card-section space-y-4">
+                <h2 class="admin-section-title">Thao tác</h2>
+                <a asp-area="Admin" asp-controller="Finance" asp-action="InvoiceDetails" asp-route-id="@Model.InvoiceId" class="admin-btn-secondary w-full">Mở hóa đơn</a>
+                <a asp-area="Admin" asp-controller="Finance" asp-action="EditPayment" asp-route-id="@Model.Id" class="admin-btn-primary w-full">Sửa giao dịch</a>
+                <form asp-area="Admin" asp-controller="Finance" asp-action="DeletePayment" asp-route-id="@Model.Id" method="post" data-confirm-title="Xóa thanh toán" data-confirm-message="Xóa giao dịch này? Hành động này không thể hoàn tác." data-confirm-submit-text="Xóa thanh toán">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="admin-btn-danger w-full">Xóa giao dịch</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</section>

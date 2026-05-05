@@ -1,3 +1,5 @@
+@model STEM.Web.Areas.Admin.Models.InventoryManagementViewModel
+
 @{
     ViewData["Title"] = "Kho thiết bị";
 }
@@ -6,109 +8,283 @@
     <div class="admin-page-header">
         <div>
             <h1 class="admin-page-title">Quản lý kho thiết bị</h1>
-            <p class="admin-page-subtitle">Giao diện chia đúng ba nhóm dữ liệu: <code>EquipmentCategories</code>, <code>Equipments</code> và <code>MaintenanceLogs</code>.</p>
+            <p class="admin-page-subtitle">Theo dõi danh mục, thiết bị và tình trạng bảo trì.</p>
         </div>
 
         <div class="admin-actions">
-            <button type="button" class="admin-btn-primary">
+            <a asp-area="Admin" asp-controller="Inventory" asp-action="CreateCategory" class="admin-btn-secondary">Thêm danh mục</a>
+            <a asp-area="Admin" asp-controller="Inventory" asp-action="CreateMaintenance" class="admin-btn-secondary">Ghi nhận sự cố</a>
+            <a asp-area="Admin" asp-controller="Inventory" asp-action="CreateEquipment" class="admin-btn-primary">
                 <span class="material-symbols-outlined text-[18px]">add</span>
                 <span>Thêm thiết bị</span>
-            </button>
+            </a>
         </div>
     </div>
 
-    <div class="grid gap-6 xl:grid-cols-[1fr_1.3fr]">
-        <div class="admin-card">
-            <div class="admin-card-section">
-                <h2 class="admin-section-title">Danh mục thiết bị</h2>
-                <div class="mt-5 space-y-4">
-                    <div class="admin-card-soft p-4">
-                        <div class="flex items-center justify-between">
-                            <span class="font-semibold text-[#1a1c19]">Robot Kit</span>
-                            <span class="text-sm text-[#73796b]">32 bộ</span>
-                        </div>
-                    </div>
-                    <div class="admin-card-soft p-4">
-                        <div class="flex items-center justify-between">
-                            <span class="font-semibold text-[#1a1c19]">Laptop lớp học</span>
-                            <span class="text-sm text-[#73796b]">18 máy</span>
-                        </div>
-                    </div>
-                    <div class="admin-card-soft p-4">
-                        <div class="flex items-center justify-between">
-                            <span class="font-semibold text-[#1a1c19]">Cảm biến</span>
-                            <span class="text-sm text-[#73796b]">54 thiết bị</span>
-                        </div>
-                    </div>
+    @if (TempData["SuccessMessage"] is string successMessage)
+    {
+        <div class="admin-alert admin-alert--success">@successMessage</div>
+    }
+
+    @if (TempData["ErrorMessage"] is string errorMessage)
+    {
+        <div class="admin-alert admin-alert--error">@errorMessage</div>
+    }
+
+    <div class="admin-stat-grid four-col">
+        <article class="admin-stat-card">
+            <span class="admin-stat-label">Danh mục</span>
+            <div class="admin-stat-value">@Model.TotalCategories</div>
+            <p class="admin-kicker">Nhóm thiết bị đang được quản lý.</p>
+        </article>
+        <article class="admin-stat-card">
+            <span class="admin-stat-label">Tổng thiết bị</span>
+            <div class="admin-stat-value">@Model.TotalEquipments</div>
+            <p class="admin-kicker">Số thiết bị đã nhập kho.</p>
+        </article>
+        <article class="admin-stat-card">
+            <span class="admin-stat-label">Sẵn sàng</span>
+            <div class="admin-stat-value">@Model.ReadyEquipments</div>
+            <p class="admin-kicker">Có thể dùng ngay cho buổi học.</p>
+        </article>
+        <article class="admin-stat-card">
+            <span class="admin-stat-label">Đang xử lý</span>
+            <div class="admin-stat-value">@Model.OpenMaintenanceLogs</div>
+            <p class="admin-kicker">Nhật ký bảo trì chưa hoàn tất.</p>
+        </article>
+    </div>
+
+    <form method="get" asp-area="Admin" asp-controller="Inventory" asp-action="Index" class="admin-card">
+        <div class="admin-card-section">
+            <div class="admin-toolbar">
+                <div class="admin-chip-group">
+                    @foreach (var filter in Model.Filters)
+                    {
+                        var isActive = filter.Key == Model.SelectedFilter;
+                        <a asp-area="Admin"
+                           asp-controller="Inventory"
+                           asp-action="Index"
+                           asp-route-filter="@filter.Key"
+                           asp-route-q="@Model.SearchTerm"
+                           asp-route-categoryId="@Model.SelectedCategoryId"
+                           class="@(isActive ? "admin-chip is-active" : "admin-chip")">
+                            @filter.Label
+                        </a>
+                    }
+                </div>
+
+                <div class="w-full lg:max-w-md">
+                    <input type="hidden" name="filter" value="@Model.SelectedFilter" />
+                    @if (Model.SelectedCategoryId.HasValue)
+                    {
+                        <input type="hidden" name="categoryId" value="@Model.SelectedCategoryId" />
+                    }
+                    <label class="relative block">
+                        <span class="material-symbols-outlined pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[20px] text-[#73796b]">search</span>
+                        <input type="text" name="q" value="@Model.SearchTerm" placeholder="Tìm theo mã thiết bị, danh mục hoặc sự cố..." class="admin-input pl-12" />
+                    </label>
                 </div>
             </div>
         </div>
+    </form>
 
-        <div class="space-y-6">
-            <div class="admin-card overflow-hidden">
-                <div class="admin-card-section">
-                    <h2 class="admin-section-title">Thiết bị hiện có</h2>
+    <div class="admin-card">
+        <div class="admin-card-section">
+            <div class="flex items-center justify-between gap-4">
+                <div>
+                    <h2 class="admin-section-title">Danh mục thiết bị</h2>
+                    <p class="admin-section-subtitle">Chọn danh mục để lọc nhanh danh sách thiết bị.</p>
                 </div>
-                <div class="overflow-x-auto">
-                    <table class="admin-table min-w-full">
-                        <thead>
-                            <tr>
-                                <th>SerialNumber</th>
-                                <th>Category</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td><strong>RBX-KIT-001</strong></td>
-                                <td>Robot Kit</td>
-                                <td><span class="admin-tag admin-tag--success">Sẵn sàng</span></td>
-                            </tr>
-                            <tr>
-                                <td><strong>LTP-014</strong></td>
-                                <td>Laptop lớp học</td>
-                                <td><span class="admin-tag admin-tag--warning">Đang mượn</span></td>
-                            </tr>
-                            <tr>
-                                <td><strong>SNS-088</strong></td>
-                                <td>Cảm biến</td>
-                                <td><span class="admin-tag admin-tag--neutral">Bảo trì</span></td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+                @if (Model.SelectedCategoryId.HasValue)
+                {
+                    <a asp-area="Admin" asp-controller="Inventory" asp-action="Index" asp-route-filter="@Model.SelectedFilter" asp-route-q="@Model.SearchTerm" class="admin-btn-secondary !h-10">Bỏ lọc danh mục</a>
+                }
             </div>
 
-            <div class="admin-card overflow-hidden">
-                <div class="admin-card-section">
-                    <h2 class="admin-section-title">Nhật ký bảo trì</h2>
+            <div class="mt-6 grid gap-4 xl:grid-cols-3">
+                @if (Model.Categories.Count == 0)
+                {
+                    <div class="admin-empty xl:col-span-3">Chưa có danh mục thiết bị nào.</div>
+                }
+                else
+                {
+                    @foreach (var category in Model.Categories)
+                    {
+                        var isSelected = Model.SelectedCategoryId == category.Id;
+                        <article class="admin-card-soft p-5 @(isSelected ? "ring-2 ring-[#6a994e]/20" : string.Empty)">
+                            <div class="flex items-start justify-between gap-3">
+                                <div>
+                                    <h3 class="text-base font-semibold text-[#1a1c19]">@category.Name</h3>
+                                    <p class="mt-1 text-sm text-[#73796b]">@category.TotalQuantity thiết bị</p>
+                                </div>
+                                <a asp-area="Admin" asp-controller="Inventory" asp-action="Index" asp-route-categoryId="@category.Id" asp-route-filter="@Model.SelectedFilter" asp-route-q="@Model.SearchTerm" class="admin-btn-secondary !h-10">Xem</a>
+                            </div>
+
+                            <div class="mt-5 grid grid-cols-3 gap-3 text-sm">
+                                <div>
+                                    <div class="font-semibold text-[#1a1c19]">@category.ReadyCount</div>
+                                    <div class="text-[#73796b]">Sẵn sàng</div>
+                                </div>
+                                <div>
+                                    <div class="font-semibold text-[#1a1c19]">@category.BorrowedCount</div>
+                                    <div class="text-[#73796b]">Đang mượn</div>
+                                </div>
+                                <div>
+                                    <div class="font-semibold text-[#1a1c19]">@category.MaintenanceCount</div>
+                                    <div class="text-[#73796b]">Bảo trì</div>
+                                </div>
+                            </div>
+
+                            <div class="mt-5 flex gap-3">
+                                <a asp-area="Admin" asp-controller="Inventory" asp-action="EditCategory" asp-route-id="@category.Id" class="admin-btn-secondary !h-10 flex-1">Cập nhật</a>
+                                <form asp-area="Admin" asp-controller="Inventory" asp-action="DeleteCategory" asp-route-id="@category.Id" method="post" class="flex-1" data-confirm-title="Xóa danh mục" data-confirm-message="Xóa danh mục này? Hành động này không thể hoàn tác." data-confirm-submit-text="Xóa danh mục">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="admin-btn-secondary !h-10 w-full">Xóa</button>
+                                </form>
+                            </div>
+                        </article>
+                    }
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="grid gap-6 xl:grid-cols-[1.7fr_1fr]">
+        <div class="admin-card overflow-hidden">
+            <div class="admin-card-section">
+                <h2 class="admin-section-title">Thiết bị hiện có</h2>
+                <p class="admin-section-subtitle">Quản lý trạng thái, lịch sử mượn và bảo trì của từng thiết bị.</p>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="admin-table min-w-full">
+                    <thead>
+                        <tr>
+                            <th>Thiết bị</th>
+                            <th>Danh mục</th>
+                            <th>Trạng thái</th>
+                            <th>Đang dùng</th>
+                            <th>Bảo trì</th>
+                            <th class="text-right">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.Equipments.Count == 0)
+                        {
+                            <tr>
+                                <td colspan="6" class="admin-empty">Không có thiết bị nào phù hợp với bộ lọc hiện tại.</td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var item in Model.Equipments)
+                            {
+                                <tr>
+                                    <td>
+                                        <div class="flex items-center gap-3">
+                                            @if (!string.IsNullOrWhiteSpace(item.ImageUrl))
+                                            {
+                                                <img src="@item.ImageUrl" alt="@item.SerialNumber" class="h-12 w-12 rounded-[8px] border border-[#e3e3de] object-cover" />
+                                            }
+                                            else
+                                            {
+                                                <div class="flex h-12 w-12 items-center justify-center rounded-[8px] border border-[#e3e3de] bg-[#f2f7f0] text-sm font-semibold text-[#3b6722]">
+                                                    @item.SerialNumber.Trim()[0].ToString().ToUpperInvariant()
+                                                </div>
+                                            }
+                                            <div>
+                                                <p class="font-semibold text-[#1a1c19]">@item.SerialNumber</p>
+                                                <p class="mt-1 text-sm text-[#73796b]">@item.LastIssueSummary</p>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td><strong>@item.CategoryName</strong></td>
+                                    <td>
+                                        <span class="inline-flex rounded-full px-3 py-2 text-xs font-semibold @item.StatusBadgeClass">
+                                            @item.StatusLabel
+                                        </span>
+                                    </td>
+                                    <td>@item.BorrowSummary</td>
+                                    <td>@item.MaintenanceCount nhật ký</td>
+                                    <td>
+                                        <div class="flex justify-end">
+                                            <details class="relative">
+                                                <summary class="admin-btn-secondary !h-10 !w-10 !px-0 list-none cursor-pointer justify-center">
+                                                    <span class="material-symbols-outlined text-[18px]">more_horiz</span>
+                                                </summary>
+                                                <div class="absolute right-0 z-20 mt-2 w-44 rounded-[8px] border border-[#e3e3de] bg-white p-2 shadow-sm">
+                                                    <a asp-area="Admin" asp-controller="Inventory" asp-action="EquipmentDetails" asp-route-id="@item.Id" class="block rounded-[8px] px-3 py-2 text-sm text-[#42493d] hover:bg-[#f4f4ee]">Chi tiết</a>
+                                                    <a asp-area="Admin" asp-controller="Inventory" asp-action="EditEquipment" asp-route-id="@item.Id" class="block rounded-[8px] px-3 py-2 text-sm text-[#42493d] hover:bg-[#f4f4ee]">Cập nhật</a>
+                                                    <form asp-area="Admin" asp-controller="Inventory" asp-action="DeleteEquipment" asp-route-id="@item.Id" method="post" data-confirm-title="Xóa thiết bị" data-confirm-message="Xóa thiết bị này? Hành động này không thể hoàn tác." data-confirm-submit-text="Xóa thiết bị">
+                                                        @Html.AntiForgeryToken()
+                                                        <button type="submit" class="block w-full rounded-[8px] px-3 py-2 text-left text-sm text-[#ba1a1a] hover:bg-[#fff4e8]">Xóa</button>
+                                                    </form>
+                                                </div>
+                                            </details>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="admin-card overflow-hidden">
+            <div class="admin-card-section">
+                <div class="flex items-center justify-between gap-4">
+                    <div>
+                        <h2 class="admin-section-title">Nhật ký bảo trì</h2>
+                        <p class="admin-section-subtitle">Các sự cố mới ghi nhận gần đây.</p>
+                    </div>
+                    <a asp-area="Admin" asp-controller="Inventory" asp-action="CreateMaintenance" class="admin-btn-secondary !h-10">Thêm</a>
                 </div>
-                <div class="overflow-x-auto">
-                    <table class="admin-table min-w-full">
-                        <thead>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="admin-table min-w-full">
+                    <thead>
+                        <tr>
+                            <th>Thiết bị</th>
+                            <th>Sự cố</th>
+                            <th>Trạng thái</th>
+                            <th class="text-right">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.MaintenanceLogs.Count == 0)
+                        {
                             <tr>
-                                <th>Thiết bị</th>
-                                <th>Người báo</th>
-                                <th>Issue</th>
-                                <th>Status</th>
+                                <td colspan="4" class="admin-empty">Chưa có nhật ký bảo trì nào.</td>
                             </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>LTP-014</td>
-                                <td>Nguyễn Minh Khoa</td>
-                                <td>Pin sụt nhanh</td>
-                                <td><span class="admin-tag admin-tag--warning">Đang xử lý</span></td>
-                            </tr>
-                            <tr>
-                                <td>SNS-088</td>
-                                <td>Lê Hoàng Việt</td>
-                                <td>Không nhận tín hiệu</td>
-                                <td><span class="admin-tag admin-tag--success">Đã thay mới</span></td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+                        }
+                        else
+                        {
+                            @foreach (var log in Model.MaintenanceLogs)
+                            {
+                                <tr>
+                                    <td>
+                                        <div>
+                                            <p class="font-semibold text-[#1a1c19]">@log.EquipmentSerialNumber</p>
+                                            <p class="mt-1 text-sm text-[#73796b]">@log.ReporterName</p>
+                                        </div>
+                                    </td>
+                                    <td>@log.Issue</td>
+                                    <td>
+                                        <span class="inline-flex rounded-full px-3 py-2 text-xs font-semibold @log.StatusBadgeClass">
+                                            @log.StatusLabel
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="flex justify-end gap-2">
+                                            <a asp-area="Admin" asp-controller="Inventory" asp-action="MaintenanceDetails" asp-route-id="@log.Id" class="admin-btn-secondary !h-10">Chi tiết</a>
+                                            <a asp-area="Admin" asp-controller="Inventory" asp-action="EditMaintenance" asp-route-id="@log.Id" class="admin-btn-secondary !h-10">Cập nhật</a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>

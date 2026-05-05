@@ -68,7 +68,7 @@
                     </div>
 
                     <label class="checkbox-row checkbox-row-start">
-                        <input id="terms" name="AcceptTerms" type="checkbox" value="true" @(Model.AcceptTerms ? "checked" : null) />
+                        <input id="terms" name="AcceptTerms" type="checkbox" value="true" @((Model?.AcceptTerms ?? false) ? "checked" : null) />
                         <span>
                             Tôi đồng ý với các <a class="auth-link" href="#">Điều khoản dịch vụ</a> và
                             <a class="auth-link" href="#">Chính sách bảo mật</a>.

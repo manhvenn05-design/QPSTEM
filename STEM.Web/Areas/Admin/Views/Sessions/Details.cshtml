@@ -1,0 +1,197 @@
+@model STEM.Web.Areas.Admin.Models.SessionDetailsViewModel
+
+@{
+    ViewData["Title"] = "Chi tiết buổi học";
+}
+
+<section class="admin-page">
+    <div class="admin-page-header">
+        <div>
+            <h1 class="admin-page-title">Chi tiết buổi học</h1>
+            <p class="admin-page-subtitle">Theo dõi đầy đủ dữ liệu của một buổi học, gồm lịch học, lớp liên quan, tài nguyên giảng dạy, điểm danh và mượn trả thiết bị.</p>
+        </div>
+
+        <div class="admin-actions">
+            <a asp-area="Admin" asp-controller="Sessions" asp-action="Edit" asp-route-id="@Model.Id" class="admin-btn-primary">Cập nhật</a>
+            <a asp-area="Admin" asp-controller="Sessions" asp-action="Index" class="admin-btn-secondary">Quay lại</a>
+        </div>
+    </div>
+
+    <div class="admin-grid-two">
+        <div class="space-y-6">
+            <div class="admin-card">
+                <div class="admin-card-section">
+                    <h2 class="admin-section-title">Thông tin buổi học</h2>
+
+                    <dl class="admin-data-grid two-col mt-6">
+                        <div class="admin-data-item">
+                            <dt>Buổi học</dt>
+                            <dd>@Model.SessionLabel</dd>
+                        </div>
+                        <div class="admin-data-item">
+                            <dt>Lớp học</dt>
+                            <dd>@Model.ClassCode</dd>
+                        </div>
+                        <div class="admin-data-item">
+                            <dt>Khóa học</dt>
+                            <dd>@Model.CourseName</dd>
+                        </div>
+                        <div class="admin-data-item">
+                            <dt>Giáo viên</dt>
+                            <dd>@Model.TeacherName @(string.IsNullOrWhiteSpace(Model.TeacherEmail) ? string.Empty : $"({Model.TeacherEmail})")</dd>
+                        </div>
+                        <div class="admin-data-item">
+                            <dt>Ngày học</dt>
+                            <dd>@Model.Date.ToString("dd/MM/yyyy")</dd>
+                        </div>
+                        <div class="admin-data-item">
+                            <dt>Khung giờ</dt>
+                            <dd>@Model.StartTime.ToString("HH:mm") - @Model.EndTime.ToString("HH:mm")</dd>
+                        </div>
+                        <div class="admin-data-item md:col-span-2">
+                            <dt>Chủ đề</dt>
+                            <dd>@(string.IsNullOrWhiteSpace(Model.Topic) ? "Chưa cập nhật chủ đề." : Model.Topic)</dd>
+                        </div>
+                        <div class="admin-data-item md:col-span-2">
+                            <dt>Link giáo án</dt>
+                            <dd>
+                                @if (string.IsNullOrWhiteSpace(Model.TeachingMaterialUrl))
+                                {
+                                    <text>Chưa gắn giáo án.</text>
+                                }
+                                else
+                                {
+                                    <a href="@Model.TeachingMaterialUrl" target="_blank" rel="noreferrer" class="text-[#3b6722] underline underline-offset-4">@Model.TeachingMaterialUrl</a>
+                                }
+                            </dd>
+                        </div>
+                        <div class="admin-data-item md:col-span-2">
+                            <dt>Media cả lớp</dt>
+                            <dd>@(string.IsNullOrWhiteSpace(Model.ClassMediaUrls) ? "Chưa cập nhật media lớp." : Model.ClassMediaUrls)</dd>
+                        </div>
+                        <div class="admin-data-item md:col-span-2">
+                            <dt>Ghi chú trợ giảng</dt>
+                            <dd>@(string.IsNullOrWhiteSpace(Model.AssistantNote) ? "Chưa có ghi chú vận hành." : Model.AssistantNote)</dd>
+                        </div>
+                    </dl>
+                </div>
+            </div>
+
+            <div class="admin-card">
+                <div class="admin-card-section">
+                    <h2 class="admin-section-title">Điểm danh học viên</h2>
+                    <p class="admin-section-subtitle">Dữ liệu lấy trực tiếp từ bảng <code>Attendances</code> của buổi học này.</p>
+
+                    @if (Model.Attendances.Count == 0)
+                    {
+                        <div class="admin-empty">Buổi học này chưa có bản ghi điểm danh.</div>
+                    }
+                    else
+                    {
+                        <div class="mt-6 overflow-hidden rounded-[8px] border border-[#e3e3de]">
+                            <table class="admin-table min-w-full">
+                                <thead>
+                                    <tr>
+                                        <th>Học viên</th>
+                                        <th>Trạng thái</th>
+                                        <th>AI Process</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var attendance in Model.Attendances)
+                                    {
+                                        <tr>
+                                            <td><strong>@attendance.StudentName</strong></td>
+                                            <td>
+                                                <span class="inline-flex rounded-full px-3 py-2 text-xs font-semibold @(attendance.IsPresent ? "bg-[#edf7e8] text-[#456c3f]" : "bg-[#ffdad6] text-[#ba1a1a]")">
+                                                    @(attendance.IsPresent ? "Có mặt" : "Vắng")
+                                                </span>
+                                            </td>
+                                            <td>@attendance.AiProcessStatus</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <div class="admin-card">
+                <div class="admin-card-section">
+                    <h2 class="admin-section-title">Mượn / trả thiết bị</h2>
+                    <p class="admin-section-subtitle">Lịch sử thiết bị được dùng trong buổi học này, lấy từ bảng <code>EquipmentBorrows</code>.</p>
+
+                    @if (Model.EquipmentBorrows.Count == 0)
+                    {
+                        <div class="admin-empty">Buổi học này chưa có lượt mượn thiết bị nào.</div>
+                    }
+                    else
+                    {
+                        <div class="mt-6 overflow-hidden rounded-[8px] border border-[#e3e3de]">
+                            <table class="admin-table min-w-full">
+                                <thead>
+                                    <tr>
+                                        <th>Thiết bị</th>
+                                        <th>Người mượn</th>
+                                        <th>Thời gian mượn</th>
+                                        <th>Thời gian trả</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var borrow in Model.EquipmentBorrows)
+                                    {
+                                        <tr>
+                                            <td><strong>@borrow.SerialNumber</strong></td>
+                                            <td>@borrow.BorrowerName</td>
+                                            <td>@borrow.BorrowTimeText</td>
+                                            <td>@borrow.ReturnTimeText</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <aside class="space-y-6">
+            <div class="admin-card">
+                <div class="admin-card-section">
+                    <h2 class="admin-section-title">Trạng thái</h2>
+                    <div class="mt-5">
+                        <span class="inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-semibold @Model.StatusBadgeClass">
+                            <span class="h-2 w-2 rounded-full @(Model.StatusLabel == "Hôm nay" ? "bg-[#6a994e]" : Model.StatusLabel == "Sắp tới" ? "bg-[#9b682f]" : "bg-[#73796b]")"></span>
+                            @Model.StatusLabel
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="admin-card">
+                <div class="admin-card-section">
+                    <h2 class="admin-section-title">Liên kết lớp học</h2>
+                    <dl class="mt-5 space-y-4">
+                        <div>
+                            <dt class="admin-label !mb-0">Thời gian lớp</dt>
+                            <dd class="mt-1 text-sm leading-6 text-[#1a1c19]">
+                                @Model.ClassStartDate.ToString("dd/MM/yyyy")
+                                -
+                                @(Model.ClassEndDate?.ToString("dd/MM/yyyy") ?? "Đang mở")
+                            </dd>
+                        </div>
+                        <div>
+                            <dt class="admin-label !mb-0">Điểm danh đã ghi</dt>
+                            <dd class="mt-1 text-[32px] font-semibold leading-10 text-[#1a1c19]">@Model.AttendanceCount</dd>
+                        </div>
+                        <div>
+                            <dt class="admin-label !mb-0">Lượt mượn thiết bị</dt>
+                            <dd class="mt-1 text-[32px] font-semibold leading-10 text-[#1a1c19]">@Model.EquipmentBorrowCount</dd>
+                        </div>
+                    </dl>
+                </div>
+            </div>
+        </aside>
+    </div>
+</section>

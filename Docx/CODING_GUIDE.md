@@ -7,6 +7,12 @@ Nếu gặp các lỗi nhỏ trong lúc làm 1 chức năng gì đó mà bạn c
 Luôn revision để xem mình đã làm đúng chưa, project đang đi đúng hướng không, có sai sót nữa không. chứ không được coding xong là bỏ đó không biết là đúng hay sai.
 # Khi nhận yêu cầu tạo giao diện
 Luôn tạo giao diện đồng nhất với hệ thống từ màu sắc, bố cục,font và đặc biệt là khớp với DB để không lệch schema.
+# Yêu cầu phải đạt được
+Giao diện và cả logic nghiệp vụ phải thân thiện với người dùng, có hướng dẫn rõ ràng không để gặp tình trang người dùng khó sử dụng tính năng nào hay nhập liệu thông tin gì. Mọi thao tác nhanh gọn KHÔNG ĐƯỢC rườm rà phức tạp tốn nhiều thời gian.
+# khi tạo ra code
+Không tạo ra các câu ví dụ như " Admin không nên thao tác trên từng record rời rạc. Màn này gom điểm danh theo từng buổi để kiểm soát tình trạng lớp, phát hiện buổi chưa chốt và mở bảng học viên nhanh hơn" những câu này làm người dùng biết đây là do AI tạo ra. Thay vì những đoạn text như vậy hay thay bằng những text giới thiệu hay hướng dẫn.
+# Trong quá trình làm Project
+Luôn đưa ra những ý tưởng đọc đáo (không nên quá cứng nhắc theo luồng mà tôi đã định sẵn) để tôi có thể thêm vào nhằm tạo ấn tượng, luôn ra soát và nắm rõ hệ thống, để luôn luôn bám sát được nhằm nâng cao tính đồng nhất khi bạn tạo code.
 ## Mục tiêu
 
 Tài liệu này là `rulebook thực thi` để Codex và người triển khai code đúng cấu trúc thư mục mong muốn cho dự án STEM.

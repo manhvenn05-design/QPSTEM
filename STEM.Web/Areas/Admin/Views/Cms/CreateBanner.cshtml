@@ -1,0 +1,71 @@
+@model STEM.Web.Areas.Admin.Models.CreateBannerViewModel
+
+@{
+    ViewData["Title"] = "Thêm banner";
+}
+
+<section class="admin-page">
+    <div class="admin-page-header">
+        <div>
+            <h1 class="admin-page-title">Thêm banner</h1>
+            <p class="admin-page-subtitle">Tải ảnh lên và gắn liên kết nếu cần.</p>
+        </div>
+
+        <div class="admin-actions">
+            <a asp-area="Admin" asp-controller="Cms" asp-action="Index" class="admin-btn-secondary">Quay lại danh sách</a>
+        </div>
+    </div>
+
+    <form method="post" enctype="multipart/form-data" asp-area="Admin" asp-controller="Cms" asp-action="CreateBanner" class="grid gap-6 xl:grid-cols-[1.45fr_0.95fr]">
+        @Html.AntiForgeryToken()
+
+        <div class="space-y-6">
+            <div class="admin-card">
+                <div class="admin-card-section space-y-5">
+                    <div>
+                        <h2 class="admin-section-title">Thông tin banner</h2>
+                        <p class="admin-section-subtitle">Ảnh nên rõ nét để hiển thị tốt trên trang chủ.</p>
+                    </div>
+
+                    <div asp-validation-summary="ModelOnly" class="admin-validation-summary"></div>
+
+                    <div class="grid gap-5">
+                        <div>
+                            <label asp-for="Title" class="admin-label"></label>
+                            <input asp-for="Title" class="admin-input" placeholder="Nhập tiêu đề nếu cần" />
+                            <span asp-validation-for="Title" class="admin-field-validation"></span>
+                        </div>
+
+                        <div>
+                            <label asp-for="ImageFile" class="admin-label"></label>
+                            <input asp-for="ImageFile" type="file" accept=".jpg,.jpeg,.png,.webp" class="admin-input file:mr-4 file:rounded-[8px] file:border-0 file:bg-[#edf7e8] file:px-3 file:py-2 file:text-sm file:font-medium file:text-[#456c3f]" />
+                            <span asp-validation-for="ImageFile" class="admin-field-validation"></span>
+                        </div>
+
+                        <div>
+                            <label asp-for="LinkUrl" class="admin-label"></label>
+                            <input asp-for="LinkUrl" class="admin-input" placeholder="/courses/robotics-starter" />
+                            <span asp-validation-for="LinkUrl" class="admin-field-validation"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <aside class="space-y-6">
+            <div class="admin-card">
+                <div class="admin-card-section space-y-4">
+                    <label class="inline-flex items-center gap-3 text-sm font-medium text-[#1a1c19]">
+                        <input asp-for="IsActive" class="admin-checkbox" />
+                        <span>Đang hiển thị</span>
+                    </label>
+                    <button type="submit" class="admin-btn-primary w-full">Lưu banner</button>
+                </div>
+            </div>
+        </aside>
+    </form>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

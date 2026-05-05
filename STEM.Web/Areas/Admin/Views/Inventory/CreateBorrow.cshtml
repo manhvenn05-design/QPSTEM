@@ -1,0 +1,66 @@
+@model STEM.Web.Areas.Admin.Models.CreateEquipmentBorrowViewModel
+
+@{
+    ViewData["Title"] = "Mượn thiết bị";
+}
+
+<section class="admin-page">
+    <div class="admin-page-header">
+        <div>
+            <h1 class="admin-page-title">Ghi nhận mượn thiết bị</h1>
+            <p class="admin-page-subtitle">Chọn buổi học và người nhận thiết bị.</p>
+        </div>
+        <div class="admin-actions">
+            <a asp-area="Admin" asp-controller="Inventory" asp-action="EquipmentDetails" asp-route-id="@Model.EquipmentId" class="admin-btn-secondary">Quay lại chi tiết</a>
+        </div>
+    </div>
+
+    <form asp-area="Admin" asp-controller="Inventory" asp-action="CreateBorrow" method="post" class="admin-page">
+        @Html.AntiForgeryToken()
+        <input asp-for="EquipmentId" type="hidden" />
+        <input asp-for="EquipmentSerialNumber" type="hidden" />
+        <div asp-validation-summary="ModelOnly" class="admin-alert admin-alert--error"></div>
+
+        <div class="admin-card">
+            <div class="admin-card-section">
+                <div class="admin-field-grid two-col">
+                    <div class="md:col-span-2">
+                        <label class="admin-label">Thiết bị</label>
+                        <input value="@Model.EquipmentSerialNumber" class="admin-input" disabled />
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <label asp-for="SessionId" class="admin-label"></label>
+                        <select asp-for="SessionId" asp-items="Model.SessionOptions" class="admin-select">
+                            <option value="">Chọn buổi học</option>
+                        </select>
+                        <span asp-validation-for="SessionId" class="admin-validation"></span>
+                    </div>
+
+                    <div>
+                        <label asp-for="BorrowerId" class="admin-label"></label>
+                        <select asp-for="BorrowerId" asp-items="Model.BorrowerOptions" class="admin-select">
+                            <option value="">Chọn người mượn</option>
+                        </select>
+                        <span asp-validation-for="BorrowerId" class="admin-validation"></span>
+                    </div>
+
+                    <div>
+                        <label asp-for="BorrowTime" class="admin-label"></label>
+                        <input asp-for="BorrowTime" class="admin-input" />
+                        <span asp-validation-for="BorrowTime" class="admin-validation"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="admin-actions justify-end">
+            <button type="submit" class="admin-btn-primary min-w-[192px]">Lưu phiếu mượn</button>
+            <a asp-area="Admin" asp-controller="Inventory" asp-action="EquipmentDetails" asp-route-id="@Model.EquipmentId" class="admin-btn-secondary">Hủy</a>
+        </div>
+    </form>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -1,0 +1,80 @@
+@model STEM.Web.Areas.Admin.Models.EditPostViewModel
+
+@{
+    ViewData["Title"] = "Cập nhật bài viết";
+}
+
+<section class="admin-page">
+    <div class="admin-page-header">
+        <div>
+            <h1 class="admin-page-title">Cập nhật bài viết</h1>
+            <p class="admin-page-subtitle">Điều chỉnh nội dung và trạng thái hiển thị.</p>
+        </div>
+
+        <div class="admin-actions">
+            <a asp-area="Admin" asp-controller="Cms" asp-action="PostDetails" asp-route-id="@Model.Id" class="admin-btn-secondary">Quay lại chi tiết</a>
+        </div>
+    </div>
+
+    <form method="post" asp-area="Admin" asp-controller="Cms" asp-action="EditPost" class="grid gap-6 xl:grid-cols-[1.55fr_0.9fr]">
+        @Html.AntiForgeryToken()
+        <input asp-for="Id" type="hidden" />
+
+        <div class="space-y-6">
+            <div class="admin-card">
+                <div class="admin-card-section space-y-5">
+                    <div>
+                        <h2 class="admin-section-title">Nội dung bài viết</h2>
+                        <p class="admin-section-subtitle">Các thay đổi sẽ cập nhật ngay sau khi lưu.</p>
+                    </div>
+
+                    <div asp-validation-summary="ModelOnly" class="admin-validation-summary"></div>
+
+                    <div class="grid gap-5">
+                        <div>
+                            <label asp-for="AuthorId" class="admin-label"></label>
+                            <select asp-for="AuthorId" asp-items="Model.AuthorOptions" class="admin-select">
+                                <option value="">Chọn tác giả</option>
+                            </select>
+                            <span asp-validation-for="AuthorId" class="admin-field-validation"></span>
+                        </div>
+
+                        <div>
+                            <label asp-for="Title" class="admin-label"></label>
+                            <input asp-for="Title" class="admin-input" />
+                            <span asp-validation-for="Title" class="admin-field-validation"></span>
+                        </div>
+
+                        <div>
+                            <label asp-for="Slug" class="admin-label"></label>
+                            <input asp-for="Slug" class="admin-input" />
+                            <span asp-validation-for="Slug" class="admin-field-validation"></span>
+                        </div>
+
+                        <div>
+                            <label asp-for="Content" class="admin-label"></label>
+                            <textarea asp-for="Content" rows="14" class="admin-textarea"></textarea>
+                            <span asp-validation-for="Content" class="admin-field-validation"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <aside class="space-y-6">
+            <div class="admin-card">
+                <div class="admin-card-section space-y-4">
+                    <label class="inline-flex items-center gap-3 text-sm font-medium text-[#1a1c19]">
+                        <input asp-for="IsPublished" class="admin-checkbox" />
+                        <span>Hiển thị ngay</span>
+                    </label>
+                    <button type="submit" class="admin-btn-primary w-full">Lưu thay đổi</button>
+                </div>
+            </div>
+        </aside>
+    </form>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

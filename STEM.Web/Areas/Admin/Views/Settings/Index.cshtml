@@ -3,43 +3,75 @@
 }
 
 <section class="admin-page">
-    <div>
-        <h1 class="admin-page-title">Cài đặt hệ thống</h1>
-        <p class="admin-page-subtitle">Trang này hiện là giao diện khung cho cấu hình hệ thống. Vì DB hiện chưa có bảng <code>Settings</code> riêng nên phần này chỉ giữ ở mức shell đồng bộ, không giả lập schema không tồn tại.</p>
+    <div class="admin-page-header">
+        <div>
+            <h1 class="admin-page-title">Cài đặt hệ thống</h1>
+            <p class="admin-page-subtitle">Mở nhanh các khu vực cần rà soát trong phần quản trị.</p>
+        </div>
     </div>
 
     <div class="grid gap-6 xl:grid-cols-3">
-        <div class="admin-card">
-            <div class="admin-card-section">
-                <h2 class="admin-section-title">Phân quyền</h2>
-                <p class="admin-section-subtitle">Khối này sẽ nối sau với quản lý vai trò, quyền admin và điều hướng khu vực nội bộ.</p>
-                <div class="mt-5 space-y-3">
-                    <div class="admin-card-soft px-4 py-3 text-sm text-[#42493d]">Tách quyền quản trị nội dung</div>
-                    <div class="admin-card-soft px-4 py-3 text-sm text-[#42493d]">Kiểm soát quyền kế toán</div>
+        <article class="admin-card">
+            <div class="admin-card-section space-y-4">
+                <div>
+                    <h2 class="admin-section-title">Người dùng và phân quyền</h2>
+                    <p class="admin-section-subtitle">Kiểm tra tài khoản, vai trò và trạng thái hoạt động.</p>
                 </div>
+                <a asp-area="Admin" asp-controller="Users" asp-action="Index" class="admin-btn-secondary w-full">Mở quản lý người dùng</a>
             </div>
-        </div>
+        </article>
 
-        <div class="admin-card">
-            <div class="admin-card-section">
-                <h2 class="admin-section-title">Nội dung hiển thị</h2>
-                <p class="admin-section-subtitle">Khu vực gom các thiết lập banner, bài viết nổi bật và nội dung landing page sau này.</p>
-                <div class="mt-5 space-y-3">
-                    <div class="admin-card-soft px-4 py-3 text-sm text-[#42493d]">Banner mặc định</div>
-                    <div class="admin-card-soft px-4 py-3 text-sm text-[#42493d]">Danh mục bài viết</div>
+        <article class="admin-card">
+            <div class="admin-card-section space-y-4">
+                <div>
+                    <h2 class="admin-section-title">Nội dung website</h2>
+                    <p class="admin-section-subtitle">Cập nhật bài viết và banner hiển thị.</p>
                 </div>
+                <a asp-area="Admin" asp-controller="Cms" asp-action="Index" class="admin-btn-secondary w-full">Mở CMS</a>
             </div>
-        </div>
+        </article>
 
-        <div class="admin-card">
-            <div class="admin-card-section">
-                <h2 class="admin-section-title">Vận hành hệ thống</h2>
-                <p class="admin-section-subtitle">Shell cho các cấu hình như thời hạn phiên đăng nhập, thông báo nội bộ và tích hợp ngoài hệ thống.</p>
-                <div class="mt-5 space-y-3">
-                    <div class="admin-card-soft px-4 py-3 text-sm text-[#42493d]">Cookie / phiên đăng nhập</div>
-                    <div class="admin-card-soft px-4 py-3 text-sm text-[#42493d]">Thông báo quản trị</div>
+        <article class="admin-card">
+            <div class="admin-card-section space-y-4">
+                <div>
+                    <h2 class="admin-section-title">Tài chính</h2>
+                    <p class="admin-section-subtitle">Theo dõi hóa đơn, công nợ và lịch sử thanh toán.</p>
+                </div>
+                <a asp-area="Admin" asp-controller="Finance" asp-action="Index" class="admin-btn-secondary w-full">Mở tài chính</a>
+            </div>
+        </article>
+
+        <article class="admin-card">
+            <div class="admin-card-section space-y-4">
+                <div>
+                    <h2 class="admin-section-title">Kho thiết bị</h2>
+                    <p class="admin-section-subtitle">Kiểm tra danh mục, thiết bị và bảo trì.</p>
+                </div>
+                <a asp-area="Admin" asp-controller="Inventory" asp-action="Index" class="admin-btn-secondary w-full">Mở kho thiết bị</a>
+            </div>
+        </article>
+
+        <article class="admin-card">
+            <div class="admin-card-section space-y-4">
+                <div>
+                    <h2 class="admin-section-title">Lớp học và buổi học</h2>
+                    <p class="admin-section-subtitle">Rà soát lịch học, giáo viên và tiến độ vận hành.</p>
+                </div>
+                <div class="grid gap-3">
+                    <a asp-area="Admin" asp-controller="Classes" asp-action="Index" class="admin-btn-secondary w-full">Mở lớp học</a>
+                    <a asp-area="Admin" asp-controller="Sessions" asp-action="Index" class="admin-btn-secondary w-full">Mở buổi học</a>
                 </div>
             </div>
-        </div>
+        </article>
+
+        <article class="admin-card">
+            <div class="admin-card-section space-y-4">
+                <div>
+                    <h2 class="admin-section-title">Điểm danh</h2>
+                    <p class="admin-section-subtitle">Kiểm tra sổ điểm danh và trạng thái ghi nhận của từng buổi.</p>
+                </div>
+                <a asp-area="Admin" asp-controller="Attendances" asp-action="Index" class="admin-btn-secondary w-full">Mở điểm danh</a>
+            </div>
+        </article>
     </div>
 </section>

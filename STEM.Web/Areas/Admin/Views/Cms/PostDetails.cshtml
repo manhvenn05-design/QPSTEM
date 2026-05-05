@@ -1,0 +1,53 @@
+@model STEM.Web.Areas.Admin.Models.PostDetailsViewModel
+
+@{
+    ViewData["Title"] = "Chi tiết bài viết";
+}
+
+<section class="admin-page">
+    <div class="admin-page-header">
+        <div>
+            <h1 class="admin-page-title">Chi tiết bài viết</h1>
+            <p class="admin-page-subtitle">Xem lại nội dung và trạng thái hiển thị.</p>
+        </div>
+
+        <div class="admin-actions">
+            <a asp-area="Admin" asp-controller="Cms" asp-action="EditPost" asp-route-id="@Model.Id" class="admin-btn-primary">Cập nhật</a>
+        </div>
+    </div>
+
+    <div class="grid gap-6 xl:grid-cols-[1.2fr_0.85fr]">
+        <div class="admin-card">
+            <div class="admin-card-section space-y-5">
+                <div class="flex items-start justify-between gap-4">
+                    <div>
+                        <h2 class="admin-section-title">@Model.Title</h2>
+                        <p class="admin-section-subtitle">@Model.Slug</p>
+                    </div>
+                    <span class="inline-flex rounded-full px-3 py-2 text-xs font-semibold @Model.StatusBadgeClass">@Model.StatusLabel</span>
+                </div>
+
+                <div>
+                    <dt class="admin-detail-label">Tác giả</dt>
+                    <dd class="admin-detail-value">@Model.AuthorName</dd>
+                </div>
+
+                <div>
+                    <dt class="admin-detail-label">Nội dung</dt>
+                    <div class="admin-card-soft mt-3 whitespace-pre-wrap p-5 text-sm leading-7 text-[#42493d]">@Model.Content</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="admin-card">
+            <div class="admin-card-section space-y-4">
+                <h2 class="admin-section-title">Thao tác</h2>
+                <a asp-area="Admin" asp-controller="Cms" asp-action="EditPost" asp-route-id="@Model.Id" class="admin-btn-primary w-full">Sửa bài viết</a>
+                <form asp-area="Admin" asp-controller="Cms" asp-action="DeletePost" asp-route-id="@Model.Id" method="post" data-confirm-title="Xóa bài viết" data-confirm-message="Xóa bài viết này? Hành động này không thể hoàn tác." data-confirm-submit-text="Xóa bài viết">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="admin-btn-danger w-full">Xóa bài viết</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</section>

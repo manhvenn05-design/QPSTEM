@@ -1,0 +1,106 @@
+@model STEM.Web.Areas.Admin.Models.InvoiceDetailsViewModel
+
+@{
+    ViewData["Title"] = "Chi tiết hóa đơn";
+}
+
+<section class="admin-page">
+    <div class="admin-page-header">
+        <div>
+            <h1 class="admin-page-title">Chi tiết hóa đơn</h1>
+            <p class="admin-page-subtitle">Theo dõi công nợ và các khoản đã thu.</p>
+        </div>
+
+        <div class="admin-actions">
+            <a asp-area="Admin" asp-controller="Finance" asp-action="CreatePayment" asp-route-invoiceId="@Model.Id" class="admin-btn-secondary">Ghi nhận thanh toán</a>
+            <a asp-area="Admin" asp-controller="Finance" asp-action="EditInvoice" asp-route-id="@Model.Id" class="admin-btn-primary">Cập nhật</a>
+        </div>
+    </div>
+
+    <div class="grid gap-6 xl:grid-cols-[1.2fr_1fr]">
+        <div class="admin-card">
+            <div class="admin-card-section space-y-5">
+                <div class="flex items-start justify-between gap-4">
+                    <div>
+                        <h2 class="admin-section-title">@Model.InvoiceNo</h2>
+                        <p class="admin-section-subtitle">@Model.ClassCode</p>
+                    </div>
+                    <span class="inline-flex rounded-full px-3 py-2 text-xs font-semibold @Model.StatusBadgeClass">@Model.StatusLabel</span>
+                </div>
+
+                <dl class="grid gap-5 md:grid-cols-2">
+                    <div>
+                        <dt class="admin-detail-label">Học viên</dt>
+                        <dd class="admin-detail-value">@Model.StudentName</dd>
+                        <p class="admin-detail-subvalue">@Model.StudentUsername</p>
+                    </div>
+                    <div>
+                        <dt class="admin-detail-label">Email</dt>
+                        <dd class="admin-detail-value">@(string.IsNullOrWhiteSpace(Model.StudentEmail) ? "Chưa cập nhật" : Model.StudentEmail)</dd>
+                    </div>
+                    <div>
+                        <dt class="admin-detail-label">Tổng tiền</dt>
+                        <dd class="admin-detail-value">@Model.FinalAmountText</dd>
+                    </div>
+                    <div>
+                        <dt class="admin-detail-label">Đã thu</dt>
+                        <dd class="admin-detail-value">@Model.PaidAmountText</dd>
+                    </div>
+                    <div class="md:col-span-2">
+                        <dt class="admin-detail-label">Còn lại</dt>
+                        <dd class="admin-detail-value">@Model.DueAmountText</dd>
+                    </div>
+                </dl>
+            </div>
+        </div>
+
+        <div class="admin-card overflow-hidden">
+            <div class="admin-card-section">
+                <div class="flex items-center justify-between gap-4">
+                    <div>
+                        <h2 class="admin-section-title">Lịch sử thanh toán</h2>
+                        <p class="admin-section-subtitle">Các khoản thu đã lưu cho hóa đơn này.</p>
+                    </div>
+                    <a asp-area="Admin" asp-controller="Finance" asp-action="CreatePayment" asp-route-invoiceId="@Model.Id" class="admin-btn-secondary !h-10">Thêm</a>
+                </div>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="admin-table min-w-full">
+                    <thead>
+                        <tr>
+                            <th>Số tiền</th>
+                            <th>Phương thức</th>
+                            <th>Thời gian</th>
+                            <th class="text-right">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.Payments.Count == 0)
+                        {
+                            <tr>
+                                <td colspan="4" class="admin-empty">Chưa có thanh toán nào.</td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var payment in Model.Payments)
+                            {
+                                <tr>
+                                    <td><strong>@payment.AmountText</strong></td>
+                                    <td>@payment.PaymentMethod</td>
+                                    <td>@payment.TransDateText</td>
+                                    <td>
+                                        <div class="flex justify-end gap-2">
+                                            <a asp-area="Admin" asp-controller="Finance" asp-action="PaymentDetails" asp-route-id="@payment.Id" class="admin-btn-secondary !h-10">Chi tiết</a>
+                                            <a asp-area="Admin" asp-controller="Finance" asp-action="EditPayment" asp-route-id="@payment.Id" class="admin-btn-secondary !h-10">Sửa</a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</section>

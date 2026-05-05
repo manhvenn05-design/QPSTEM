@@ -1,0 +1,45 @@
+@model STEM.Web.Areas.Admin.Models.BannerDetailsViewModel
+
+@{
+    ViewData["Title"] = "Chi tiết banner";
+}
+
+<section class="admin-page">
+    <div class="admin-page-header">
+        <div>
+            <h1 class="admin-page-title">Chi tiết banner</h1>
+            <p class="admin-page-subtitle">Kiểm tra ảnh, liên kết và trạng thái hiển thị.</p>
+        </div>
+
+        <div class="admin-actions">
+            <a asp-area="Admin" asp-controller="Cms" asp-action="EditBanner" asp-route-id="@Model.Id" class="admin-btn-primary">Cập nhật</a>
+        </div>
+    </div>
+
+    <div class="grid gap-6 xl:grid-cols-[1.2fr_0.85fr]">
+        <div class="admin-card">
+            <div class="admin-card-section space-y-5">
+                <img src="@Model.ImageUrl" alt="@Model.Title" class="h-64 w-full rounded-[12px] border border-[#e3e3de] object-cover" />
+
+                <div class="flex items-start justify-between gap-4">
+                    <div>
+                        <h2 class="admin-section-title">@(string.IsNullOrWhiteSpace(Model.Title) ? "Banner không tiêu đề" : Model.Title)</h2>
+                        <p class="admin-section-subtitle">@(string.IsNullOrWhiteSpace(Model.LinkUrl) ? "Chưa gắn liên kết" : Model.LinkUrl)</p>
+                    </div>
+                    <span class="inline-flex rounded-full px-3 py-2 text-xs font-semibold @Model.StatusBadgeClass">@Model.StatusLabel</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="admin-card">
+            <div class="admin-card-section space-y-4">
+                <h2 class="admin-section-title">Thao tác</h2>
+                <a asp-area="Admin" asp-controller="Cms" asp-action="EditBanner" asp-route-id="@Model.Id" class="admin-btn-primary w-full">Sửa banner</a>
+                <form asp-area="Admin" asp-controller="Cms" asp-action="DeleteBanner" asp-route-id="@Model.Id" method="post" data-confirm-title="Xóa banner" data-confirm-message="Xóa banner này? Hành động này không thể hoàn tác." data-confirm-submit-text="Xóa banner">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="admin-btn-danger w-full">Xóa banner</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</section>

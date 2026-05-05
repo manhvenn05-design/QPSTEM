@@ -35,13 +35,13 @@
         }
 
         .material-symbols-outlined {
-            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
         }
 
         html, body {
             background: var(--admin-bg);
             color: var(--admin-text);
-            font-family: 'Inter', sans-serif;
+            font-family: "Inter", sans-serif;
         }
 
         .admin-shell {
@@ -69,23 +69,6 @@
             height: 52px;
             justify-content: center;
             width: 52px;
-        }
-
-        .admin-logo-wordmark {
-            color: var(--admin-primary);
-            font-size: 2rem;
-            font-weight: 700;
-            letter-spacing: -0.04em;
-            line-height: 1;
-        }
-
-        .admin-logo-subtitle {
-            color: #8b8f85;
-            font-size: 12px;
-            font-weight: 700;
-            letter-spacing: 0.14em;
-            line-height: 16px;
-            margin-top: 4px;
         }
 
         .admin-nav-link {
@@ -343,7 +326,7 @@
             border-radius: 8px;
             color: var(--admin-primary-strong);
             cursor: pointer;
-            font-family: 'Inter', sans-serif;
+            font-family: "Inter", sans-serif;
             font-size: 14px;
             font-weight: 600;
             margin-right: 12px;
@@ -360,6 +343,18 @@
             margin-bottom: 8px;
         }
 
+        .admin-checkbox {
+            border-color: var(--admin-border-strong);
+            border-radius: 4px;
+            color: var(--admin-primary);
+            height: 18px;
+            width: 18px;
+        }
+
+        .admin-checkbox:focus {
+            --tw-ring-color: rgba(106, 153, 78, 0.16);
+        }
+
         .admin-hint,
         .admin-validation {
             font-size: 14px;
@@ -373,6 +368,29 @@
 
         .admin-validation {
             color: var(--admin-danger);
+        }
+
+        .admin-field-validation {
+            color: var(--admin-danger);
+            display: block;
+            font-size: 13px;
+            line-height: 18px;
+            margin-top: 8px;
+        }
+
+        .admin-validation-summary {
+            background: #fff4f3;
+            border: 1px solid #f0c9c7;
+            border-radius: 8px;
+            color: #b54740;
+            font-size: 14px;
+            line-height: 20px;
+            padding: 16px;
+        }
+
+        .admin-validation-summary ul {
+            margin: 0;
+            padding-left: 20px;
         }
 
         .admin-field-grid {
@@ -592,6 +610,28 @@
             padding: 14px 16px;
         }
 
+        .admin-detail-label {
+            color: var(--admin-text-soft);
+            font-size: 13px;
+            font-weight: 500;
+            line-height: 18px;
+        }
+
+        .admin-detail-value {
+            color: var(--admin-text);
+            font-size: 15px;
+            font-weight: 600;
+            line-height: 22px;
+            margin-top: 6px;
+        }
+
+        .admin-detail-subvalue {
+            color: var(--admin-text-soft);
+            font-size: 13px;
+            line-height: 18px;
+            margin-top: 4px;
+        }
+
         .admin-menu-button {
             align-items: center;
             border: 1px solid var(--admin-border);
@@ -606,6 +646,36 @@
         .admin-menu-button:hover {
             border-color: var(--admin-primary);
             color: var(--admin-primary-strong);
+        }
+
+        .admin-icon-button {
+            align-items: center;
+            border: 1px solid var(--admin-border);
+            border-radius: 9999px;
+            color: var(--admin-text-soft);
+            display: inline-flex;
+            height: 40px;
+            justify-content: center;
+            position: relative;
+            transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+            width: 40px;
+        }
+
+        .admin-icon-button:hover {
+            background: var(--admin-surface-soft);
+            border-color: var(--admin-primary);
+            color: var(--admin-primary-strong);
+        }
+
+        .admin-badge-dot {
+            background: var(--admin-danger);
+            border: 2px solid #fff;
+            border-radius: 9999px;
+            height: 10px;
+            position: absolute;
+            right: 7px;
+            top: 7px;
+            width: 10px;
         }
 
         .admin-menu-item {
@@ -662,6 +732,60 @@
             padding: 16px;
         }
 
+        .admin-popover {
+            background: var(--admin-surface);
+            border: 1px solid var(--admin-border);
+            border-radius: 12px;
+            box-shadow: var(--admin-shadow);
+            min-width: 280px;
+            overflow: hidden;
+        }
+
+        .admin-popover-header {
+            border-bottom: 1px solid var(--admin-border);
+            padding: 16px 18px;
+        }
+
+        .admin-popover-body {
+            padding: 12px;
+        }
+
+        .admin-popover-item {
+            align-items: flex-start;
+            border-radius: 8px;
+            color: var(--admin-text-muted);
+            display: flex;
+            gap: 12px;
+            padding: 12px;
+            transition: background-color 0.2s ease, color 0.2s ease;
+        }
+
+        .admin-popover-item:hover {
+            background: var(--admin-primary-soft);
+            color: var(--admin-primary-strong);
+        }
+
+        .admin-profile-trigger {
+            align-items: center;
+            border-radius: 10px;
+            display: flex;
+            gap: 12px;
+            padding: 8px;
+            transition: background-color 0.2s ease;
+            width: 100%;
+        }
+
+        .admin-profile-trigger:hover {
+            background: var(--admin-surface-soft);
+        }
+
+        .admin-profile-summary {
+            color: var(--admin-text-soft);
+            font-size: 13px;
+            line-height: 18px;
+            margin-top: 2px;
+        }
+
         .admin-pagination {
             display: flex;
             gap: 8px;
@@ -703,6 +827,7 @@
         var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
         var currentUserIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
         var currentUserId = int.TryParse(currentUserIdClaim, out var parsedUserId) ? parsedUserId : (int?)null;
+        var today = DateOnly.FromDateTime(DateTime.Today);
         var currentAdminProfile = currentUserId.HasValue
             ? await DbContext.Users.AsNoTracking()
                 .Where(x => x.Id == currentUserId.Value)
@@ -711,6 +836,10 @@
             : null;
         var currentAdminName = currentAdminProfile?.FullName ?? User.FindFirstValue(ClaimTypes.GivenName) ?? User.Identity?.Name ?? "Quản trị viên";
         var currentAdminAvatarUrl = currentAdminProfile?.AvatarUrl;
+        var todaySessionCount = await DbContext.Sessions.AsNoTracking().CountAsync(x => x.Date == today);
+        var openMaintenanceCount = await DbContext.MaintenanceLogs.AsNoTracking().CountAsync(x => x.Status == 1 || x.Status == 2);
+        var unpaidInvoiceCount = await DbContext.Invoices.AsNoTracking().CountAsync(x => !x.Payments.Any() || x.Payments.Sum(p => (decimal?)p.Amount) < x.FinalAmount);
+        var notificationCount = todaySessionCount + openMaintenanceCount + unpaidInvoiceCount;
         string NavClass(string controller) => currentController == controller ? "admin-nav-link is-active" : "admin-nav-link";
     }
 
@@ -719,8 +848,6 @@
             <div class="admin-logo">
                 <div class="admin-logo-mark">
                     <span class="material-symbols-outlined text-[24px]">school</span>
-                </div>
-                <div>
                 </div>
             </div>
         </div>
@@ -771,22 +898,51 @@
         </nav>
 
         <div class="mt-auto border-t border-[#e3e3de] px-4 pt-6">
-            <div class="flex items-center gap-3 px-2">
-                @if (!string.IsNullOrWhiteSpace(currentAdminAvatarUrl))
-                {
-                    <img alt="@currentAdminName" class="h-10 w-10 rounded-full border border-[#c2c9b9] object-cover" src="@currentAdminAvatarUrl" />
-                }
-                else
-                {
-                    <div class="flex h-10 w-10 items-center justify-center rounded-full border border-[#c2c9b9] bg-[#f2f7f0] text-sm font-semibold text-[#3b6722]">
-                        @currentAdminName.Trim()[0].ToString().ToUpperInvariant()
+            <details class="relative">
+                <summary class="admin-profile-trigger list-none cursor-pointer">
+                    @if (!string.IsNullOrWhiteSpace(currentAdminAvatarUrl))
+                    {
+                        <img alt="@currentAdminName" class="h-10 w-10 rounded-full border border-[#c2c9b9] object-cover" src="@currentAdminAvatarUrl" />
+                    }
+                    else
+                    {
+                        <div class="flex h-10 w-10 items-center justify-center rounded-full border border-[#c2c9b9] bg-[#f2f7f0] text-sm font-semibold text-[#3b6722]">
+                            @currentAdminName.Trim()[0].ToString().ToUpperInvariant()
+                        </div>
+                    }
+                    <div class="min-w-0 flex-1">
+                        <p class="truncate text-sm font-semibold text-[#1a1c19]">@currentAdminName</p>
+                        <p class="admin-profile-summary">Quản trị viên</p>
                     </div>
-                }
-                <div class="min-w-0">
-                    <p class="truncate text-sm font-semibold text-[#1a1c19]">@currentAdminName</p>
-                    <p class="text-xs text-[#73796b]">Quản trị viên</p>
+                    <span class="material-symbols-outlined text-[18px] text-[#73796b]">expand_more</span>
+                </summary>
+
+                <div class="admin-popover absolute bottom-[calc(100%+12px)] left-0 right-0 z-30">
+                    <div class="admin-popover-header">
+                        <p class="text-sm font-semibold text-[#1a1c19]">@currentAdminName</p>
+                        <p class="mt-1 text-xs text-[#73796b]">Tài khoản quản trị</p>
+                    </div>
+                    <div class="admin-popover-body">
+                        @if (currentUserId.HasValue)
+                        {
+                            <a asp-area="Admin" asp-controller="Users" asp-action="Details" asp-route-id="@currentUserId.Value" class="admin-popover-item">
+                                <span class="material-symbols-outlined text-[20px]">badge</span>
+                                <span>
+                                    <span class="block text-sm font-medium text-[#1a1c19]">Thông tin tài khoản</span>
+                                    <span class="mt-1 block text-xs text-[#73796b]">Xem nhanh hồ sơ của bạn</span>
+                                </span>
+                            </a>
+                            <a asp-area="Admin" asp-controller="Users" asp-action="Edit" asp-route-id="@currentUserId.Value" class="admin-popover-item">
+                                <span class="material-symbols-outlined text-[20px]">edit_square</span>
+                                <span>
+                                    <span class="block text-sm font-medium text-[#1a1c19]">Cập nhật hồ sơ</span>
+                                    <span class="mt-1 block text-xs text-[#73796b]">Đổi ảnh, tên hiển thị hoặc mật khẩu</span>
+                                </span>
+                            </a>
+                        }
+                    </div>
                 </div>
-            </div>
+            </details>
         </div>
     </aside>
 
@@ -798,16 +954,85 @@
                 <span class="font-semibold text-[#3b6722]">@ViewData["Title"]</span>
             </div>
 
-            <div class="flex items-center gap-5">
-                <button type="button" class="text-[#73796b] transition hover:text-[#3b6722]" title="Thông báo">
-                    <span class="material-symbols-outlined text-[22px]">notifications</span>
-                </button>
-                <button type="button" class="text-[#73796b] transition hover:text-[#3b6722]" title="Trợ giúp">
-                    <span class="material-symbols-outlined text-[22px]">help</span>
-                </button>
-                <form asp-area="" asp-controller="Account" asp-action="Logout" method="post">
-                    <button type="submit" class="text-[#73796b] transition hover:text-[#ba1a1a]" title="Đăng xuất">
-                        <span class="material-symbols-outlined text-[22px]">logout</span>
+            <div class="flex items-center gap-3">
+                <details class="relative">
+                    <summary class="admin-icon-button list-none cursor-pointer" title="Thông báo">
+                        <span class="material-symbols-outlined text-[20px]">notifications</span>
+                        @if (notificationCount > 0)
+                        {
+                            <span class="admin-badge-dot"></span>
+                        }
+                    </summary>
+                    <div class="admin-popover absolute right-0 top-[calc(100%+12px)] z-30">
+                        <div class="admin-popover-header">
+                            <p class="text-sm font-semibold text-[#1a1c19]">Thông báo nhanh</p>
+                            <p class="mt-1 text-xs text-[#73796b]">Các mục cần kiểm tra trong ngày.</p>
+                        </div>
+                        <div class="admin-popover-body">
+                            <a asp-area="Admin" asp-controller="Sessions" asp-action="Index" class="admin-popover-item">
+                                <span class="material-symbols-outlined text-[20px]">event</span>
+                                <span>
+                                    <span class="block text-sm font-medium text-[#1a1c19]">@todaySessionCount buổi học trong ngày</span>
+                                    <span class="mt-1 block text-xs text-[#73796b]">Mở lịch buổi học</span>
+                                </span>
+                            </a>
+                            <a asp-area="Admin" asp-controller="Inventory" asp-action="Index" class="admin-popover-item">
+                                <span class="material-symbols-outlined text-[20px]">construction</span>
+                                <span>
+                                    <span class="block text-sm font-medium text-[#1a1c19]">@openMaintenanceCount thiết bị đang xử lý</span>
+                                    <span class="mt-1 block text-xs text-[#73796b]">Mở kho thiết bị</span>
+                                </span>
+                            </a>
+                            <a asp-area="Admin" asp-controller="Finance" asp-action="Index" asp-route-filter="unpaid" class="admin-popover-item">
+                                <span class="material-symbols-outlined text-[20px]">receipt_long</span>
+                                <span>
+                                    <span class="block text-sm font-medium text-[#1a1c19]">@unpaidInvoiceCount hóa đơn cần theo dõi</span>
+                                    <span class="mt-1 block text-xs text-[#73796b]">Mở danh sách công nợ</span>
+                                </span>
+                            </a>
+                        </div>
+                    </div>
+                </details>
+
+                <details class="relative">
+                    <summary class="admin-icon-button list-none cursor-pointer" title="Trợ giúp">
+                        <span class="material-symbols-outlined text-[20px]">help</span>
+                    </summary>
+                    <div class="admin-popover absolute right-0 top-[calc(100%+12px)] z-30">
+                        <div class="admin-popover-header">
+                            <p class="text-sm font-semibold text-[#1a1c19]">Trợ giúp nhanh</p>
+                            <p class="mt-1 text-xs text-[#73796b]">Mở nhanh các khu vực thường dùng.</p>
+                        </div>
+                        <div class="admin-popover-body">
+                            <a asp-area="Admin" asp-controller="Users" asp-action="Index" class="admin-popover-item">
+                                <span class="material-symbols-outlined text-[20px]">group</span>
+                                <span>
+                                    <span class="block text-sm font-medium text-[#1a1c19]">Người dùng</span>
+                                    <span class="mt-1 block text-xs text-[#73796b]">Tài khoản, vai trò và trạng thái</span>
+                                </span>
+                            </a>
+                            <a asp-area="Admin" asp-controller="Classes" asp-action="Index" class="admin-popover-item">
+                                <span class="material-symbols-outlined text-[20px]">class</span>
+                                <span>
+                                    <span class="block text-sm font-medium text-[#1a1c19]">Lớp học</span>
+                                    <span class="mt-1 block text-xs text-[#73796b]">Lịch khai giảng và giáo viên</span>
+                                </span>
+                            </a>
+                            <a asp-area="Admin" asp-controller="Settings" asp-action="Index" class="admin-popover-item">
+                                <span class="material-symbols-outlined text-[20px]">settings</span>
+                                <span>
+                                    <span class="block text-sm font-medium text-[#1a1c19]">Cài đặt</span>
+                                    <span class="mt-1 block text-xs text-[#73796b]">Đi đến trung tâm điều hướng quản trị</span>
+                                </span>
+                            </a>
+                        </div>
+                    </div>
+                </details>
+
+                <form asp-area="" asp-controller="Account" asp-action="Logout" method="post" data-confirm-title="Đăng xuất" data-confirm-message="Bạn có muốn đăng xuất khỏi khu vực quản trị không?" data-confirm-submit-text="Đăng xuất">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="admin-icon-button" title="Đăng xuất">
+                        <span class="material-symbols-outlined text-[20px]">logout</span>
                     </button>
                 </form>
             </div>
@@ -822,8 +1047,8 @@
         <div class="admin-modal-panel w-full max-w-md p-6">
             <div class="flex items-start justify-between gap-4">
                 <div>
-                    <h2 id="admin-confirm-title" class="admin-section-title">Xác nhận xóa</h2>
-                    <p id="admin-confirm-message" class="admin-section-subtitle !mt-2">Bạn có chắc muốn thực hiện hành động này?</p>
+                    <h2 id="admin-confirm-title" class="admin-section-title">Xác nhận</h2>
+                    <p id="admin-confirm-message" class="admin-section-subtitle !mt-2">Bạn có chắc muốn tiếp tục không?</p>
                 </div>
                 <button id="admin-confirm-close" type="button" class="admin-btn-secondary !h-10 !w-10 !px-0">
                     <span class="material-symbols-outlined text-[18px]">close</span>
@@ -832,7 +1057,7 @@
 
             <div class="mt-6 flex justify-end gap-3">
                 <button id="admin-confirm-cancel" type="button" class="admin-btn-secondary">Hủy</button>
-                <button id="admin-confirm-submit" type="button" class="admin-btn-danger">Xóa bản ghi</button>
+                <button id="admin-confirm-submit" type="button" class="admin-btn-danger">Xác nhận</button>
             </div>
         </div>
     </div>
@@ -871,9 +1096,9 @@
 
                 event.preventDefault();
                 pendingForm = form;
-                title.textContent = form.getAttribute("data-confirm-title") || "Xác nhận xóa";
-                message.textContent = form.getAttribute("data-confirm-message") || "Bạn có chắc muốn thực hiện hành động này?";
-                submitButton.textContent = form.getAttribute("data-confirm-submit-text") || "Xóa bản ghi";
+                title.textContent = form.getAttribute("data-confirm-title") || "Xác nhận";
+                message.textContent = form.getAttribute("data-confirm-message") || "Bạn có chắc muốn tiếp tục không?";
+                submitButton.textContent = form.getAttribute("data-confirm-submit-text") || "Xác nhận";
                 modal.classList.remove("hidden");
                 modal.classList.add("flex");
             });

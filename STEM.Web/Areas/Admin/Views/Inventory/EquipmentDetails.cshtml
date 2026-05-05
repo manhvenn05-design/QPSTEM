@@ -1,0 +1,201 @@
+@model STEM.Web.Areas.Admin.Models.EquipmentDetailsViewModel
+
+@{
+    ViewData["Title"] = "Chi tiết thiết bị";
+}
+
+<section class="admin-page">
+    <div class="admin-page-header">
+        <div>
+            <h1 class="admin-page-title">Chi tiết thiết bị</h1>
+            <p class="admin-page-subtitle">Xem lịch sử mượn trả và bảo trì của thiết bị.</p>
+        </div>
+        <div class="admin-actions">
+            <a asp-area="Admin" asp-controller="Inventory" asp-action="EditEquipment" asp-route-id="@Model.Id" class="admin-btn-primary">Cập nhật</a>
+            <a asp-area="Admin" asp-controller="Inventory" asp-action="Index" class="admin-btn-secondary">Quay lại</a>
+        </div>
+    </div>
+
+    @if (TempData["SuccessMessage"] is string successMessage)
+    {
+        <div class="admin-alert admin-alert--success">@successMessage</div>
+    }
+
+    @if (TempData["ErrorMessage"] is string errorMessage)
+    {
+        <div class="admin-alert admin-alert--error">@errorMessage</div>
+    }
+
+    <div class="admin-grid-two">
+        <div class="space-y-6">
+            <div class="admin-card">
+                <div class="admin-card-section">
+                    <h2 class="admin-section-title">Thông tin thiết bị</h2>
+                    <div class="mt-6 flex items-start gap-5">
+                        @if (!string.IsNullOrWhiteSpace(Model.ImageUrl))
+                        {
+                            <img src="@Model.ImageUrl" alt="@Model.SerialNumber" class="h-24 w-24 rounded-[12px] border border-[#e3e3de] object-cover" />
+                        }
+                        else
+                        {
+                            <div class="flex h-24 w-24 items-center justify-center rounded-[12px] border border-[#e3e3de] bg-[#f2f7f0] text-2xl font-semibold text-[#3b6722]">
+                                @Model.SerialNumber.Trim()[0].ToString().ToUpperInvariant()
+                            </div>
+                        }
+
+                        <dl class="admin-data-grid two-col flex-1">
+                            <div class="admin-data-item">
+                                <dt>Mã thiết bị</dt>
+                                <dd>@Model.SerialNumber</dd>
+                            </div>
+                            <div class="admin-data-item">
+                                <dt>Danh mục</dt>
+                                <dd>@Model.CategoryName</dd>
+                            </div>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+
+            <div class="admin-card overflow-hidden">
+                <div class="admin-card-section">
+                    <h2 class="admin-section-title">Lịch sử mượn trả</h2>
+                    <p class="admin-section-subtitle">Theo dõi các buổi học đã sử dụng thiết bị này.</p>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="admin-table min-w-full">
+                        <thead>
+                            <tr>
+                                <th>Buổi học</th>
+                                <th>Người mượn</th>
+                                <th>Thời gian mượn</th>
+                                <th>Thời gian trả</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Model.BorrowHistory.Count == 0)
+                            {
+                                <tr>
+                                    <td colspan="4" class="admin-empty">Thiết bị này chưa có phiếu mượn nào.</td>
+                                </tr>
+                            }
+                            else
+                            {
+                                @foreach (var item in Model.BorrowHistory)
+                                {
+                                    <tr>
+                                        <td><strong>@item.SessionLabel</strong></td>
+                                        <td>@item.BorrowerName</td>
+                                        <td>@item.BorrowTimeText</td>
+                                        <td>@item.ReturnTimeText</td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="admin-card overflow-hidden">
+                <div class="admin-card-section">
+                    <h2 class="admin-section-title">Nhật ký bảo trì</h2>
+                    <p class="admin-section-subtitle">Các sự cố đã ghi nhận cho thiết bị này.</p>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="admin-table min-w-full">
+                        <thead>
+                            <tr>
+                                <th>Người báo</th>
+                                <th>Sự cố</th>
+                                <th>Trạng thái</th>
+                                <th class="text-right">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Model.MaintenanceLogs.Count == 0)
+                            {
+                                <tr>
+                                    <td colspan="4" class="admin-empty">Thiết bị này chưa có nhật ký bảo trì.</td>
+                                </tr>
+                            }
+                            else
+                            {
+                                @foreach (var item in Model.MaintenanceLogs)
+                                {
+                                    <tr>
+                                        <td><strong>@item.ReporterName</strong></td>
+                                        <td>@item.Issue</td>
+                                        <td>
+                                            <span class="inline-flex rounded-full px-3 py-2 text-xs font-semibold @item.StatusBadgeClass">@item.StatusLabel</span>
+                                        </td>
+                                        <td>
+                                            <div class="flex justify-end">
+                                                <a asp-area="Admin" asp-controller="Inventory" asp-action="MaintenanceDetails" asp-route-id="@item.Id" class="admin-btn-secondary !h-10">Chi tiết</a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <aside class="space-y-6">
+            <div class="admin-card">
+                <div class="admin-card-section">
+                    <h2 class="admin-section-title">Trạng thái</h2>
+                    <div class="mt-5">
+                        <span class="inline-flex rounded-full px-3 py-2 text-sm font-semibold @Model.StatusBadgeClass">@Model.StatusLabel</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="admin-card">
+                <div class="admin-card-section">
+                    <h2 class="admin-section-title">Mượn / trả thiết bị</h2>
+                    @if (Model.HasActiveBorrow && Model.ActiveBorrow != null)
+                    {
+                        <dl class="mt-5 space-y-4 text-sm text-[#42493d]">
+                            <div>
+                                <dt class="admin-label !mb-0">Đang dùng trong</dt>
+                                <dd class="mt-1">@Model.ActiveBorrow.SessionLabel</dd>
+                            </div>
+                            <div>
+                                <dt class="admin-label !mb-0">Người mượn</dt>
+                                <dd class="mt-1">@Model.ActiveBorrow.BorrowerName</dd>
+                            </div>
+                            <div>
+                                <dt class="admin-label !mb-0">Thời gian mượn</dt>
+                                <dd class="mt-1">@Model.ActiveBorrow.BorrowTimeText</dd>
+                            </div>
+                        </dl>
+                        <form asp-area="Admin" asp-controller="Inventory" asp-action="ReturnBorrow" asp-route-id="@Model.ActiveBorrow.Id" method="post" class="mt-5">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="admin-btn-primary w-full">Xác nhận đã trả</button>
+                        </form>
+                    }
+                    else
+                    {
+                        <p class="mt-5 text-sm text-[#73796b]">Thiết bị đang sẵn sàng cho buổi học mới.</p>
+                        <a asp-area="Admin" asp-controller="Inventory" asp-action="CreateBorrow" asp-route-equipmentId="@Model.Id" class="admin-btn-primary mt-5 w-full">Ghi nhận mượn thiết bị</a>
+                    }
+                </div>
+            </div>
+
+            <div class="admin-card">
+                <div class="admin-card-section">
+                    <h2 class="admin-section-title">Thao tác nhanh</h2>
+                    <div class="mt-5 grid gap-3">
+                        <a asp-area="Admin" asp-controller="Inventory" asp-action="CreateMaintenance" asp-route-equipmentId="@Model.Id" class="admin-btn-secondary w-full">Báo sự cố</a>
+                        <form asp-area="Admin" asp-controller="Inventory" asp-action="DeleteEquipment" asp-route-id="@Model.Id" method="post" data-confirm-title="Xóa thiết bị" data-confirm-message="Xóa thiết bị này? Hành động này không thể hoàn tác." data-confirm-submit-text="Xóa thiết bị">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="admin-btn-secondary w-full">Xóa thiết bị</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </aside>
+    </div>
+</section>

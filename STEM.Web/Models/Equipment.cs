@@ -13,6 +13,8 @@ public partial class Equipment
 
     public byte Status { get; set; }
 
+    public string? ImageUrl { get; set; }
+
     public virtual EquipmentCategory Category { get; set; } = null!;
 
     public virtual ICollection<EquipmentBorrow> EquipmentBorrows { get; set; } = new List<EquipmentBorrow>();

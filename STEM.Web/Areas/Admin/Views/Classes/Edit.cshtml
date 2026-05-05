@@ -1,0 +1,80 @@
+@model STEM.Web.Areas.Admin.Models.EditClassViewModel
+
+@{
+    ViewData["Title"] = "Cập nhật lớp học";
+}
+
+<section class="admin-page">
+    <div class="admin-page-header">
+        <div>
+            <h1 class="admin-page-title">Cập nhật lớp học</h1>
+            <p class="admin-page-subtitle">Chỉnh sửa khóa học, giáo viên phụ trách và thời gian của lớp học đã tạo.</p>
+        </div>
+
+        <div class="admin-actions">
+            <a asp-area="Admin" asp-controller="Classes" asp-action="Details" asp-route-id="@Model.Id" class="admin-btn-secondary">Xem chi tiết</a>
+            <a asp-area="Admin" asp-controller="Classes" asp-action="Index" class="admin-btn-secondary">Quay lại danh sách</a>
+        </div>
+    </div>
+
+    <form asp-area="Admin" asp-controller="Classes" asp-action="Edit" method="post" class="admin-page">
+        @Html.AntiForgeryToken()
+        <input asp-for="Id" type="hidden" />
+        <div asp-validation-summary="ModelOnly" class="admin-alert admin-alert--error"></div>
+
+        <div class="admin-card">
+            <div class="admin-card-section">
+                <div class="mb-6">
+                    <h2 class="admin-section-title">Thông tin lớp học</h2>
+                    <p class="admin-section-subtitle">Các thay đổi ở đây sẽ cập nhật trực tiếp vào bảng <code>Classes</code>.</p>
+                </div>
+
+                <div class="admin-field-grid two-col">
+                    <div>
+                        <label asp-for="CourseId" class="admin-label"></label>
+                        <select asp-for="CourseId" asp-items="Model.CourseOptions" class="admin-select">
+                            <option value="">Chọn khóa học</option>
+                        </select>
+                        <span asp-validation-for="CourseId" class="admin-validation"></span>
+                    </div>
+
+                    <div>
+                        <label asp-for="TeacherId" class="admin-label"></label>
+                        <select asp-for="TeacherId" asp-items="Model.TeacherOptions" class="admin-select">
+                            <option value="">Chọn giáo viên</option>
+                        </select>
+                        <span asp-validation-for="TeacherId" class="admin-validation"></span>
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <label asp-for="ClassCode" class="admin-label"></label>
+                        <input asp-for="ClassCode" class="admin-input uppercase" />
+                        <span asp-validation-for="ClassCode" class="admin-validation"></span>
+                    </div>
+
+                    <div>
+                        <label asp-for="StartDate" class="admin-label"></label>
+                        <input asp-for="StartDate" class="admin-input" />
+                        <span asp-validation-for="StartDate" class="admin-validation"></span>
+                    </div>
+
+                    <div>
+                        <label asp-for="EndDate" class="admin-label"></label>
+                        <input asp-for="EndDate" class="admin-input" />
+                        <p class="admin-hint">Để trống nếu lớp vẫn đang mở.</p>
+                        <span asp-validation-for="EndDate" class="admin-validation"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="admin-actions justify-end">
+            <button type="submit" class="admin-btn-primary min-w-[192px]">Lưu cập nhật</button>
+            <a asp-area="Admin" asp-controller="Classes" asp-action="Index" class="admin-btn-secondary">Hủy</a>
+        </div>
+    </form>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

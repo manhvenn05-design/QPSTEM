@@ -1,0 +1,176 @@
+@model STEM.Web.Areas.Admin.Models.ClassDetailsViewModel
+
+@{
+    ViewData["Title"] = "Chi tiết lớp học";
+}
+
+<section class="admin-page">
+    <div class="admin-page-header">
+        <div>
+            <h1 class="admin-page-title">Chi tiết lớp học</h1>
+            <p class="admin-page-subtitle">Xem đầy đủ thông tin lớp, giáo viên phụ trách, danh sách học viên và các buổi học đã được tạo.</p>
+        </div>
+
+        <div class="admin-actions">
+            <a asp-area="Admin" asp-controller="Classes" asp-action="Edit" asp-route-id="@Model.Id" class="admin-btn-primary">Cập nhật</a>
+            <a asp-area="Admin" asp-controller="Classes" asp-action="Index" class="admin-btn-secondary">Quay lại</a>
+        </div>
+    </div>
+
+    <div class="admin-grid-two">
+        <div class="space-y-6">
+            <div class="admin-card">
+                <div class="admin-card-section">
+                    <h2 class="admin-section-title">Thông tin lớp học</h2>
+
+                    <dl class="admin-data-grid two-col mt-6">
+                        <div class="admin-data-item">
+                            <dt>Mã lớp</dt>
+                            <dd>@Model.ClassCode</dd>
+                        </div>
+                        <div class="admin-data-item">
+                            <dt>Khóa học</dt>
+                            <dd>@Model.CourseName (@Model.CourseCode)</dd>
+                        </div>
+                        <div class="admin-data-item">
+                            <dt>Giáo viên phụ trách</dt>
+                            <dd>@Model.TeacherName</dd>
+                        </div>
+                        <div class="admin-data-item">
+                            <dt>Liên hệ giáo viên</dt>
+                            <dd>@(string.IsNullOrWhiteSpace(Model.TeacherEmail) ? Model.TeacherPhone ?? "Chưa cập nhật" : Model.TeacherEmail)</dd>
+                        </div>
+                        <div class="admin-data-item">
+                            <dt>Ngày bắt đầu</dt>
+                            <dd>@Model.StartDate.ToString("dd/MM/yyyy")</dd>
+                        </div>
+                        <div class="admin-data-item">
+                            <dt>Ngày kết thúc</dt>
+                            <dd>@(Model.EndDate?.ToString("dd/MM/yyyy") ?? "Đang mở")</dd>
+                        </div>
+                    </dl>
+                </div>
+            </div>
+
+            <div class="admin-card">
+                <div class="admin-card-section">
+                    <div class="flex items-center justify-between gap-4">
+                        <div>
+                            <h2 class="admin-section-title">Danh sách học viên</h2>
+                            <p class="admin-section-subtitle">Dữ liệu lấy trực tiếp từ bảng <code>Enrollments</code>.</p>
+                        </div>
+                    </div>
+
+                    @if (Model.Students.Count == 0)
+                    {
+                        <div class="admin-empty">Lớp học này chưa có học viên nào được ghi danh.</div>
+                    }
+                    else
+                    {
+                        <div class="mt-6 overflow-hidden rounded-[8px] border border-[#e3e3de]">
+                            <table class="admin-table min-w-full">
+                                <thead>
+                                    <tr>
+                                        <th>Học viên</th>
+                                        <th>Tên đăng nhập</th>
+                                        <th>Ngày ghi danh</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var student in Model.Students)
+                                    {
+                                        <tr>
+                                            <td><strong>@student.FullName</strong></td>
+                                            <td>@student.Username</td>
+                                            <td>@student.EnrollDateText</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <div class="admin-card">
+                <div class="admin-card-section">
+                    <div class="flex items-center justify-between gap-4">
+                        <div>
+                            <h2 class="admin-section-title">Tiến độ buổi học</h2>
+                            <p class="admin-section-subtitle">Các buổi đã tạo từ bảng <code>Sessions</code> liên quan đến lớp này.</p>
+                        </div>
+                    </div>
+
+                    @if (Model.Sessions.Count == 0)
+                    {
+                        <div class="admin-empty">Lớp học này chưa có buổi học nào được lên lịch.</div>
+                    }
+                    else
+                    {
+                        <div class="mt-6 overflow-hidden rounded-[8px] border border-[#e3e3de]">
+                            <table class="admin-table min-w-full">
+                                <thead>
+                                    <tr>
+                                        <th>Buổi</th>
+                                        <th>Ngày học</th>
+                                        <th>Khung giờ</th>
+                                        <th>Chủ đề</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var session in Model.Sessions)
+                                    {
+                                        <tr>
+                                            <td><strong>Buổi @session.SessionNo</strong></td>
+                                            <td>@session.Date.ToString("dd/MM/yyyy")</td>
+                                            <td>@session.StartTime.ToString("HH:mm") - @session.EndTime.ToString("HH:mm")</td>
+                                            <td>@(string.IsNullOrWhiteSpace(session.Topic) ? "Chưa cập nhật" : session.Topic)</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <aside class="space-y-6">
+            <div class="admin-card">
+                <div class="admin-card-section">
+                    <h2 class="admin-section-title">Trạng thái</h2>
+                    <div class="mt-5">
+                        <span class="inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-semibold @Model.StatusBadgeClass">
+                            <span class="h-2 w-2 rounded-full @(Model.StatusLabel == "Đang mở" ? "bg-[#6a994e]" : Model.StatusLabel == "Sắp khai giảng" ? "bg-[#9b682f]" : "bg-[#73796b]")"></span>
+                            @Model.StatusLabel
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="admin-card">
+                <div class="admin-card-section">
+                    <h2 class="admin-section-title">Tổng quan lớp</h2>
+                    <dl class="mt-5 space-y-4">
+                        <div>
+                            <dt class="admin-label !mb-0">Độ tuổi phù hợp</dt>
+                            <dd class="mt-1 text-[32px] font-semibold leading-10 text-[#1a1c19]">@Model.AgeRangeText</dd>
+                        </div>
+                        <div>
+                            <dt class="admin-label !mb-0">Học phí khóa</dt>
+                            <dd class="mt-1 text-[32px] font-semibold leading-10 text-[#1a1c19]">@Model.PriceText</dd>
+                        </div>
+                        <div>
+                            <dt class="admin-label !mb-0">Tiến độ lịch học</dt>
+                            <dd class="mt-1 text-[32px] font-semibold leading-10 text-[#1a1c19]">@Model.SessionCount / @Model.TotalSessionsText</dd>
+                        </div>
+                        <div>
+                            <dt class="admin-label !mb-0">Sĩ số hiện tại</dt>
+                            <dd class="mt-1 text-[32px] font-semibold leading-10 text-[#1a1c19]">@Model.EnrollmentCount học viên</dd>
+                        </div>
+                    </dl>
+                </div>
+            </div>
+        </aside>
+    </div>
+</section>

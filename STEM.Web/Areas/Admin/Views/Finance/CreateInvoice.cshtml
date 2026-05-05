@@ -1,0 +1,78 @@
+@model STEM.Web.Areas.Admin.Models.CreateInvoiceViewModel
+
+@{
+    ViewData["Title"] = "Tạo hóa đơn";
+}
+
+<section class="admin-page">
+    <div class="admin-page-header">
+        <div>
+            <h1 class="admin-page-title">Tạo hóa đơn</h1>
+            <p class="admin-page-subtitle">Nhập học viên, lớp học và số tiền cần thu.</p>
+        </div>
+
+        <div class="admin-actions">
+            <a asp-area="Admin" asp-controller="Finance" asp-action="Index" class="admin-btn-secondary">Quay lại danh sách</a>
+        </div>
+    </div>
+
+    <form method="post" asp-area="Admin" asp-controller="Finance" asp-action="CreateInvoice" class="grid gap-6 xl:grid-cols-[1.5fr_0.9fr]">
+        @Html.AntiForgeryToken()
+        <div class="space-y-6">
+            <div class="admin-card">
+                <div class="admin-card-section space-y-5">
+                    <div>
+                        <h2 class="admin-section-title">Thông tin hóa đơn</h2>
+                        <p class="admin-section-subtitle">Điền đủ thông tin trước khi lưu.</p>
+                    </div>
+
+                    <div asp-validation-summary="ModelOnly" class="admin-validation-summary"></div>
+
+                    <div class="grid gap-5 md:grid-cols-2">
+                        <div class="md:col-span-2">
+                            <label asp-for="StudentId" class="admin-label"></label>
+                            <select asp-for="StudentId" asp-items="Model.StudentOptions" class="admin-select">
+                                <option value="">Chọn học viên</option>
+                            </select>
+                            <span asp-validation-for="StudentId" class="admin-field-validation"></span>
+                        </div>
+
+                        <div>
+                            <label asp-for="ClassId" class="admin-label"></label>
+                            <select asp-for="ClassId" asp-items="Model.ClassOptions" class="admin-select">
+                                <option value="">Chưa gắn lớp</option>
+                            </select>
+                            <span asp-validation-for="ClassId" class="admin-field-validation"></span>
+                        </div>
+
+                        <div>
+                            <label asp-for="InvoiceNo" class="admin-label"></label>
+                            <input asp-for="InvoiceNo" class="admin-input" placeholder="VD: INV-240601" />
+                            <span asp-validation-for="InvoiceNo" class="admin-field-validation"></span>
+                        </div>
+
+                        <div>
+                            <label asp-for="FinalAmount" class="admin-label"></label>
+                            <input asp-for="FinalAmount" class="admin-input" placeholder="Nhập tổng tiền" />
+                            <span asp-validation-for="FinalAmount" class="admin-field-validation"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <aside class="space-y-6">
+            <div class="admin-card">
+                <div class="admin-card-section space-y-4">
+                    <h2 class="admin-section-title">Lưu hóa đơn</h2>
+                    <p class="admin-section-subtitle">Kiểm tra lại số hóa đơn và số tiền trước khi lưu.</p>
+                    <button type="submit" class="admin-btn-primary w-full">Lưu hóa đơn</button>
+                </div>
+            </div>
+        </aside>
+    </form>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

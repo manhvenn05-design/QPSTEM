@@ -1,0 +1,101 @@
+@model STEM.Web.Areas.Admin.Models.EditSessionViewModel
+
+@{
+    ViewData["Title"] = "Cập nhật buổi học";
+}
+
+<section class="admin-page">
+    <div class="admin-page-header">
+        <div>
+            <h1 class="admin-page-title">Cập nhật buổi học</h1>
+            <p class="admin-page-subtitle">Cập nhật lịch học, chủ đề và tài liệu của buổi học.</p>
+        </div>
+
+        <div class="admin-actions">
+            <a asp-area="Admin" asp-controller="Sessions" asp-action="Details" asp-route-id="@Model.Id" class="admin-btn-secondary">Xem chi tiết</a>
+            <a asp-area="Admin" asp-controller="Sessions" asp-action="Index" class="admin-btn-secondary">Quay lại danh sách</a>
+        </div>
+    </div>
+
+    <form asp-area="Admin" asp-controller="Sessions" asp-action="Edit" method="post" class="admin-page">
+        @Html.AntiForgeryToken()
+        <input asp-for="Id" type="hidden" />
+        <div asp-validation-summary="ModelOnly" class="admin-alert admin-alert--error"></div>
+
+        <div class="admin-card">
+            <div class="admin-card-section">
+                <div class="mb-6">
+                    <h2 class="admin-section-title">Thông tin buổi học</h2>
+                    <p class="admin-section-subtitle">Mọi thay đổi tại đây sẽ cập nhật trực tiếp vào bản ghi hiện có của buổi học.</p>
+                </div>
+
+                <div class="admin-field-grid two-col">
+                    <div class="md:col-span-2">
+                        <label asp-for="ClassId" class="admin-label"></label>
+                        <select asp-for="ClassId" asp-items="Model.ClassOptions" class="admin-select">
+                            <option value="">Chọn lớp học</option>
+                        </select>
+                        <span asp-validation-for="ClassId" class="admin-validation"></span>
+                    </div>
+
+                    <div>
+                        <label asp-for="SessionNo" class="admin-label"></label>
+                        <input asp-for="SessionNo" class="admin-input" />
+                        <span asp-validation-for="SessionNo" class="admin-validation"></span>
+                    </div>
+
+                    <div>
+                        <label asp-for="Date" class="admin-label"></label>
+                        <input asp-for="Date" class="admin-input" />
+                        <span asp-validation-for="Date" class="admin-validation"></span>
+                    </div>
+
+                    <div>
+                        <label asp-for="StartTime" class="admin-label"></label>
+                        <input asp-for="StartTime" class="admin-input" />
+                        <span asp-validation-for="StartTime" class="admin-validation"></span>
+                    </div>
+
+                    <div>
+                        <label asp-for="EndTime" class="admin-label"></label>
+                        <input asp-for="EndTime" class="admin-input" />
+                        <span asp-validation-for="EndTime" class="admin-validation"></span>
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <label asp-for="Topic" class="admin-label"></label>
+                        <input asp-for="Topic" class="admin-input" />
+                        <span asp-validation-for="Topic" class="admin-validation"></span>
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <label asp-for="TeachingMaterialUrl" class="admin-label"></label>
+                        <input asp-for="TeachingMaterialUrl" class="admin-input" />
+                        <span asp-validation-for="TeachingMaterialUrl" class="admin-validation"></span>
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <label asp-for="ClassMediaUrls" class="admin-label"></label>
+                        <textarea asp-for="ClassMediaUrls" class="admin-textarea" rows="4"></textarea>
+                        <span asp-validation-for="ClassMediaUrls" class="admin-validation"></span>
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <label asp-for="AssistantNote" class="admin-label"></label>
+                        <textarea asp-for="AssistantNote" class="admin-textarea" rows="4"></textarea>
+                        <span asp-validation-for="AssistantNote" class="admin-validation"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="admin-actions justify-end">
+            <button type="submit" class="admin-btn-primary min-w-[192px]">Lưu cập nhật</button>
+            <a asp-area="Admin" asp-controller="Sessions" asp-action="Index" class="admin-btn-secondary">Hủy</a>
+        </div>
+    </form>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

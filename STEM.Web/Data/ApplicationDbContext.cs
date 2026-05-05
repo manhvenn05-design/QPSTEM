@@ -146,6 +146,7 @@ public partial class ApplicationDbContext : DbContext
             entity.Property(e => e.SerialNumber)
                 .HasMaxLength(50)
                 .IsUnicode(false);
+            entity.Property(e => e.ImageUrl).HasMaxLength(500);
             entity.Property(e => e.Status).HasDefaultValue((byte)1);
 
             entity.HasOne(d => d.Category).WithMany(p => p.Equipment)
