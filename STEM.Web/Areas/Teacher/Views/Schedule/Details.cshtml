@@ -1,0 +1,126 @@
+@model STEM.Web.Areas.Teacher.Models.TeacherScheduleDetailsViewModel
+
+@{
+    ViewData["Title"] = "Lịch dạy";
+}
+
+<section class="teacher-page">
+    <div class="teacher-page-header">
+        <div>
+            <h1 class="teacher-page-title">@Model.SessionLabel · @Model.ClassCode</h1>
+            <p class="teacher-page-subtitle">@Model.CourseName · @Model.DateText · @Model.TimeRangeText</p>
+        </div>
+
+        <div class="teacher-actions">
+            @if (!string.IsNullOrWhiteSpace(Model.TeachingMaterialUrl))
+            {
+                <a href="@Model.TeachingMaterialUrl" target="_blank" rel="noreferrer" class="teacher-btn-secondary">
+                    <span class="material-symbols-outlined text-[18px]">menu_book</span>
+                    <span>Mở giáo án</span>
+                </a>
+            }
+            <a asp-area="Teacher" asp-controller="Attendances" asp-action="Board" asp-route-sessionId="@Model.SessionId" class="teacher-btn-primary">
+                <span class="material-symbols-outlined text-[18px]">fact_check</span>
+                <span>Điểm danh</span>
+            </a>
+        </div>
+    </div>
+
+    <div class="teacher-panel-grid">
+        <div class="teacher-stack">
+            <div class="teacher-card">
+                <div class="teacher-card-section">
+                    <h2 class="teacher-section-title">Thông tin buổi học</h2>
+                    <div class="teacher-info-grid teacher-info-grid--2 mt-6">
+                        <dl class="teacher-key-value">
+                            <dt>Chủ đề</dt>
+                            <dd>@Model.Topic</dd>
+                        </dl>
+                        <dl class="teacher-key-value">
+                            <dt>Giáo viên phụ trách</dt>
+                            <dd>@Model.TeacherName</dd>
+                        </dl>
+                        <dl class="teacher-key-value">
+                            <dt>Sĩ số lớp</dt>
+                            <dd>@Model.StudentCount học viên</dd>
+                        </dl>
+                        <dl class="teacher-key-value">
+                            <dt>Đã điểm danh</dt>
+                            <dd>@Model.AttendanceCount học viên</dd>
+                        </dl>
+                    </div>
+
+                    @if (!string.IsNullOrWhiteSpace(Model.AssistantNote))
+                    {
+                        <div class="teacher-divider mt-6 pt-6">
+                            <h3 class="text-sm font-semibold text-[#1a1c19]">Ghi chú trợ giảng</h3>
+                            <p class="teacher-list-note mt-3">@Model.AssistantNote</p>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <div class="teacher-card">
+                <div class="teacher-card-section">
+                    <h2 class="teacher-section-title">Danh sách học viên</h2>
+                    <p class="teacher-section-subtitle">Kiểm tra nhanh sĩ số trước khi điểm danh.</p>
+
+                    <div class="teacher-list mt-6">
+                        @foreach (var student in Model.Students)
+                        {
+                            <article class="teacher-data-row">
+                                <div>
+                                    <p class="text-sm font-semibold text-[#1a1c19]">@student.FullName</p>
+                                    <p class="teacher-section-subtitle mt-1">@student.Username</p>
+                                </div>
+                            </article>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="teacher-stack">
+            <div class="teacher-card">
+                <div class="teacher-card-section">
+                    <h2 class="teacher-section-title">Thiết bị gắn với buổi học</h2>
+                    <p class="teacher-section-subtitle">Theo dõi để chuẩn bị hoặc xác nhận trả thiết bị.</p>
+
+                    <div class="teacher-list mt-6">
+                        @if (Model.Equipments.Count == 0)
+                        {
+                            <p class="teacher-empty">Buổi học này chưa có phiếu mượn thiết bị.</p>
+                        }
+                        else
+                        {
+                            @foreach (var item in Model.Equipments)
+                            {
+                                <article class="teacher-data-row">
+                                    <div>
+                                        <p class="text-sm font-semibold text-[#1a1c19]">@item.SerialNumber</p>
+                                        <p class="teacher-section-subtitle mt-1">@item.BorrowerName</p>
+                                        <div class="teacher-meta-row mt-3">
+                                            <span>Mượn: @item.BorrowTimeText</span>
+                                            <span>Trả: @item.ReturnTimeText</span>
+                                        </div>
+                                    </div>
+                                </article>
+                            }
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <div class="teacher-card">
+                <div class="teacher-card-section">
+                    <h2 class="teacher-section-title">Thao tác nhanh</h2>
+                    <div class="teacher-stack mt-6">
+                        <a asp-area="Teacher" asp-controller="Attendances" asp-action="Board" asp-route-sessionId="@Model.SessionId" class="teacher-btn-primary w-full">Mở sổ điểm danh</a>
+                        <a asp-area="Teacher" asp-controller="Equipment" asp-action="Borrow" asp-route-sessionId="@Model.SessionId" class="teacher-btn-secondary w-full">Mượn thiết bị cho buổi này</a>
+                        <a asp-area="Teacher" asp-controller="Schedule" asp-action="Index" class="teacher-btn-secondary w-full">Quay lại lịch dạy</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

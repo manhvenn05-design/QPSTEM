@@ -8,7 +8,7 @@
     <div class="admin-page-header">
         <div>
             <h1 class="admin-page-title">Cập nhật điểm danh</h1>
-            <p class="admin-page-subtitle">Giữ form gọn cho admin: chỉ tập trung vào trạng thái có mặt, ghi chú giáo viên và minh chứng sản phẩm.</p>
+            <p class="admin-page-subtitle">Điều chỉnh trạng thái và ghi chú của học viên.</p>
         </div>
 
         <div class="admin-actions">
@@ -23,25 +23,21 @@
     <form asp-area="Admin" asp-controller="Attendances" asp-action="Edit" method="post" class="admin-page">
         @Html.AntiForgeryToken()
         <input asp-for="Id" type="hidden" />
+        <input asp-for="SessionId" type="hidden" />
+        <input asp-for="StudentId" type="hidden" />
         <div asp-validation-summary="ModelOnly" class="admin-alert admin-alert--error"></div>
 
         <div class="admin-card">
             <div class="admin-card-section">
                 <div class="admin-field-grid two-col">
-                    <div class="md:col-span-2">
-                        <label asp-for="SessionId" class="admin-label"></label>
-                        <select asp-for="SessionId" asp-items="Model.SessionOptions" class="admin-select" id="SessionId">
-                            <option value="">Chọn buổi học</option>
-                        </select>
-                        <span asp-validation-for="SessionId" class="admin-validation"></span>
+                    <div>
+                        <label class="admin-label">Buổi học</label>
+                        <div class="admin-static-field">@Model.SessionSummary</div>
                     </div>
 
-                    <div class="md:col-span-2">
-                        <label asp-for="StudentId" class="admin-label"></label>
-                        <select asp-for="StudentId" asp-items="Model.StudentOptions" class="admin-select" id="StudentId">
-                            <option value="">Chọn học viên thuộc lớp</option>
-                        </select>
-                        <span asp-validation-for="StudentId" class="admin-validation"></span>
+                    <div>
+                        <label class="admin-label">Học viên</label>
+                        <div class="admin-static-field">@Model.StudentSummary</div>
                     </div>
 
                     <div class="md:col-span-2">
@@ -49,22 +45,17 @@
                             <input asp-for="IsPresent" />
                             <span>
                                 <span class="block text-sm font-semibold text-[#1a1c19]">Đánh dấu có mặt</span>
-                                <span class="mt-1 block text-sm text-[#73796b]">Tắt tùy chọn này nếu học viên vắng mặt trong buổi học.</span>
+                                <span class="mt-1 block text-sm text-[#73796b]">Bỏ chọn nếu học viên vắng trong buổi học này.</span>
                             </span>
                         </label>
                     </div>
 
                     <div class="md:col-span-2">
                         <label asp-for="TeacherRawNote" class="admin-label"></label>
-                        <textarea asp-for="TeacherRawNote" class="admin-textarea" rows="4"></textarea>
+                        <textarea asp-for="TeacherRawNote" class="admin-textarea" rows="4" placeholder="Ghi ngắn về tiến độ, thái độ hoặc điều cần lưu ý."></textarea>
                         <span asp-validation-for="TeacherRawNote" class="admin-validation"></span>
                     </div>
 
-                    <div class="md:col-span-2">
-                        <label asp-for="ProductMediaUrls" class="admin-label"></label>
-                        <textarea asp-for="ProductMediaUrls" class="admin-textarea" rows="4"></textarea>
-                        <span asp-validation-for="ProductMediaUrls" class="admin-validation"></span>
-                    </div>
                 </div>
             </div>
         </div>
@@ -73,7 +64,7 @@
             <summary class="admin-card-section cursor-pointer">
                 <div>
                     <h2 class="admin-section-title">Thông tin bổ sung</h2>
-                    <p class="admin-section-subtitle">Mở khi cần cập nhật thêm dữ liệu liên quan.</p>
+                    <p class="admin-section-subtitle">Mở khi cần lưu thêm dữ liệu liên quan.</p>
                 </div>
             </summary>
             <div class="admin-divider"></div>
@@ -108,56 +99,4 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
-    <script>
-        (() => {
-            const sessionSelect = document.getElementById("SessionId");
-            const studentSelect = document.getElementById("StudentId");
-
-            if (!sessionSelect || !studentSelect) {
-                return;
-            }
-
-            const initialStudent = studentSelect.value;
-
-            const renderDefault = (selectedValue = "") => {
-                studentSelect.innerHTML = "";
-                const option = document.createElement("option");
-                option.value = "";
-                option.textContent = "Chọn học viên thuộc lớp";
-                studentSelect.appendChild(option);
-
-                if (selectedValue) {
-                    studentSelect.value = selectedValue;
-                }
-            };
-
-            const loadStudents = async (sessionId, selectedValue = "") => {
-                renderDefault();
-
-                if (!sessionId) {
-                    return;
-                }
-
-                const response = await fetch(`/Admin/Attendances/StudentsForSession?sessionId=${encodeURIComponent(sessionId)}`);
-                if (!response.ok) {
-                    return;
-                }
-
-                const items = await response.json();
-                for (const item of items) {
-                    const option = document.createElement("option");
-                    option.value = item.value;
-                    option.textContent = item.text;
-                    studentSelect.appendChild(option);
-                }
-
-                if (selectedValue) {
-                    studentSelect.value = selectedValue;
-                }
-            };
-
-            sessionSelect.addEventListener("change", () => loadStudents(sessionSelect.value));
-            loadStudents(sessionSelect.value, initialStudent);
-        })();
-    </script>
 }

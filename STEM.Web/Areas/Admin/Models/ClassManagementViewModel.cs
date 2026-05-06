@@ -94,12 +94,24 @@ public class ClassDetailsViewModel
     public string AgeRangeText { get; set; } = string.Empty;
     public string PriceText { get; set; } = string.Empty;
     public string TotalSessionsText { get; set; } = string.Empty;
+    public int AvailableStudentCount { get; set; }
+    public string StudentSearchTerm { get; set; } = string.Empty;
+    public IReadOnlyList<ClassAvailableStudentViewModel> AvailableStudents { get; set; } = [];
     public IReadOnlyList<ClassStudentSummaryViewModel> Students { get; set; } = [];
     public IReadOnlyList<ClassSessionSummaryViewModel> Sessions { get; set; } = [];
 }
 
+public class ClassAvailableStudentViewModel
+{
+    public int StudentId { get; set; }
+    public string FullName { get; set; } = string.Empty;
+    public string Username { get; set; } = string.Empty;
+    public string? SchoolName { get; set; }
+}
+
 public class ClassStudentSummaryViewModel
 {
+    public int StudentId { get; set; }
     public string FullName { get; set; } = string.Empty;
     public string Username { get; set; } = string.Empty;
     public string EnrollDateText { get; set; } = string.Empty;
@@ -107,6 +119,7 @@ public class ClassStudentSummaryViewModel
 
 public class ClassSessionSummaryViewModel
 {
+    public int Id { get; set; }
     public int SessionNo { get; set; }
     public DateOnly Date { get; set; }
     public TimeOnly StartTime { get; set; }

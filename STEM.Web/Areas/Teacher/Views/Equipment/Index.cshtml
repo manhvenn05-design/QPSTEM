@@ -1,0 +1,166 @@
+@model STEM.Web.Areas.Teacher.Models.TeacherEquipmentIndexViewModel
+
+@{
+    ViewData["Title"] = "Mượn / Trả thiết bị";
+}
+
+<section class="teacher-page">
+    <div class="teacher-page-header">
+        <div>
+            <h1 class="teacher-page-title">Mượn / Trả thiết bị</h1>
+            <p class="teacher-page-subtitle">Chọn thiết bị sẵn sàng, gắn với buổi học và theo dõi các phiếu đang mở.</p>
+        </div>
+
+        <div class="teacher-actions">
+            <a asp-area="Teacher" asp-controller="Equipment" asp-action="Borrow" class="teacher-btn-primary">
+                <span class="material-symbols-outlined text-[18px]">add</span>
+                <span>Tạo phiếu mượn</span>
+            </a>
+        </div>
+    </div>
+
+    @if (TempData["SuccessMessage"] is string successMessage)
+    {
+        <div class="teacher-alert teacher-alert--success">@successMessage</div>
+    }
+
+    <div class="teacher-stat-grid teacher-stat-grid--4">
+        <article class="teacher-stat-card">
+            <span class="teacher-stat-label">Thiết bị sẵn sàng</span>
+            <div class="teacher-stat-value">@Model.AvailableCount</div>
+            <p class="teacher-kicker">Có thể tạo phiếu mượn mới ngay.</p>
+        </article>
+        <article class="teacher-stat-card">
+            <span class="teacher-stat-label">Phiếu đang mở</span>
+            <div class="teacher-stat-value">@Model.ActiveBorrowCount</div>
+            <p class="teacher-kicker">Nên trả đúng buổi sau khi dùng xong.</p>
+        </article>
+        <article class="teacher-stat-card">
+            <span class="teacher-stat-label">Đã trả</span>
+            <div class="teacher-stat-value">@Model.ReturnedCount</div>
+            <p class="teacher-kicker">Lịch sử phiếu mượn gần đây của bạn.</p>
+        </article>
+    </div>
+
+    <div class="teacher-panel-grid">
+        <div class="teacher-stack">
+            <div class="teacher-card">
+                <div class="teacher-card-section">
+                    <h2 class="teacher-section-title">Thiết bị sẵn sàng</h2>
+                    <p class="teacher-section-subtitle">Bấm mượn để gắn thiết bị với buổi học của bạn.</p>
+
+                    <div class="teacher-list mt-6">
+                        @if (Model.AvailableEquipments.Count == 0)
+                        {
+                            <p class="teacher-empty">Hiện chưa có thiết bị nào ở trạng thái sẵn sàng.</p>
+                        }
+                        else
+                        {
+                            @foreach (var item in Model.AvailableEquipments)
+                            {
+                                <article class="teacher-data-row">
+                                    <div class="teacher-session-card">
+                                        <div class="teacher-session-main">
+                                            <div class="flex items-start gap-4">
+                                                @if (!string.IsNullOrWhiteSpace(item.ImageUrl))
+                                                {
+                                                    <img class="h-16 w-16 rounded-xl border border-[#e3e3de] object-cover" src="@item.ImageUrl" alt="@item.SerialNumber" />
+                                                }
+                                                else
+                                                {
+                                                    <div class="flex h-16 w-16 items-center justify-center rounded-xl border border-[#e3e3de] bg-[#f2f7f0] text-[#3b6722]">
+                                                        <span class="material-symbols-outlined text-[24px]">inventory_2</span>
+                                                    </div>
+                                                }
+                                                <div>
+                                                    <div class="flex flex-wrap items-center gap-3">
+                                                        <h3 class="text-sm font-semibold text-[#1a1c19]">@item.SerialNumber</h3>
+                                                        <span class="@item.StatusBadgeClass">@item.StatusLabel</span>
+                                                    </div>
+                                                    <p class="teacher-section-subtitle mt-2">@item.CategoryName</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="teacher-session-side !min-w-[180px]">
+                                            <a asp-area="Teacher" asp-controller="Equipment" asp-action="Borrow" asp-route-equipmentId="@item.Id" class="teacher-btn-primary w-full">Mượn thiết bị</a>
+                                        </div>
+                                    </div>
+                                </article>
+                            }
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="teacher-stack">
+            <div class="teacher-card">
+                <div class="teacher-card-section">
+                    <h2 class="teacher-section-title">Phiếu đang mở</h2>
+                    <p class="teacher-section-subtitle">Xác nhận trả khi đã dùng xong thiết bị.</p>
+
+                    <div class="teacher-list mt-6">
+                        @if (Model.ActiveBorrows.Count == 0)
+                        {
+                            <p class="teacher-empty">Bạn chưa có phiếu mượn nào đang mở.</p>
+                        }
+                        else
+                        {
+                            @foreach (var item in Model.ActiveBorrows)
+                            {
+                                <article class="teacher-data-row">
+                                    <div class="teacher-session-card">
+                                        <div class="teacher-session-main">
+                                            <p class="text-sm font-semibold text-[#1a1c19]">@item.SerialNumber</p>
+                                            <p class="teacher-section-subtitle mt-1">@item.CategoryName</p>
+                                            <div class="teacher-meta-row mt-4">
+                                                <span>@item.SessionLabel</span>
+                                                <span>@item.BorrowTimeText</span>
+                                            </div>
+                                        </div>
+                                        <div class="teacher-session-side !min-w-[180px]">
+                                            <form asp-area="Teacher" asp-controller="Equipment" asp-action="Return" asp-route-id="@item.BorrowId" method="post" class="w-full">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="teacher-btn-secondary w-full">Xác nhận trả</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </article>
+                            }
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <div class="teacher-card">
+                <div class="teacher-card-section">
+                    <h2 class="teacher-section-title">Lịch sử gần đây</h2>
+                    <p class="teacher-section-subtitle">Các phiếu đã trả gần nhất của bạn.</p>
+
+                    <div class="teacher-list mt-6">
+                        @if (Model.History.Count == 0)
+                        {
+                            <p class="teacher-empty">Chưa có lịch sử trả thiết bị.</p>
+                        }
+                        else
+                        {
+                            @foreach (var item in Model.History)
+                            {
+                                <article class="teacher-data-row">
+                                    <div>
+                                        <p class="text-sm font-semibold text-[#1a1c19]">@item.SerialNumber</p>
+                                        <p class="teacher-section-subtitle mt-1">@item.CategoryName · @item.SessionLabel</p>
+                                        <div class="teacher-meta-row mt-4">
+                                            <span>Mượn: @item.BorrowTimeText</span>
+                                            <span>Trả: @item.ReturnTimeText</span>
+                                        </div>
+                                    </div>
+                                </article>
+                            }
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

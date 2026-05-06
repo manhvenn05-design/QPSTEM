@@ -13,6 +13,14 @@ namespace STEM.Web.Areas.Admin.Controllers;
 public class AttendancesController : Controller
 {
     private const int PageSize = 10;
+    private static readonly HashSet<string> AllowedAttendanceStatuses = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "pending",
+        "present",
+        "absent",
+        "excused"
+    };
+
     private readonly ApplicationDbContext _context;
 
     public AttendancesController(ApplicationDbContext context)
@@ -151,7 +159,7 @@ public class AttendancesController : Controller
         var model = new AttendanceBoardViewModel
         {
             SessionId = sessionInfo.Id,
-            SessionLabel = $"Buổi {sessionInfo.SessionNo:00}",
+            SessionLabel = $"Buổi số {sessionInfo.SessionNo:00}",
             ClassCode = sessionInfo.ClassCode,
             CourseName = sessionInfo.CourseName,
             TeacherName = sessionInfo.TeacherName,
@@ -160,14 +168,19 @@ public class AttendancesController : Controller
             AttendanceCount = sessionInfo.AttendanceCount,
             PresentCount = sessionInfo.PresentCount,
             AbsentCount = sessionInfo.AbsentCount,
+            MissingCount = Math.Max(0, sessionInfo.StudentCount - sessionInfo.AttendanceCount),
+            CompletionPercent = sessionInfo.StudentCount == 0
+                ? 0
+                : (int)Math.Round((double)sessionInfo.AttendanceCount * 100 / sessionInfo.StudentCount),
             StatusLabel = sessionInfo.Date > today ? "Sắp tới" : sessionInfo.Date < today ? "Đã diễn ra" : "Hôm nay",
             StatusBadgeClass = sessionInfo.Date > today
                 ? "bg-[#fff4e8] text-[#9b682f]"
                 : sessionInfo.Date < today
                     ? "bg-[#eeeee9] text-[#42493d]"
                     : "bg-[#edf7e8] text-[#456c3f]",
-            Students = students.Select(x => new AttendanceBoardStudentItemViewModel
+            Rows = students.Select(x => new AttendanceBoardStudentRowViewModel
             {
+                SessionId = sessionInfo.Id,
                 StudentId = x.StudentId,
                 StudentName = x.FullName,
                 StudentUsername = x.Username,
@@ -175,6 +188,7 @@ public class AttendancesController : Controller
                 HasAttendance = x.Attendance != null,
                 AttendanceId = x.Attendance?.Id,
                 IsPresent = x.Attendance?.IsPresent ?? false,
+                AttendanceStatus = MapAttendanceStatus(x.Attendance?.IsPresent, x.Attendance?.TeacherRawNote),
                 PresenceLabel = x.Attendance == null ? "Chưa ghi" : x.Attendance.IsPresent ? "Có mặt" : "Vắng",
                 PresenceBadgeClass = x.Attendance == null
                     ? "bg-[#eeeee9] text-[#42493d]"
@@ -182,11 +196,129 @@ public class AttendancesController : Controller
                         ? "bg-[#edf7e8] text-[#456c3f]"
                         : "bg-[#ffdad6] text-[#ba1a1a]",
                 NotePreview = BuildPreview(x.Attendance?.TeacherRawNote, "Chưa có ghi chú."),
-                MediaSummary = string.IsNullOrWhiteSpace(x.Attendance?.ProductMediaUrls) ? "Chưa có media" : "Đã có media"
+                MediaSummary = string.IsNullOrWhiteSpace(x.Attendance?.ProductMediaUrls) ? "Chưa có media" : "Đã có media",
+                TeacherRawNote = x.Attendance?.TeacherRawNote,
+                ProductMediaUrls = x.Attendance?.ProductMediaUrls
             }).ToList()
         };
 
         return View(model);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> QuickSave(AttendanceQuickUpdateViewModel model)
+    {
+        var sessionExists = await _context.Sessions.AnyAsync(x => x.Id == model.SessionId);
+        if (!sessionExists)
+        {
+            TempData["ErrorMessage"] = "Buổi học không hợp lệ.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        model.AttendanceStatus = string.IsNullOrWhiteSpace(model.AttendanceStatus)
+            ? "pending"
+            : model.AttendanceStatus.Trim().ToLowerInvariant();
+
+        if (!AllowedAttendanceStatuses.Contains(model.AttendanceStatus) || model.AttendanceStatus == "pending")
+        {
+            TempData["ErrorMessage"] = "Vui lòng chọn trạng thái điểm danh trước khi lưu.";
+            return RedirectToAction(nameof(Board), new { sessionId = model.SessionId });
+        }
+
+        if (model.AttendanceStatus == "excused" && string.IsNullOrWhiteSpace(model.TeacherRawNote))
+        {
+            TempData["ErrorMessage"] = "Vui lòng nhập lý do khi chọn vắng có lý do.";
+            return RedirectToAction(nameof(Board), new { sessionId = model.SessionId });
+        }
+
+        var isStudentInSessionClass = await _context.Enrollments.AnyAsync(x =>
+            x.StudentId == model.StudentId &&
+            x.Class.Sessions.Any(s => s.Id == model.SessionId));
+
+        if (!isStudentInSessionClass)
+        {
+            TempData["ErrorMessage"] = "Học viên không thuộc lớp của buổi học này.";
+            return RedirectToAction(nameof(Board), new { sessionId = model.SessionId });
+        }
+
+        var entity = await _context.Attendances
+            .FirstOrDefaultAsync(x => x.SessionId == model.SessionId && x.StudentId == model.StudentId);
+
+        if (entity == null)
+        {
+            entity = new Attendance
+            {
+                SessionId = model.SessionId,
+                StudentId = model.StudentId
+            };
+            _context.Attendances.Add(entity);
+        }
+
+        entity.IsPresent = model.AttendanceStatus == "present";
+        entity.TeacherRawNote = NormalizeText(model.TeacherRawNote);
+
+        await _context.SaveChangesAsync();
+
+        TempData["SuccessMessage"] = "Đã lưu điểm danh.";
+        return RedirectToAction(nameof(Board), new { sessionId = model.SessionId });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> MarkAllPresent(int sessionId)
+    {
+        var session = await _context.Sessions
+            .AsNoTracking()
+            .Where(x => x.Id == sessionId)
+            .Select(x => new
+            {
+                x.Id,
+                StudentIds = x.Class.Enrollments.Select(e => e.StudentId).ToList()
+            })
+            .FirstOrDefaultAsync();
+
+        if (session == null)
+        {
+            TempData["ErrorMessage"] = "Buổi học không hợp lệ.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        if (session.StudentIds.Count == 0)
+        {
+            TempData["ErrorMessage"] = "Lớp này chưa có học viên để điểm danh.";
+            return RedirectToAction(nameof(Board), new { sessionId });
+        }
+
+        var existingStudentIds = await _context.Attendances
+            .Where(x => x.SessionId == sessionId)
+            .Select(x => x.StudentId)
+            .ToListAsync();
+
+        var missingStudentIds = session.StudentIds
+            .Except(existingStudentIds)
+            .ToList();
+
+        if (missingStudentIds.Count == 0)
+        {
+            TempData["SuccessMessage"] = "Tất cả học viên đã có bản ghi điểm danh.";
+            return RedirectToAction(nameof(Board), new { sessionId });
+        }
+
+        foreach (var studentId in missingStudentIds)
+        {
+            _context.Attendances.Add(new Attendance
+            {
+                SessionId = sessionId,
+                StudentId = studentId,
+                IsPresent = true
+            });
+        }
+
+        await _context.SaveChangesAsync();
+
+        TempData["SuccessMessage"] = $"Đã đánh dấu nhanh có mặt cho {missingStudentIds.Count} học viên.";
+        return RedirectToAction(nameof(Board), new { sessionId });
     }
 
     [HttpGet]
@@ -219,7 +351,6 @@ public class AttendancesController : Controller
             SessionId = model.SessionId!.Value,
             StudentId = model.StudentId!.Value,
             IsPresent = model.IsPresent,
-            ProductMediaUrls = NormalizeText(model.ProductMediaUrls),
             TeacherRawNote = NormalizeText(model.TeacherRawNote),
             AiEvaluation = NormalizeText(model.AiEvaluation),
             VideoTranscript = NormalizeText(model.VideoTranscript),
@@ -284,7 +415,6 @@ public class AttendancesController : Controller
         entity.SessionId = model.SessionId!.Value;
         entity.StudentId = model.StudentId!.Value;
         entity.IsPresent = model.IsPresent;
-        entity.ProductMediaUrls = NormalizeText(model.ProductMediaUrls);
         entity.TeacherRawNote = NormalizeText(model.TeacherRawNote);
         entity.AiEvaluation = NormalizeText(model.AiEvaluation);
         entity.VideoTranscript = NormalizeText(model.VideoTranscript);
@@ -309,7 +439,7 @@ public class AttendancesController : Controller
                 StudentName = x.Student.FullName,
                 StudentUsername = x.Student.Username,
                 StudentAvatarUrl = x.Student.AvatarUrl,
-                SessionLabel = $"Buổi {x.Session.SessionNo:00}",
+                SessionLabel = $"Buổi số {x.Session.SessionNo:00}",
                 ClassCode = x.Session.Class.ClassCode,
                 CourseName = x.Session.Class.Course.Name,
                 TeacherName = x.Session.Class.Teacher.FullName,
@@ -379,7 +509,7 @@ public class AttendancesController : Controller
             .ThenBy(x => x.Class.ClassCode)
             .ThenBy(x => x.SessionNo)
             .Select(x => new SelectListItem(
-                $"{x.Class.ClassCode} - Buổi {x.SessionNo:00} - {x.Date:dd/MM/yyyy}",
+                $"{x.Class.ClassCode} - Buổi số {x.SessionNo:00} - {x.Date:dd/MM/yyyy}",
                 x.Id.ToString()))
             .ToListAsync();
 
@@ -392,7 +522,7 @@ public class AttendancesController : Controller
             model.SessionSummary = await _context.Sessions
                 .AsNoTracking()
                 .Where(x => x.Id == sessionId.Value)
-                .Select(x => $"{x.Class.ClassCode} · Buổi {x.SessionNo:00} · {x.Date:dd/MM/yyyy}")
+                .Select(x => $"{x.Class.ClassCode} · Buổi số {x.SessionNo:00} · {x.Date:dd/MM/yyyy}")
                 .FirstOrDefaultAsync() ?? string.Empty;
         }
 
@@ -476,7 +606,7 @@ public class AttendancesController : Controller
         return new AttendanceSessionItemViewModel
         {
             SessionId = item.SessionId,
-            SessionLabel = $"Buổi {item.SessionNo:00}",
+            SessionLabel = $"Buổi số {item.SessionNo:00}",
             ClassCode = item.ClassCode,
             CourseName = item.CourseName,
             TeacherName = item.TeacherName,
@@ -507,6 +637,21 @@ public class AttendancesController : Controller
     private static string? NormalizeText(string? value)
     {
         return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+    }
+
+    private static string MapAttendanceStatus(bool? isPresent, string? teacherRawNote)
+    {
+        if (!isPresent.HasValue)
+        {
+            return "pending";
+        }
+
+        if (isPresent.Value)
+        {
+            return "present";
+        }
+
+        return string.IsNullOrWhiteSpace(teacherRawNote) ? "absent" : "excused";
     }
 
     private sealed class SessionAttendanceProjection

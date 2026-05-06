@@ -30,7 +30,7 @@
         <div class="admin-alert admin-alert--error">@errorMessage</div>
     }
 
-    <div class="admin-stat-grid four-col">
+    <div class="admin-stat-grid five-col">
         <article class="admin-stat-card">
             <span class="admin-stat-label">Đã thu</span>
             <div class="admin-stat-value">@Model.TotalRevenue.ToString("N0")đ</div>
@@ -47,11 +47,29 @@
             <p class="admin-kicker">Cần theo dõi thêm.</p>
         </article>
         <article class="admin-stat-card">
+            <span class="admin-stat-label">Đang thu dở</span>
+            <div class="admin-stat-value">@Model.PartialInvoiceCount</div>
+            <p class="admin-kicker">Đã thu một phần, còn số dư.</p>
+        </article>
+        <article class="admin-stat-card">
             <span class="admin-stat-label">Lượt thanh toán</span>
             <div class="admin-stat-value">@Model.PaymentCount</div>
             <p class="admin-kicker">Tổng giao dịch đã lưu.</p>
         </article>
     </div>
+
+    @if (Model.OutstandingInvoiceCount > 0)
+    {
+        <div class="admin-card">
+            <div class="admin-card-section flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                <div>
+                    <h2 class="admin-section-title">Cần thu thêm</h2>
+                    <p class="admin-section-subtitle">@Model.OutstandingInvoiceCount hóa đơn còn số dư. Tổng còn lại @Model.TotalOutstanding.ToString("N0")đ.</p>
+                </div>
+                <a asp-area="Admin" asp-controller="Finance" asp-action="Index" asp-route-filter="unpaid" class="admin-btn-primary">Mở danh sách cần thu</a>
+            </div>
+        </div>
+    }
 
     <form method="get" asp-area="Admin" asp-controller="Finance" asp-action="Index" class="admin-card">
         <div class="admin-card-section">
@@ -138,7 +156,13 @@
                                         </span>
                                     </td>
                                     <td>
-                                        <div class="flex justify-end">
+                                        <div class="flex justify-end gap-2">
+                                            @if (invoice.CanCollectPayment)
+                                            {
+                                                <a asp-area="Admin" asp-controller="Finance" asp-action="CreatePayment" asp-route-invoiceId="@invoice.Id" class="admin-btn-primary !h-10">
+                                                    Thu tiền
+                                                </a>
+                                            }
                                             <details class="relative">
                                                 <summary class="admin-menu-button cursor-pointer list-none">
                                                     <span class="material-symbols-outlined text-[18px]">more_horiz</span>

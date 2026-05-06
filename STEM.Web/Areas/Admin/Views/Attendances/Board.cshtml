@@ -12,10 +12,15 @@
         </div>
 
         <div class="admin-actions">
-            <a asp-area="Admin" asp-controller="Attendances" asp-action="Create" asp-route-sessionId="@Model.SessionId" class="admin-btn-primary">
-                <span class="material-symbols-outlined text-[18px]">add</span>
-                <span>Thêm bản ghi</span>
-            </a>
+            @if (Model.HasMissingRows)
+            {
+                <form asp-area="Admin" asp-controller="Attendances" asp-action="MarkAllPresent" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="sessionId" value="@Model.SessionId" />
+                    <button type="submit" class="admin-btn-primary">Đánh dấu nhanh cả lớp có mặt</button>
+                </form>
+            }
+            <a asp-area="Admin" asp-controller="Sessions" asp-action="Details" asp-route-id="@Model.SessionId" class="admin-btn-secondary">Xem buổi học</a>
             <a asp-area="Admin" asp-controller="Attendances" asp-action="Index" class="admin-btn-secondary">Quay lại danh sách</a>
         </div>
     </div>
@@ -30,109 +35,131 @@
         <div class="admin-alert admin-alert--error">@errorMessage</div>
     }
 
-    <div class="admin-stat-grid four-col">
+    <div class="admin-stat-grid five-col">
         <article class="admin-stat-card">
             <span class="admin-stat-label">Sĩ số lớp</span>
             <div class="admin-stat-value">@Model.StudentCount</div>
-            <p class="admin-kicker">Tổng học viên ghi danh trong lớp.</p>
+            <p class="admin-kicker">Tổng số học viên của buổi học này.</p>
         </article>
         <article class="admin-stat-card">
             <span class="admin-stat-label">Đã ghi nhận</span>
             <div class="admin-stat-value">@Model.AttendanceCount</div>
-            <p class="admin-kicker">Số bản ghi điểm danh đã được tạo.</p>
+            <p class="admin-kicker">Số học viên đã có dữ liệu điểm danh.</p>
+        </article>
+        <article class="admin-stat-card">
+            <span class="admin-stat-label">Chưa ghi</span>
+            <div class="admin-stat-value">@Model.MissingCount</div>
+            <p class="admin-kicker">Cần kiểm tra và bổ sung thêm.</p>
         </article>
         <article class="admin-stat-card">
             <span class="admin-stat-label">Có mặt</span>
             <div class="admin-stat-value">@Model.PresentCount</div>
-            <p class="admin-kicker">Học viên được đánh dấu có mặt.</p>
+            <p class="admin-kicker">Số học viên được đánh dấu có mặt.</p>
         </article>
         <article class="admin-stat-card">
             <span class="admin-stat-label">Vắng</span>
             <div class="admin-stat-value">@Model.AbsentCount</div>
-            <p class="admin-kicker">Học viên được đánh dấu vắng.</p>
+            <p class="admin-kicker">Gồm cả vắng có lý do.</p>
         </article>
     </div>
 
     <div class="admin-card">
-        <div class="admin-card-section flex items-center justify-between gap-4">
-            <div>
-                <h2 class="admin-section-title">Trạng thái buổi học</h2>
-                <p class="admin-section-subtitle">Admin xem nhanh tiến độ chốt điểm danh của cả lớp theo từng buổi.</p>
+        <div class="admin-card-section flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div class="space-y-3">
+                <div>
+                    <h2 class="admin-section-title">Tiến độ buổi học</h2>
+                    <p class="admin-section-subtitle">Cập nhật nhanh từng học viên ngay trên màn hình này.</p>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-3">
+                    <span class="inline-flex rounded-full px-3 py-2 text-sm font-semibold @Model.StatusBadgeClass">
+                        @Model.StatusLabel
+                    </span>
+                    <span class="text-sm font-medium text-[#4d5648]">@Model.AttendanceCount/@Model.StudentCount học viên đã ghi nhận</span>
+                </div>
             </div>
 
-            <span class="inline-flex rounded-full px-3 py-2 text-sm font-semibold @Model.StatusBadgeClass">
-                @Model.StatusLabel
-            </span>
+            <div class="w-full max-w-[320px]">
+                <div class="mb-2 flex items-center justify-between text-sm text-[#5f6759]">
+                    <span>Hoàn thành</span>
+                    <strong class="text-[#1a1c19]">@Model.CompletionPercent%</strong>
+                </div>
+                <div class="h-3 overflow-hidden rounded-full bg-[#eef2ea]">
+                    <div class="h-full rounded-full bg-[#6A994E]" style="width:@Model.CompletionPercent%"></div>
+                </div>
+            </div>
         </div>
     </div>
 
-    <div class="admin-card overflow-hidden">
-        <div class="overflow-x-auto">
-            <table class="admin-table min-w-full">
-                <thead>
-                    <tr>
-                        <th>Học viên</th>
-                        <th>Trạng thái</th>
-                        <th>Ghi chú giáo viên</th>
-                        <th>Minh chứng</th>
-                        <th class="text-right">Thao tác</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @if (!Model.HasStudents)
-                    {
-                        <tr>
-                            <td colspan="5" class="admin-empty">Lớp của buổi học này chưa có học viên nào trong bảng ghi danh, nên hiện chưa thể điểm danh.</td>
-                        </tr>
-                    }
-                    else
-                    {
-                        @foreach (var student in Model.Students)
-                        {
-                            <tr>
-                                <td>
-                                    <div class="flex items-center gap-3">
-                                        @if (!string.IsNullOrWhiteSpace(student.AvatarUrl))
-                                        {
-                                            <img src="@student.AvatarUrl" alt="@student.StudentName" class="h-10 w-10 rounded-full border border-[#e3e3de] object-cover" />
-                                        }
-                                        else
-                                        {
-                                            <div class="flex h-10 w-10 items-center justify-center rounded-full border border-[#e3e3de] bg-[#f2f7f0] text-sm font-semibold text-[#3b6722]">
-                                                @student.StudentName.Trim()[0].ToString().ToUpperInvariant()
-                                            </div>
-                                        }
-                                        <div>
-                                            <p class="font-semibold text-[#1a1c19]">@student.StudentName</p>
-                                            <p class="mt-1 text-sm text-[#73796b]">@student.StudentUsername</p>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td>
-                                    <span class="inline-flex rounded-full px-3 py-2 text-xs font-semibold @student.PresenceBadgeClass">
-                                        @student.PresenceLabel
-                                    </span>
-                                </td>
-                                <td>@student.NotePreview</td>
-                                <td>@student.MediaSummary</td>
-                                <td>
-                                    <div class="flex justify-end gap-3">
-                                        @if (student.HasAttendance && student.AttendanceId.HasValue)
-                                        {
-                                            <a asp-area="Admin" asp-controller="Attendances" asp-action="Edit" asp-route-id="@student.AttendanceId.Value" class="admin-btn-secondary !h-10">Cập nhật</a>
-                                            <a asp-area="Admin" asp-controller="Attendances" asp-action="Details" asp-route-id="@student.AttendanceId.Value" class="admin-btn-secondary !h-10">Chi tiết</a>
-                                        }
-                                        else
-                                        {
-                                            <a asp-area="Admin" asp-controller="Attendances" asp-action="Create" asp-route-sessionId="@Model.SessionId" asp-route-studentId="@student.StudentId" class="admin-btn-primary !h-10">Ghi điểm danh</a>
-                                        }
-                                    </div>
-                                </td>
-                            </tr>
-                        }
-                    }
-                </tbody>
-            </table>
+    @if (!Model.HasStudents)
+    {
+        <div class="admin-card">
+            <div class="admin-card-section">
+                <p class="admin-empty">Lớp này chưa có học viên. Hãy thêm học viên vào lớp trước khi điểm danh.</p>
+            </div>
         </div>
-    </div>
+    }
+    else
+    {
+        <div class="space-y-4">
+            @foreach (var row in Model.Rows)
+            {
+                <form asp-area="Admin" asp-controller="Attendances" asp-action="QuickSave" method="post" class="admin-card">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="SessionId" value="@row.SessionId" />
+                    <input type="hidden" name="StudentId" value="@row.StudentId" />
+                    <input type="hidden" name="AttendanceId" value="@row.AttendanceId" />
+
+                    <div class="admin-card-section">
+                        <div class="grid gap-6 xl:grid-cols-[260px,180px,1fr,140px] xl:items-start">
+                            <div class="flex items-center gap-3">
+                                @if (!string.IsNullOrWhiteSpace(row.AvatarUrl))
+                                {
+                                    <img src="@row.AvatarUrl" alt="@row.StudentName" class="h-12 w-12 rounded-full border border-[#e3e3de] object-cover" />
+                                }
+                                else
+                                {
+                                    <div class="flex h-12 w-12 items-center justify-center rounded-full border border-[#e3e3de] bg-[#f2f7f0] text-sm font-semibold text-[#3b6722]">
+                                        @row.StudentName.Trim()[0].ToString().ToUpperInvariant()
+                                    </div>
+                                }
+
+                                <div>
+                                    <p class="font-semibold text-[#1a1c19]">@row.StudentName</p>
+                                    <p class="mt-1 text-sm text-[#73796b]">@row.StudentUsername</p>
+                                </div>
+                            </div>
+
+                            <div class="space-y-2">
+                                <label class="admin-label">Trạng thái</label>
+                                <select name="AttendanceStatus" class="admin-select">
+                                    <option value="pending" selected="@(row.AttendanceStatus == "pending" ? "selected" : null)">Chưa ghi</option>
+                                    <option value="present" selected="@(row.AttendanceStatus == "present" ? "selected" : null)">Có mặt</option>
+                                    <option value="absent" selected="@(row.AttendanceStatus == "absent" ? "selected" : null)">Vắng</option>
+                                    <option value="excused" selected="@(row.AttendanceStatus == "excused" ? "selected" : null)">Vắng có lý do</option>
+                                </select>
+                                <span class="inline-flex rounded-full px-3 py-2 text-xs font-semibold @row.PresenceBadgeClass">
+                                    @row.PresenceLabel
+                                </span>
+                            </div>
+
+                            <div class="space-y-2">
+                                <label class="admin-label">Ghi chú</label>
+                                <textarea name="TeacherRawNote" class="admin-textarea" rows="3" placeholder="Ghi chú ngắn hoặc lý do vắng.">@row.TeacherRawNote</textarea>
+                            </div>
+
+                            <div class="flex flex-col items-stretch gap-3 xl:items-end">
+                                <button type="submit" class="admin-btn-primary w-full xl:w-auto">Lưu nhanh</button>
+
+                                @if (row.HasAttendance && row.AttendanceId.HasValue)
+                                {
+                                    <a asp-area="Admin" asp-controller="Attendances" asp-action="Details" asp-route-id="@row.AttendanceId.Value" class="admin-btn-secondary w-full text-center xl:w-auto">Chi tiết</a>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            }
+        </div>
+    }
 </section>

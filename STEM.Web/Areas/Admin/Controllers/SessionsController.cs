@@ -160,9 +160,12 @@ public class SessionsController : Controller
     }
 
     [HttpGet]
-    public async Task<IActionResult> Create()
+    public async Task<IActionResult> Create(int? classId = null)
     {
-        var model = new CreateSessionViewModel();
+        var model = new CreateSessionViewModel
+        {
+            ClassId = classId
+        };
         await PopulateOptionsAsync(model);
         return View(model);
     }

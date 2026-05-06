@@ -8,7 +8,7 @@
     <div class="admin-page-header">
         <div>
             <h1 class="admin-page-title">Thêm lớp học mới</h1>
-            <p class="admin-page-subtitle">Tạo lớp học từ khóa học có sẵn, gán giáo viên phụ trách và thiết lập khung thời gian đúng với bảng <code>Classes</code>.</p>
+            <p class="admin-page-subtitle">Chọn khóa học, gán giáo viên và thiết lập thời gian cho lớp.</p>
         </div>
 
         <div class="admin-actions">
@@ -24,7 +24,7 @@
             <div class="admin-card-section">
                 <div class="mb-6">
                     <h2 class="admin-section-title">Thông tin lớp học</h2>
-                    <p class="admin-section-subtitle">Nhập mã lớp và thời gian học.</p>
+                    <p class="admin-section-subtitle">Nhập mã lớp và khoảng thời gian dự kiến.</p>
                 </div>
 
                 <div class="admin-field-grid two-col">
@@ -59,7 +59,7 @@
                     <div>
                         <label asp-for="EndDate" class="admin-label"></label>
                         <input asp-for="EndDate" class="admin-input" />
-                        <p class="admin-hint">Có thể để trống nếu lớp đang mở và chưa chốt ngày kết thúc.</p>
+                        <p class="admin-hint">Có thể để trống nếu lớp chưa chốt ngày kết thúc.</p>
                         <span asp-validation-for="EndDate" class="admin-validation"></span>
                     </div>
                 </div>

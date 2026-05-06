@@ -8,7 +8,6 @@
     <div class="admin-page-header">
         <div>
             <h1 class="admin-page-title">Thêm buổi học mới</h1>
-            <p class="admin-page-subtitle">Tạo một buổi học theo đúng bảng <code>Sessions</code>, gắn với lớp đã có và chuẩn bị dữ liệu cho điểm danh, AI nhận xét và mượn trả thiết bị.</p>
         </div>
 
         <div class="admin-actions">
@@ -38,7 +37,8 @@
 
                     <div>
                         <label asp-for="SessionNo" class="admin-label"></label>
-                        <input asp-for="SessionNo" class="admin-input" />
+                        <input asp-for="SessionNo" class="admin-input" placeholder="Ví dụ: 1, 2, 3..." />
+                        <p class="mt-2 text-sm text-[#73796b]">Đây là thứ tự của buổi học trong lớp, không phải tổng số buổi của khóa.</p>
                         <span asp-validation-for="SessionNo" class="admin-validation"></span>
                     </div>
 

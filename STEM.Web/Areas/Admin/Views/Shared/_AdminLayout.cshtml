@@ -482,6 +482,18 @@
             }
         }
 
+        @@media (min-width: 768px) {
+            .admin-stat-grid.five-col {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @@media (min-width: 1200px) {
+            .admin-stat-grid.five-col {
+                grid-template-columns: repeat(5, minmax(0, 1fr));
+            }
+        }
+
         .admin-stat-card {
             background: var(--admin-surface);
             border: 1px solid var(--admin-border);
@@ -497,6 +509,17 @@
             font-size: 14px;
             font-weight: 500;
             line-height: 20px;
+        }
+
+        .admin-static-field {
+            align-items: center;
+            background: var(--admin-surface-soft);
+            border: 1px solid var(--admin-border);
+            border-radius: 12px;
+            color: var(--admin-text);
+            display: flex;
+            min-height: 52px;
+            padding: 14px 16px;
         }
 
         .admin-stat-value {

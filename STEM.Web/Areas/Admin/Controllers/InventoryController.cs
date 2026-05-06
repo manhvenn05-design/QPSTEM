@@ -67,6 +67,11 @@ public class InventoryController : Controller
                 SerialNumber = x.SerialNumber,
                 ImageUrl = x.ImageUrl,
                 Status = x.Status,
+                ActiveBorrowId = x.EquipmentBorrows
+                    .Where(b => b.ReturnTime == null)
+                    .OrderByDescending(b => b.BorrowTime)
+                    .Select(b => (int?)b.Id)
+                    .FirstOrDefault(),
                 ActiveBorrowerName = x.EquipmentBorrows
                     .Where(b => b.ReturnTime == null)
                     .OrderByDescending(b => b.BorrowTime)
@@ -831,6 +836,7 @@ public class InventoryController : Controller
             CategoryId = item.CategoryId,
             CategoryName = item.CategoryName,
             Status = item.Status,
+            ActiveBorrowId = item.ActiveBorrowId,
             HasActiveBorrow = !string.IsNullOrWhiteSpace(item.ActiveBorrowerName),
             BorrowSummary = !string.IsNullOrWhiteSpace(item.ActiveBorrowerName)
                 ? $"{item.ActiveBorrowerName} · {item.ActiveClassCode} · Buổi {item.ActiveSessionNo}"
@@ -1051,6 +1057,7 @@ public class InventoryController : Controller
         public string SerialNumber { get; set; } = string.Empty;
         public string? ImageUrl { get; set; }
         public byte Status { get; set; }
+        public int? ActiveBorrowId { get; set; }
         public string? ActiveBorrowerName { get; set; }
         public int? ActiveSessionNo { get; set; }
         public string? ActiveClassCode { get; set; }

@@ -1,0 +1,166 @@
+@model STEM.Web.Areas.Teacher.Models.TeacherAttendanceBoardViewModel
+
+@{
+    ViewData["Title"] = "Điểm danh";
+}
+
+<section class="teacher-page">
+    <div class="teacher-page-header">
+        <div>
+            <h1 class="teacher-page-title">@Model.SessionLabel · @Model.ClassCode</h1>
+            <p class="teacher-page-subtitle">@Model.CourseName · @Model.ScheduleText</p>
+        </div>
+
+        <div class="teacher-actions">
+            @if (!string.IsNullOrWhiteSpace(Model.TeachingMaterialUrl))
+            {
+                <a href="@Model.TeachingMaterialUrl" target="_blank" rel="noreferrer" class="teacher-btn-secondary">
+                    <span class="material-symbols-outlined text-[18px]">menu_book</span>
+                    <span>Mở giáo án</span>
+                </a>
+            }
+            <a asp-area="Teacher" asp-controller="Attendances" asp-action="Index" class="teacher-btn-secondary">
+                <span class="material-symbols-outlined text-[18px]">arrow_back</span>
+                <span>Quay lại danh sách</span>
+            </a>
+        </div>
+    </div>
+
+    @if (TempData["SuccessMessage"] is string successMessage)
+    {
+        <div class="teacher-alert teacher-alert--success">@successMessage</div>
+    }
+
+    @if (TempData["ErrorMessage"] is string errorMessage)
+    {
+        <div class="teacher-alert teacher-alert--error">@errorMessage</div>
+    }
+
+    @if (!ViewData.ModelState.IsValid)
+    {
+        <div asp-validation-summary="ModelOnly" class="teacher-alert teacher-alert--error"></div>
+    }
+
+    <div class="teacher-stat-grid teacher-stat-grid--4">
+        <article class="teacher-stat-card">
+            <span class="teacher-stat-label">Sĩ số lớp</span>
+            <div class="teacher-stat-value">@Model.StudentCount</div>
+            <p class="teacher-kicker">Tổng số học viên của buổi học này.</p>
+        </article>
+        <article class="teacher-stat-card">
+            <span class="teacher-stat-label">Đã ghi nhận</span>
+            <div class="teacher-stat-value">@Model.AttendanceCount</div>
+            <p class="teacher-kicker">Số học viên đã có dữ liệu điểm danh.</p>
+        </article>
+        <article class="teacher-stat-card">
+            <span class="teacher-stat-label">Có mặt</span>
+            <div class="teacher-stat-value">@Model.PresentCount</div>
+            <p class="teacher-kicker">Số học viên được đánh dấu có mặt.</p>
+        </article>
+        <article class="teacher-stat-card">
+            <span class="teacher-stat-label">Vắng</span>
+            <div class="teacher-stat-value">@Model.AbsentCount</div>
+            <p class="teacher-kicker">Số học viên được đánh dấu vắng.</p>
+        </article>
+    </div>
+
+    @if (!Model.HasStudents)
+    {
+        <div class="teacher-card">
+            <div class="teacher-card-section">
+                <p class="teacher-empty">Lớp này chưa có học viên. Hãy ghi danh học viên trước khi điểm danh.</p>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="teacher-card">
+            <div class="teacher-card-section">
+                <div class="teacher-toolbar">
+                    <div>
+                        <h2 class="teacher-section-title">Sổ điểm danh</h2>
+                        <p class="teacher-section-subtitle">Điền trạng thái, ghi chú và media cho từng học viên rồi bấm lưu cuối trang.</p>
+                    </div>
+                    <form asp-area="Teacher" asp-controller="Attendances" asp-action="MarkAllPresent" asp-route-sessionId="@Model.SessionId" method="post">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="teacher-btn-secondary">
+                            <span class="material-symbols-outlined text-[18px]">done_all</span>
+                            <span>Đánh dấu nhanh cả lớp có mặt</span>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <form asp-area="Teacher" asp-controller="Attendances" asp-action="Board" method="post" class="teacher-card">
+            @Html.AntiForgeryToken()
+            <input asp-for="SessionId" type="hidden" />
+
+            <div class="teacher-card-section">
+                <div class="teacher-board">
+                    @for (var i = 0; i < Model.Rows.Count; i++)
+                    {
+                        <article class="teacher-board-row">
+                            <input asp-for="Rows[@i].AttendanceId" type="hidden" />
+                            <input asp-for="Rows[@i].StudentId" type="hidden" />
+                            <input asp-for="Rows[@i].StudentName" type="hidden" />
+                            <input asp-for="Rows[@i].StudentUsername" type="hidden" />
+                            <input asp-for="Rows[@i].StudentAvatarUrl" type="hidden" />
+                            <input asp-for="Rows[@i].MediaHint" type="hidden" />
+
+                            <div class="teacher-board-student">
+                                @if (!string.IsNullOrWhiteSpace(Model.Rows[i].StudentAvatarUrl))
+                                {
+                                    <img src="@Model.Rows[i].StudentAvatarUrl" alt="@Model.Rows[i].StudentName" class="teacher-avatar" />
+                                }
+                                else
+                                {
+                                    <div class="teacher-avatar-fallback">
+                                        @Model.Rows[i].StudentName.Trim()[0].ToString().ToUpperInvariant()
+                                    </div>
+                                }
+
+                                <div>
+                                    <p class="text-sm font-semibold text-[#1a1c19]">@Model.Rows[i].StudentName</p>
+                                    <p class="mt-1 text-sm text-[#73796b]">@Model.Rows[i].StudentUsername</p>
+                                </div>
+                            </div>
+
+                            <div class="teacher-board-fields">
+                                <div class="teacher-toggle">
+                                    <label class="teacher-checkbox">
+                                        <input asp-for="Rows[@i].IsPresent" />
+                                        <span>Có mặt</span>
+                                    </label>
+                                </div>
+
+                                <div class="teacher-field">
+                                    <label asp-for="Rows[@i].TeacherRawNote">Ghi chú giáo viên</label>
+                                    <textarea asp-for="Rows[@i].TeacherRawNote" rows="3" placeholder="Ghi chú ngắn về tiến độ, thái độ hoặc điều cần lưu ý."></textarea>
+                                    <span asp-validation-for="Rows[@i].TeacherRawNote" class="teacher-field-error"></span>
+                                </div>
+
+                                <div class="teacher-field">
+                                    <label asp-for="Rows[@i].ProductMediaUrls">Media sản phẩm</label>
+                                    <textarea asp-for="Rows[@i].ProductMediaUrls" rows="3" placeholder="Mỗi dòng một link ảnh hoặc video."></textarea>
+                                    <p class="teacher-field-hint">@Model.Rows[i].MediaHint</p>
+                                    <span asp-validation-for="Rows[@i].ProductMediaUrls" class="teacher-field-error"></span>
+                                </div>
+                            </div>
+                        </article>
+                    }
+                </div>
+
+                <div class="mt-8 flex flex-wrap justify-end gap-3">
+                    <a asp-area="Teacher" asp-controller="Attendances" asp-action="Index" class="teacher-btn-secondary">
+                        <span>Quay lại</span>
+                    </a>
+                    <button type="submit" class="teacher-btn-primary">
+                        <span class="material-symbols-outlined text-[18px]">save</span>
+                        <span>Lưu điểm danh</span>
+                    </button>
+                </div>
+            </div>
+        </form>
+    }
+</section>

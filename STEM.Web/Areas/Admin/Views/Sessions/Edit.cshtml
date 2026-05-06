@@ -8,7 +8,7 @@
     <div class="admin-page-header">
         <div>
             <h1 class="admin-page-title">Cập nhật buổi học</h1>
-            <p class="admin-page-subtitle">Cập nhật lịch học, chủ đề và tài liệu của buổi học.</p>
+            <p class="admin-page-subtitle">Điều chỉnh lịch học, chủ đề và tài liệu của buổi học.</p>
         </div>
 
         <div class="admin-actions">
@@ -26,7 +26,7 @@
             <div class="admin-card-section">
                 <div class="mb-6">
                     <h2 class="admin-section-title">Thông tin buổi học</h2>
-                    <p class="admin-section-subtitle">Mọi thay đổi tại đây sẽ cập nhật trực tiếp vào bản ghi hiện có của buổi học.</p>
+                    <p class="admin-section-subtitle">Các thay đổi tại đây sẽ cập nhật trực tiếp vào buổi học hiện tại.</p>
                 </div>
 
                 <div class="admin-field-grid two-col">
@@ -40,7 +40,8 @@
 
                     <div>
                         <label asp-for="SessionNo" class="admin-label"></label>
-                        <input asp-for="SessionNo" class="admin-input" />
+                        <input asp-for="SessionNo" class="admin-input" placeholder="Ví dụ: 1, 2, 3..." />
+                        <p class="mt-2 text-sm text-[#73796b]">Đây là thứ tự của buổi học trong lớp, không phải tổng số buổi của khóa.</p>
                         <span asp-validation-for="SessionNo" class="admin-validation"></span>
                     </div>
 
@@ -64,25 +65,25 @@
 
                     <div class="md:col-span-2">
                         <label asp-for="Topic" class="admin-label"></label>
-                        <input asp-for="Topic" class="admin-input" />
+                        <input asp-for="Topic" class="admin-input" placeholder="Ví dụ: Làm quen cảm biến cơ bản" />
                         <span asp-validation-for="Topic" class="admin-validation"></span>
                     </div>
 
                     <div class="md:col-span-2">
                         <label asp-for="TeachingMaterialUrl" class="admin-label"></label>
-                        <input asp-for="TeachingMaterialUrl" class="admin-input" />
+                        <input asp-for="TeachingMaterialUrl" class="admin-input" placeholder="https://..." />
                         <span asp-validation-for="TeachingMaterialUrl" class="admin-validation"></span>
                     </div>
 
                     <div class="md:col-span-2">
                         <label asp-for="ClassMediaUrls" class="admin-label"></label>
-                        <textarea asp-for="ClassMediaUrls" class="admin-textarea" rows="4"></textarea>
+                        <textarea asp-for="ClassMediaUrls" class="admin-textarea" rows="4" placeholder="Dán URL ảnh hoặc video của lớp"></textarea>
                         <span asp-validation-for="ClassMediaUrls" class="admin-validation"></span>
                     </div>
 
                     <div class="md:col-span-2">
                         <label asp-for="AssistantNote" class="admin-label"></label>
-                        <textarea asp-for="AssistantNote" class="admin-textarea" rows="4"></textarea>
+                        <textarea asp-for="AssistantNote" class="admin-textarea" rows="4" placeholder="Ghi chú trợ giảng, vận hành hoặc lưu ý trước buổi học"></textarea>
                         <span asp-validation-for="AssistantNote" class="admin-validation"></span>
                     </div>
                 </div>

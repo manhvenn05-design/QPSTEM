@@ -1,0 +1,114 @@
+@model STEM.Web.Areas.Teacher.Models.TeacherEvidenceIndexViewModel
+
+@{
+    ViewData["Title"] = "Minh chứng";
+}
+
+<section class="teacher-page">
+    <div class="teacher-page-header">
+        <div>
+            <h1 class="teacher-page-title">Minh chứng</h1>
+            <p class="teacher-page-subtitle">Rà soát các bản ghi còn thiếu ảnh, video hoặc ghi chú để hoàn tất buổi học.</p>
+        </div>
+    </div>
+
+    <div class="teacher-stat-grid teacher-stat-grid--4">
+        <article class="teacher-stat-card">
+            <span class="teacher-stat-label">Tổng bản ghi</span>
+            <div class="teacher-stat-value">@Model.TotalRows</div>
+            <p class="teacher-kicker">Các bản ghi điểm danh thuộc lớp bạn phụ trách.</p>
+        </article>
+        <article class="teacher-stat-card">
+            <span class="teacher-stat-label">Thiếu media</span>
+            <div class="teacher-stat-value">@Model.MissingMediaCount</div>
+            <p class="teacher-kicker">Cần bổ sung ảnh hoặc video sản phẩm.</p>
+        </article>
+        <article class="teacher-stat-card">
+            <span class="teacher-stat-label">Thiếu ghi chú</span>
+            <div class="teacher-stat-value">@Model.MissingNoteCount</div>
+            <p class="teacher-kicker">Nên cập nhật nhận xét ngắn của buổi học.</p>
+        </article>
+        <article class="teacher-stat-card">
+            <span class="teacher-stat-label">Đã đủ</span>
+            <div class="teacher-stat-value">@Model.ReadyCount</div>
+            <p class="teacher-kicker">Có đủ ghi chú và media.</p>
+        </article>
+    </div>
+
+    <div class="teacher-card">
+        <div class="teacher-card-section">
+            <div class="teacher-toolbar">
+                <div class="teacher-filter-list">
+                    @foreach (var filter in Model.Filters)
+                    {
+                        <a asp-area="Teacher"
+                           asp-controller="Evidence"
+                           asp-action="Index"
+                           asp-route-filter="@filter.Key"
+                           asp-route-q="@Model.SearchTerm"
+                           class="@(Model.SelectedFilter == filter.Key ? "teacher-filter is-active" : "teacher-filter")">
+                            @filter.Label
+                        </a>
+                    }
+                </div>
+
+                <form method="get" class="teacher-search-form">
+                    <input type="hidden" name="filter" value="@Model.SelectedFilter" />
+                    <label class="sr-only" for="teacher-evidence-search">Tìm bản ghi</label>
+                    <div class="teacher-search-box">
+                        <span class="material-symbols-outlined text-[20px] text-[#73796b]">search</span>
+                        <input id="teacher-evidence-search"
+                               name="q"
+                               value="@Model.SearchTerm"
+                               type="search"
+                               placeholder="Tìm theo học viên, lớp hoặc chủ đề" />
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="teacher-list">
+        @if (Model.Items.Count == 0)
+        {
+            <div class="teacher-card">
+                <div class="teacher-card-section">
+                    <p class="teacher-empty">Chưa có bản ghi nào phù hợp với bộ lọc này.</p>
+                </div>
+            </div>
+        }
+        else
+        {
+            @foreach (var item in Model.Items)
+            {
+                <article class="teacher-card">
+                    <div class="teacher-card-section">
+                        <div class="teacher-session-card">
+                            <div class="teacher-session-main">
+                                <div class="flex flex-wrap items-center gap-3">
+                                    <span class="@item.MediaStatusBadgeClass">@item.MediaStatusLabel</span>
+                                    <span class="teacher-tag teacher-tag--neutral">@item.SessionLabel</span>
+                                </div>
+                                <h2 class="teacher-section-title mt-4">@item.StudentName</h2>
+                                <p class="teacher-section-subtitle mt-1">@item.StudentUsername · @item.ClassCode · @item.CourseName</p>
+                                <div class="teacher-meta-row mt-4">
+                                    <span>@item.DateText</span>
+                                    <span>@item.Topic</span>
+                                    <span>@item.MediaCount media</span>
+                                </div>
+                                <p class="teacher-kicker mt-3">@item.NotePreview</p>
+                            </div>
+
+                            <div class="teacher-session-side !min-w-[220px]">
+                                <div class="teacher-inline-list w-full justify-end">
+                                    <a asp-area="Teacher" asp-controller="Evidence" asp-action="Details" asp-route-id="@item.AttendanceId" class="teacher-btn-secondary">Chi tiết</a>
+                                    <a asp-area="Teacher" asp-controller="Attendances" asp-action="Board" asp-route-sessionId="@item.SessionId" class="teacher-btn-primary">Mở buổi học</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+            }
+        }
+    </div>
+</section>

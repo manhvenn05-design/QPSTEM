@@ -1,3 +1,5 @@
+@model STEM.Web.Areas.Admin.Models.SettingsViewModel
+
 @{
     ViewData["Title"] = "Cài đặt";
 }
@@ -6,8 +8,36 @@
     <div class="admin-page-header">
         <div>
             <h1 class="admin-page-title">Cài đặt hệ thống</h1>
-            <p class="admin-page-subtitle">Mở nhanh các khu vực cần rà soát trong phần quản trị.</p>
+            <p class="admin-page-subtitle">Rà soát nhanh các khu vực quan trọng trước khi đi sâu vào từng màn.</p>
         </div>
+    </div>
+
+    <div class="admin-stat-grid five-col">
+        <article class="admin-stat-card">
+            <span class="admin-stat-label">Tài khoản</span>
+            <div class="admin-stat-value">@Model.TotalUsers</div>
+            <p class="admin-kicker">Tổng số người dùng đang có trong hệ thống.</p>
+        </article>
+        <article class="admin-stat-card">
+            <span class="admin-stat-label">Giáo viên đang hoạt động</span>
+            <div class="admin-stat-value">@Model.ActiveTeachers</div>
+            <p class="admin-kicker">Dùng để kiểm tra nhanh nhân sự giảng dạy.</p>
+        </article>
+        <article class="admin-stat-card">
+            <span class="admin-stat-label">Lớp đang chạy</span>
+            <div class="admin-stat-value">@Model.ActiveClasses</div>
+            <p class="admin-kicker">Các lớp đang nằm trong thời gian vận hành.</p>
+        </article>
+        <article class="admin-stat-card">
+            <span class="admin-stat-label">Hóa đơn còn dư</span>
+            <div class="admin-stat-value">@Model.UnpaidInvoices</div>
+            <p class="admin-kicker">Nên kiểm tra tại màn tài chính.</p>
+        </article>
+        <article class="admin-stat-card">
+            <span class="admin-stat-label">Thiết bị đang xử lý</span>
+            <div class="admin-stat-value">@Model.EquipmentsInMaintenance</div>
+            <p class="admin-kicker">Bao gồm các phiếu bảo trì đang mở.</p>
+        </article>
     </div>
 
     <div class="grid gap-6 xl:grid-cols-3">
@@ -25,7 +55,7 @@
             <div class="admin-card-section space-y-4">
                 <div>
                     <h2 class="admin-section-title">Nội dung website</h2>
-                    <p class="admin-section-subtitle">Cập nhật bài viết và banner hiển thị.</p>
+                    <p class="admin-section-subtitle">@Model.PublishedPosts bài viết và @Model.ActiveBanners banner đang hiển thị.</p>
                 </div>
                 <a asp-area="Admin" asp-controller="Cms" asp-action="Index" class="admin-btn-secondary w-full">Mở CMS</a>
             </div>
@@ -45,7 +75,7 @@
             <div class="admin-card-section space-y-4">
                 <div>
                     <h2 class="admin-section-title">Kho thiết bị</h2>
-                    <p class="admin-section-subtitle">Kiểm tra danh mục, thiết bị và bảo trì.</p>
+                    <p class="admin-section-subtitle">Kiểm tra thiết bị sẵn sàng, đang mượn và đang xử lý.</p>
                 </div>
                 <a asp-area="Admin" asp-controller="Inventory" asp-action="Index" class="admin-btn-secondary w-full">Mở kho thiết bị</a>
             </div>
@@ -68,7 +98,7 @@
             <div class="admin-card-section space-y-4">
                 <div>
                     <h2 class="admin-section-title">Điểm danh</h2>
-                    <p class="admin-section-subtitle">Kiểm tra sổ điểm danh và trạng thái ghi nhận của từng buổi.</p>
+                    <p class="admin-section-subtitle">Theo dõi nhanh các buổi còn thiếu bản ghi hoặc cần kiểm tra lại.</p>
                 </div>
                 <a asp-area="Admin" asp-controller="Attendances" asp-action="Index" class="admin-btn-secondary w-full">Mở điểm danh</a>
             </div>

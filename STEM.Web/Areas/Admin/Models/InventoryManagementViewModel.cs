@@ -47,6 +47,7 @@ public class InventoryEquipmentItemViewModel
     public string StatusLabel { get; set; } = string.Empty;
     public string StatusBadgeClass { get; set; } = string.Empty;
     public bool HasActiveBorrow { get; set; }
+    public int? ActiveBorrowId { get; set; }
     public string BorrowSummary { get; set; } = string.Empty;
     public int MaintenanceCount { get; set; }
     public string LastIssueSummary { get; set; } = string.Empty;

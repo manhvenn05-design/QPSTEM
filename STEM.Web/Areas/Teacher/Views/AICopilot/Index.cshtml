@@ -1,0 +1,127 @@
+@model STEM.Web.Areas.Teacher.Models.TeacherAICopilotViewModel
+
+@{
+    ViewData["Title"] = "AI Copilot";
+}
+
+<section class="teacher-page">
+    <div class="teacher-page-header">
+        <div>
+            <h1 class="teacher-page-title">AI Copilot</h1>
+            <p class="teacher-page-subtitle">Chuẩn bị dữ liệu nhận xét trước khi kết nối AI. Trang này hiện dùng để rà soát nội dung đầu vào và kết quả đã lưu.</p>
+        </div>
+    </div>
+
+    <div class="teacher-card">
+        <div class="teacher-card-section">
+            <div class="teacher-inline-list items-center justify-between">
+                <div>
+                    <h2 class="teacher-section-title">Trạng thái kết nối</h2>
+                    <p class="teacher-section-subtitle">Chức năng tạo nhận xét sẽ bật sau khi cấu hình AI hoàn tất.</p>
+                </div>
+                <span class="teacher-tag teacher-tag--warning">Chưa kết nối AI</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="teacher-stat-grid teacher-stat-grid--4">
+        <article class="teacher-stat-card">
+            <span class="teacher-stat-label">Sẵn sàng</span>
+            <div class="teacher-stat-value">@Model.ReadyCount</div>
+            <p class="teacher-kicker">Đã có đủ ghi chú và media.</p>
+        </article>
+        <article class="teacher-stat-card">
+            <span class="teacher-stat-label">Đã có nhận xét</span>
+            <div class="teacher-stat-value">@Model.CompletedCount</div>
+            <p class="teacher-kicker">Các bản ghi đã có nội dung AI trong DB.</p>
+        </article>
+        <article class="teacher-stat-card">
+            <span class="teacher-stat-label">Thiếu ghi chú</span>
+            <div class="teacher-stat-value">@Model.MissingNoteCount</div>
+            <p class="teacher-kicker">Cần bổ sung ghi chú trước khi dùng AI.</p>
+        </article>
+    </div>
+
+    <div class="teacher-panel-grid">
+        <div class="teacher-card">
+            <div class="teacher-card-section">
+                <div class="teacher-filter-list">
+                    @foreach (var filter in Model.Filters)
+                    {
+                        <a asp-area="Teacher"
+                           asp-controller="AICopilot"
+                           asp-action="Index"
+                           asp-route-filter="@filter.Key"
+                           class="@(Model.SelectedFilter == filter.Key ? "teacher-filter is-active" : "teacher-filter")">
+                            @filter.Label
+                        </a>
+                    }
+                </div>
+
+                <div class="teacher-list mt-6">
+                    @if (Model.Candidates.Count == 0)
+                    {
+                        <p class="teacher-empty">Chưa có bản ghi nào phù hợp với bộ lọc này.</p>
+                    }
+                    else
+                    {
+                        @foreach (var item in Model.Candidates)
+                        {
+                            <a asp-area="Teacher"
+                               asp-controller="AICopilot"
+                               asp-action="Index"
+                               asp-route-filter="@Model.SelectedFilter"
+                               asp-route-attendanceId="@item.AttendanceId"
+                               class="teacher-data-row">
+                                <div class="flex items-start justify-between gap-4">
+                                    <div>
+                                        <p class="text-sm font-semibold text-[#1a1c19]">@item.StudentName</p>
+                                        <p class="teacher-section-subtitle mt-1">@item.ClassCode · @item.SessionLabel</p>
+                                    </div>
+                                    <span class="@item.StatusBadgeClass">@item.StatusLabel</span>
+                                </div>
+                            </a>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="teacher-card">
+            <div class="teacher-card-section">
+                <h2 class="teacher-section-title">Xem trước dữ liệu</h2>
+                <p class="teacher-section-subtitle">Kiểm tra ghi chú và nhận xét hiện có trước khi tích hợp AI thật.</p>
+
+                @if (Model.Preview == null)
+                {
+                    <p class="teacher-empty mt-6">Chọn một bản ghi ở cột bên trái để xem chi tiết.</p>
+                }
+                else
+                {
+                    <div class="teacher-stack mt-6">
+                        <dl class="teacher-key-value">
+                            <dt>Học viên</dt>
+                            <dd>@Model.Preview.StudentName</dd>
+                        </dl>
+                        <dl class="teacher-key-value">
+                            <dt>Buổi học</dt>
+                            <dd>@Model.Preview.ClassCode · @Model.Preview.SessionLabel</dd>
+                        </dl>
+                        <dl class="teacher-key-value">
+                            <dt>Chủ đề</dt>
+                            <dd>@Model.Preview.Topic</dd>
+                        </dl>
+                        <dl class="teacher-key-value">
+                            <dt>Ghi chú đầu vào</dt>
+                            <dd>@(!string.IsNullOrWhiteSpace(Model.Preview.RawNote) ? Model.Preview.RawNote : "Chưa có ghi chú.")</dd>
+                        </dl>
+                        <dl class="teacher-key-value">
+                            <dt>Nhận xét AI hiện có</dt>
+                            <dd>@(!string.IsNullOrWhiteSpace(Model.Preview.ExistingEvaluation) ? Model.Preview.ExistingEvaluation : "Chưa có nội dung AI.")</dd>
+                        </dl>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</section>

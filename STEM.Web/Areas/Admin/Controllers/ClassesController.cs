@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.Data.SqlClient;
@@ -26,10 +26,10 @@ public class ClassesController : Controller
     {
         var filters = new[]
         {
-            new ClassFilterViewModel { Key = "all", Label = "Tất cả" },
-            new ClassFilterViewModel { Key = "active", Label = "Đang mở" },
-            new ClassFilterViewModel { Key = "upcoming", Label = "Sắp khai giảng" },
-            new ClassFilterViewModel { Key = "completed", Label = "Đã kết thúc" }
+            new ClassFilterViewModel { Key = "all", Label = "Táº¥t cáº£" },
+            new ClassFilterViewModel { Key = "active", Label = "Äang má»Ÿ" },
+            new ClassFilterViewModel { Key = "upcoming", Label = "Sáº¯p khai giáº£ng" },
+            new ClassFilterViewModel { Key = "completed", Label = "ÄÃ£ káº¿t thÃºc" }
         };
 
         var normalizedFilter = string.IsNullOrWhiteSpace(filter) ? "all" : filter.Trim().ToLowerInvariant();
@@ -93,7 +93,7 @@ public class ClassesController : Controller
     }
 
     [HttpGet]
-    public async Task<IActionResult> Details(int id)
+    public async Task<IActionResult> Details(int id, string? studentSearch = null)
     {
         var today = DateOnly.FromDateTime(DateTime.Today);
 
@@ -114,22 +114,23 @@ public class ClassesController : Controller
                 EnrollmentCount = x.Enrollments.Count,
                 SessionCount = x.Sessions.Count,
                 StatusLabel = x.StartDate > today
-                    ? "Sắp khai giảng"
+                    ? "Sáº¯p khai giáº£ng"
                     : x.EndDate.HasValue && x.EndDate.Value < today
-                        ? "Đã kết thúc"
-                        : "Đang mở",
+                        ? "ÄÃ£ káº¿t thÃºc"
+                        : "Äang má»Ÿ",
                 StatusBadgeClass = x.StartDate > today
                     ? "bg-[#fff4e8] text-[#9b682f]"
                     : x.EndDate.HasValue && x.EndDate.Value < today
                         ? "bg-[#eeeee9] text-[#42493d]"
                         : "bg-[#edf7e8] text-[#456c3f]",
-                AgeRangeText = $"{x.Course.TargetAgeMin}-{x.Course.TargetAgeMax} tuổi",
-                PriceText = $"{x.Course.Price:N0}đ",
-                TotalSessionsText = $"{x.Course.TotalSessions} buổi",
+                AgeRangeText = $"{x.Course.TargetAgeMin}-{x.Course.TargetAgeMax} tuá»•i",
+                PriceText = $"{x.Course.Price:N0}Ä‘",
+                TotalSessionsText = $"{x.Course.TotalSessions} buá»•i",
                 Students = x.Enrollments
                     .OrderBy(e => e.Student.FullName)
                     .Select(e => new ClassStudentSummaryViewModel
                     {
+                        StudentId = e.StudentId,
                         FullName = e.Student.FullName,
                         Username = e.Student.Username,
                         EnrollDateText = e.EnrollDate.ToString("dd/MM/yyyy")
@@ -139,6 +140,7 @@ public class ClassesController : Controller
                     .OrderBy(s => s.SessionNo)
                     .Select(s => new ClassSessionSummaryViewModel
                     {
+                        Id = s.Id,
                         SessionNo = s.SessionNo,
                         Date = s.Date,
                         StartTime = s.StartTime,
@@ -154,6 +156,12 @@ public class ClassesController : Controller
             return NotFound();
         }
 
+        var normalizedStudentSearch = studentSearch?.Trim() ?? string.Empty;
+        var availableStudents = await GetAvailableStudentsAsync(id, normalizedStudentSearch);
+        model.StudentSearchTerm = normalizedStudentSearch;
+        model.AvailableStudents = availableStudents;
+        model.AvailableStudentCount = availableStudents.Count;
+
         return View(model);
     }
 
@@ -167,6 +175,133 @@ public class ClassesController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    public async Task<IActionResult> EnrollStudent(int id, int? studentId)
+    {
+        if (!studentId.HasValue)
+        {
+            TempData["ErrorMessage"] = "Vui lÃ²ng chá»n há»c viÃªn.";
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
+        if (!await _context.Classes.AnyAsync(x => x.Id == id))
+        {
+            return NotFound();
+        }
+
+        var isValidStudent = await _context.Users.AnyAsync(x =>
+            x.Id == studentId.Value &&
+            x.IsActive &&
+            (x.Role.Name == "Student" || x.Role.Name == "Há»c sinh"));
+
+        if (!isValidStudent)
+        {
+            TempData["ErrorMessage"] = "Há»c viÃªn khÃ´ng há»£p lá»‡.";
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
+        if (await _context.Enrollments.AnyAsync(x => x.ClassId == id && x.StudentId == studentId.Value))
+        {
+            TempData["ErrorMessage"] = "Há»c viÃªn nÃ y Ä‘Ã£ cÃ³ trong lá»›p.";
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
+        _context.Enrollments.Add(new Enrollment
+        {
+            ClassId = id,
+            StudentId = studentId.Value
+        });
+
+        await _context.SaveChangesAsync();
+        TempData["SuccessMessage"] = "ÄÃ£ thÃªm há»c viÃªn vÃ o lá»›p.";
+        return RedirectToAction(nameof(Details), new { id });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> EnrollStudents(int id, List<int> studentIds)
+    {
+        if (studentIds.Count == 0)
+        {
+            TempData["ErrorMessage"] = "Vui lÃ²ng chá»n Ã­t nháº¥t má»™t há»c viÃªn.";
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
+        if (!await _context.Classes.AnyAsync(x => x.Id == id))
+        {
+            return NotFound();
+        }
+
+        var validStudentIds = await _context.Users
+            .AsNoTracking()
+            .Where(x =>
+                studentIds.Contains(x.Id) &&
+                x.IsActive &&
+                (x.Role.Name == "Student" || x.Role.Name == "Há»c sinh"))
+            .Select(x => x.Id)
+            .ToListAsync();
+
+        if (validStudentIds.Count == 0)
+        {
+            TempData["ErrorMessage"] = "KhÃ´ng cÃ³ há»c viÃªn há»£p lá»‡ Ä‘á»ƒ thÃªm vÃ o lá»›p.";
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
+        var enrolledIds = await _context.Enrollments
+            .AsNoTracking()
+            .Where(x => x.ClassId == id && validStudentIds.Contains(x.StudentId))
+            .Select(x => x.StudentId)
+            .ToListAsync();
+
+        var newIds = validStudentIds.Except(enrolledIds).ToList();
+        if (newIds.Count == 0)
+        {
+            TempData["ErrorMessage"] = "CÃ¡c há»c viÃªn Ä‘Ã£ chá»n Ä‘á»u Ä‘Ã£ cÃ³ trong lá»›p.";
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
+        _context.Enrollments.AddRange(newIds.Select(studentId => new Enrollment
+        {
+            ClassId = id,
+            StudentId = studentId
+        }));
+
+        await _context.SaveChangesAsync();
+        TempData["SuccessMessage"] = $"ÄÃ£ thÃªm {newIds.Count} há»c viÃªn vÃ o lá»›p.";
+        return RedirectToAction(nameof(Details), new { id });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> RemoveStudent(int id, int studentId)
+    {
+        var enrollment = await _context.Enrollments.FirstOrDefaultAsync(x => x.ClassId == id && x.StudentId == studentId);
+        if (enrollment == null)
+        {
+            TempData["ErrorMessage"] = "KhÃ´ng tÃ¬m tháº¥y há»c viÃªn trong lá»›p nÃ y.";
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
+        if (await _context.Attendances.AnyAsync(x => x.StudentId == studentId && x.Session.ClassId == id))
+        {
+            TempData["ErrorMessage"] = "KhÃ´ng thá»ƒ gá»¡ há»c viÃªn nÃ y vÃ¬ Ä‘Ã£ cÃ³ Ä‘iá»ƒm danh trong lá»›p.";
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
+        if (await _context.Invoices.AnyAsync(x => x.ClassId == id && x.StudentId == studentId))
+        {
+            TempData["ErrorMessage"] = "KhÃ´ng thá»ƒ gá»¡ há»c viÃªn nÃ y vÃ¬ Ä‘Ã£ cÃ³ hÃ³a Ä‘Æ¡n liÃªn quan.";
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
+        _context.Enrollments.Remove(enrollment);
+        await _context.SaveChangesAsync();
+
+        TempData["SuccessMessage"] = "ÄÃ£ gá»¡ há»c viÃªn khá»i lá»›p.";
+        return RedirectToAction(nameof(Details), new { id });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(CreateClassViewModel model)
     {
         await PopulateOptionsAsync(model);
@@ -174,17 +309,17 @@ public class ClassesController : Controller
 
         if (await _context.Classes.AnyAsync(x => x.ClassCode.ToLower() == normalizedCode.ToLower()))
         {
-            ModelState.AddModelError(nameof(model.ClassCode), "Mã lớp đã tồn tại.");
+            ModelState.AddModelError(nameof(model.ClassCode), "MÃ£ lá»›p Ä‘Ã£ tá»“n táº¡i.");
         }
 
         if (!await IsValidCourseAsync(model.CourseId))
         {
-            ModelState.AddModelError(nameof(model.CourseId), "Khóa học không hợp lệ.");
+            ModelState.AddModelError(nameof(model.CourseId), "KhÃ³a há»c khÃ´ng há»£p lá»‡.");
         }
 
         if (!await IsValidTeacherAsync(model.TeacherId))
         {
-            ModelState.AddModelError(nameof(model.TeacherId), "Giáo viên không hợp lệ.");
+            ModelState.AddModelError(nameof(model.TeacherId), "GiÃ¡o viÃªn khÃ´ng há»£p lá»‡.");
         }
 
         if (!ModelState.IsValid)
@@ -208,11 +343,11 @@ public class ClassesController : Controller
         }
         catch (DbUpdateException ex) when (IsDuplicateClassCode(ex))
         {
-            ModelState.AddModelError(nameof(model.ClassCode), "Mã lớp đã tồn tại.");
+            ModelState.AddModelError(nameof(model.ClassCode), "MÃ£ lá»›p Ä‘Ã£ tá»“n táº¡i.");
             return View(model);
         }
 
-        TempData["SuccessMessage"] = "Đã tạo lớp học mới.";
+        TempData["SuccessMessage"] = "ÄÃ£ táº¡o lá»›p há»c má»›i.";
         return RedirectToAction(nameof(Index));
     }
 
@@ -258,17 +393,17 @@ public class ClassesController : Controller
 
         if (await _context.Classes.AnyAsync(x => x.Id != model.Id && x.ClassCode.ToLower() == normalizedCode.ToLower()))
         {
-            ModelState.AddModelError(nameof(model.ClassCode), "Mã lớp đã tồn tại.");
+            ModelState.AddModelError(nameof(model.ClassCode), "MÃ£ lá»›p Ä‘Ã£ tá»“n táº¡i.");
         }
 
         if (!await IsValidCourseAsync(model.CourseId))
         {
-            ModelState.AddModelError(nameof(model.CourseId), "Khóa học không hợp lệ.");
+            ModelState.AddModelError(nameof(model.CourseId), "KhÃ³a há»c khÃ´ng há»£p lá»‡.");
         }
 
         if (!await IsValidTeacherAsync(model.TeacherId))
         {
-            ModelState.AddModelError(nameof(model.TeacherId), "Giáo viên không hợp lệ.");
+            ModelState.AddModelError(nameof(model.TeacherId), "GiÃ¡o viÃªn khÃ´ng há»£p lá»‡.");
         }
 
         if (!ModelState.IsValid)
@@ -288,11 +423,11 @@ public class ClassesController : Controller
         }
         catch (DbUpdateException ex) when (IsDuplicateClassCode(ex))
         {
-            ModelState.AddModelError(nameof(model.ClassCode), "Mã lớp đã tồn tại.");
+            ModelState.AddModelError(nameof(model.ClassCode), "MÃ£ lá»›p Ä‘Ã£ tá»“n táº¡i.");
             return View(model);
         }
 
-        TempData["SuccessMessage"] = "Đã cập nhật lớp học.";
+        TempData["SuccessMessage"] = "ÄÃ£ cáº­p nháº­t lá»›p há»c.";
         return RedirectToAction(nameof(Index));
     }
 
@@ -308,20 +443,20 @@ public class ClassesController : Controller
 
         if (entity == null)
         {
-            TempData["ErrorMessage"] = "Không tìm thấy lớp học cần xóa.";
+            TempData["ErrorMessage"] = "KhÃ´ng tÃ¬m tháº¥y lá»›p há»c cáº§n xÃ³a.";
             return RedirectToAction(nameof(Index));
         }
 
         if (entity.Enrollments.Count > 0 || entity.Sessions.Count > 0 || entity.Invoices.Count > 0)
         {
-            TempData["ErrorMessage"] = "Không thể xóa lớp học này vì đang có học viên, buổi học hoặc hóa đơn liên quan.";
+            TempData["ErrorMessage"] = "KhÃ´ng thá»ƒ xÃ³a lá»›p há»c nÃ y vÃ¬ Ä‘ang cÃ³ há»c viÃªn, buá»•i há»c hoáº·c hÃ³a Ä‘Æ¡n liÃªn quan.";
             return RedirectToAction(nameof(Index));
         }
 
         _context.Classes.Remove(entity);
         await _context.SaveChangesAsync();
 
-        TempData["SuccessMessage"] = "Đã xóa lớp học.";
+        TempData["SuccessMessage"] = "ÄÃ£ xÃ³a lá»›p há»c.";
         return RedirectToAction(nameof(Index));
     }
 
@@ -335,9 +470,38 @@ public class ClassesController : Controller
 
         model.TeacherOptions = await _context.Users
             .AsNoTracking()
-            .Where(x => x.IsActive && (x.Role.Name == "Teacher" || x.Role.Name == "Giáo viên"))
+            .Where(x => x.IsActive && (x.Role.Name == "Teacher" || x.Role.Name == "GiÃ¡o viÃªn"))
             .OrderBy(x => x.FullName)
             .Select(x => new SelectListItem(x.FullName, x.Id.ToString()))
+            .ToListAsync();
+    }
+
+    private async Task<IReadOnlyList<ClassAvailableStudentViewModel>> GetAvailableStudentsAsync(int classId, string searchTerm)
+    {
+        var query = _context.Users
+            .AsNoTracking()
+            .Where(x =>
+                x.IsActive &&
+                (x.Role.Name == "Student" || x.Role.Name == "Há»c sinh") &&
+                !x.Enrollments.Any(e => e.ClassId == classId));
+
+        if (!string.IsNullOrWhiteSpace(searchTerm))
+        {
+            query = query.Where(x =>
+                x.FullName.Contains(searchTerm) ||
+                x.Username.Contains(searchTerm));
+        }
+
+        return await query
+            .OrderBy(x => x.FullName)
+            .Select(x => new ClassAvailableStudentViewModel
+            {
+                StudentId = x.Id,
+                FullName = x.FullName,
+                Username = x.Username,
+                SchoolName = x.StudentProfile != null ? x.StudentProfile.CurrentSchool : null
+            })
+            .Take(100)
             .ToListAsync();
     }
 
@@ -351,7 +515,7 @@ public class ClassesController : Controller
         return teacherId.HasValue && await _context.Users.AnyAsync(x =>
             x.Id == teacherId.Value &&
             x.IsActive &&
-            (x.Role.Name == "Teacher" || x.Role.Name == "Giáo viên"));
+            (x.Role.Name == "Teacher" || x.Role.Name == "GiÃ¡o viÃªn"));
     }
 
     private static IQueryable<ClassListProjection> ApplyFilter(IQueryable<ClassListProjection> query, string filter, DateOnly today)
@@ -368,10 +532,10 @@ public class ClassesController : Controller
     private static ClassManagementItemViewModel MapClassListItem(ClassListProjection item, DateOnly today)
     {
         var statusLabel = item.StartDate > today
-            ? "Sắp khai giảng"
+            ? "Sáº¯p khai giáº£ng"
             : item.EndDate.HasValue && item.EndDate.Value < today
-                ? "Đã kết thúc"
-                : "Đang mở";
+                ? "ÄÃ£ káº¿t thÃºc"
+                : "Äang má»Ÿ";
 
         var statusBadgeClass = item.StartDate > today
             ? "bg-[#fff4e8] text-[#9b682f]"
@@ -379,7 +543,7 @@ public class ClassesController : Controller
                 ? "bg-[#eeeee9] text-[#42493d]"
                 : "bg-[#edf7e8] text-[#456c3f]";
 
-        var scheduleText = $"{item.StartDate:dd/MM/yyyy} - {(item.EndDate.HasValue ? item.EndDate.Value.ToString("dd/MM/yyyy") : "Đang mở")}";
+        var scheduleText = $"{item.StartDate:dd/MM/yyyy} - {(item.EndDate.HasValue ? item.EndDate.Value.ToString("dd/MM/yyyy") : "Äang má»Ÿ")}";
 
         return new ClassManagementItemViewModel
         {
@@ -391,7 +555,7 @@ public class ClassesController : Controller
             ScheduleText = scheduleText,
             EnrollmentCount = item.EnrollmentCount,
             SessionCount = item.SessionCount,
-            EnrollmentText = $"{item.EnrollmentCount} học viên · {item.SessionCount} buổi",
+            EnrollmentText = $"{item.EnrollmentCount} há»c viÃªn Â· {item.SessionCount} buá»•i",
             StatusLabel = statusLabel,
             StatusBadgeClass = statusBadgeClass
         };
@@ -421,3 +585,4 @@ public class ClassesController : Controller
         public int SessionCount { get; set; }
     }
 }
+

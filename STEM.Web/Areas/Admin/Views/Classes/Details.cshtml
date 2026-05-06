@@ -8,14 +8,25 @@
     <div class="admin-page-header">
         <div>
             <h1 class="admin-page-title">Chi tiết lớp học</h1>
-            <p class="admin-page-subtitle">Xem đầy đủ thông tin lớp, giáo viên phụ trách, danh sách học viên và các buổi học đã được tạo.</p>
+            <p class="admin-page-subtitle">Theo dõi lớp, thêm học viên và mở các buổi học liên quan.</p>
         </div>
 
         <div class="admin-actions">
+            <a asp-area="Admin" asp-controller="Sessions" asp-action="Create" asp-route-classId="@Model.Id" class="admin-btn-secondary">Thêm buổi học</a>
             <a asp-area="Admin" asp-controller="Classes" asp-action="Edit" asp-route-id="@Model.Id" class="admin-btn-primary">Cập nhật</a>
             <a asp-area="Admin" asp-controller="Classes" asp-action="Index" class="admin-btn-secondary">Quay lại</a>
         </div>
     </div>
+
+    @if (TempData["SuccessMessage"] is string successMessage)
+    {
+        <div class="admin-alert admin-alert--success">@successMessage</div>
+    }
+
+    @if (TempData["ErrorMessage"] is string errorMessage)
+    {
+        <div class="admin-alert admin-alert--error">@errorMessage</div>
+    }
 
     <div class="admin-grid-two">
         <div class="space-y-6">
@@ -54,16 +65,92 @@
 
             <div class="admin-card">
                 <div class="admin-card-section">
-                    <div class="flex items-center justify-between gap-4">
+                    <div class="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
                         <div>
-                            <h2 class="admin-section-title">Danh sách học viên</h2>
-                            <p class="admin-section-subtitle">Dữ liệu lấy trực tiếp từ bảng <code>Enrollments</code>.</p>
+                            <h2 class="admin-section-title">Thêm học viên vào lớp</h2>
+                            <p class="admin-section-subtitle">Tìm theo tên hoặc username rồi chọn nhiều học viên cùng lúc.</p>
                         </div>
+
+                        <form method="get" class="flex w-full flex-col gap-3 xl:max-w-[420px]">
+                            <input type="hidden" name="id" value="@Model.Id" />
+                            <div class="relative">
+                                <span class="material-symbols-outlined pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[20px] text-[#73796b]">search</span>
+                                <input name="studentSearch"
+                                       value="@Model.StudentSearchTerm"
+                                       class="admin-input pl-12"
+                                       placeholder="Tìm theo tên hoặc username" />
+                            </div>
+                            <button type="submit" class="admin-btn-secondary w-full justify-center">Lọc danh sách</button>
+                        </form>
                     </div>
+
+                    @if (Model.AvailableStudents.Count == 0)
+                    {
+                        <div class="admin-empty">Không còn học viên phù hợp để thêm vào lớp này.</div>
+                    }
+                    else
+                    {
+                        <form asp-area="Admin" asp-controller="Classes" asp-action="EnrollStudents" method="post" class="mt-6 space-y-4">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@Model.Id" />
+
+                            <div class="flex flex-wrap items-center justify-between gap-3">
+                                <p class="text-sm text-[#73796b]">@Model.AvailableStudentCount học viên đang hiển thị</p>
+                                <label class="inline-flex items-center gap-2 text-sm font-medium text-[#42493d]">
+                                    <input type="checkbox" data-select-all-students class="h-4 w-4 rounded border-[#c2c9b9] text-[#6a994e] focus:ring-[#6a994e]" />
+                                    <span>Chọn tất cả</span>
+                                </label>
+                            </div>
+
+                            <div class="overflow-hidden rounded-[8px] border border-[#e3e3de]">
+                                <div class="max-h-[420px] overflow-y-auto">
+                                    <table class="admin-table min-w-full">
+                                        <thead>
+                                            <tr>
+                                                <th class="w-[64px]">Chọn</th>
+                                                <th>Học viên</th>
+                                                <th>Tên đăng nhập</th>
+                                                <th>Trường hiện tại</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var student in Model.AvailableStudents)
+                                            {
+                                                <tr>
+                                                    <td>
+                                                        <input type="checkbox"
+                                                               name="studentIds"
+                                                               value="@student.StudentId"
+                                                               data-student-checkbox
+                                                               class="h-4 w-4 rounded border-[#c2c9b9] text-[#6a994e] focus:ring-[#6a994e]" />
+                                                    </td>
+                                                    <td><strong>@student.FullName</strong></td>
+                                                    <td>@student.Username</td>
+                                                    <td>@(string.IsNullOrWhiteSpace(student.SchoolName) ? "Chưa cập nhật" : student.SchoolName)</td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <div class="flex flex-wrap items-center justify-between gap-3">
+                                <p class="text-sm text-[#73796b]"><span data-selected-count>0</span> học viên đã chọn</p>
+                                <button type="submit" class="admin-btn-primary min-w-[220px] justify-center">Thêm học viên đã chọn</button>
+                            </div>
+                        </form>
+                    }
+                </div>
+            </div>
+
+            <div class="admin-card">
+                <div class="admin-card-section">
+                    <h2 class="admin-section-title">Học viên trong lớp</h2>
+                    <p class="admin-section-subtitle">Danh sách học viên đã ghi danh.</p>
 
                     @if (Model.Students.Count == 0)
                     {
-                        <div class="admin-empty">Lớp học này chưa có học viên nào được ghi danh.</div>
+                        <div class="admin-empty">Lớp này chưa có học viên nào.</div>
                     }
                     else
                     {
@@ -74,6 +161,7 @@
                                         <th>Học viên</th>
                                         <th>Tên đăng nhập</th>
                                         <th>Ngày ghi danh</th>
+                                        <th class="text-right">Thao tác</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -83,6 +171,22 @@
                                             <td><strong>@student.FullName</strong></td>
                                             <td>@student.Username</td>
                                             <td>@student.EnrollDateText</td>
+                                            <td>
+                                                <div class="flex justify-end">
+                                                    <form asp-area="Admin" asp-controller="Classes" asp-action="RemoveStudent" method="post" class="inline-flex">
+                                                        @Html.AntiForgeryToken()
+                                                        <input type="hidden" name="id" value="@Model.Id" />
+                                                        <input type="hidden" name="studentId" value="@student.StudentId" />
+                                                        <button type="submit"
+                                                                class="admin-btn-secondary !h-10"
+                                                                data-confirm-submit
+                                                                data-confirm-title="Gỡ học viên"
+                                                                data-confirm-message="Bạn có muốn gỡ học viên này khỏi lớp không?">
+                                                            Gỡ khỏi lớp
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            </td>
                                         </tr>
                                     }
                                 </tbody>
@@ -96,14 +200,15 @@
                 <div class="admin-card-section">
                     <div class="flex items-center justify-between gap-4">
                         <div>
-                            <h2 class="admin-section-title">Tiến độ buổi học</h2>
-                            <p class="admin-section-subtitle">Các buổi đã tạo từ bảng <code>Sessions</code> liên quan đến lớp này.</p>
+                            <h2 class="admin-section-title">Buổi học đã tạo</h2>
+                            <p class="admin-section-subtitle">Tạo buổi mới hoặc mở nhanh sang điểm danh.</p>
                         </div>
+                        <a asp-area="Admin" asp-controller="Sessions" asp-action="Create" asp-route-classId="@Model.Id" class="admin-btn-secondary !h-10">Thêm buổi học</a>
                     </div>
 
                     @if (Model.Sessions.Count == 0)
                     {
-                        <div class="admin-empty">Lớp học này chưa có buổi học nào được lên lịch.</div>
+                        <div class="admin-empty">Lớp này chưa có buổi học nào.</div>
                     }
                     else
                     {
@@ -115,6 +220,7 @@
                                         <th>Ngày học</th>
                                         <th>Khung giờ</th>
                                         <th>Chủ đề</th>
+                                        <th class="text-right">Thao tác</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -125,6 +231,12 @@
                                             <td>@session.Date.ToString("dd/MM/yyyy")</td>
                                             <td>@session.StartTime.ToString("HH:mm") - @session.EndTime.ToString("HH:mm")</td>
                                             <td>@(string.IsNullOrWhiteSpace(session.Topic) ? "Chưa cập nhật" : session.Topic)</td>
+                                            <td>
+                                                <div class="flex justify-end gap-3">
+                                                    <a asp-area="Admin" asp-controller="Sessions" asp-action="Details" asp-route-id="@session.Id" class="admin-btn-secondary !h-10">Chi tiết</a>
+                                                    <a asp-area="Admin" asp-controller="Attendances" asp-action="Board" asp-route-sessionId="@session.Id" class="admin-btn-secondary !h-10">Điểm danh</a>
+                                                </div>
+                                            </td>
                                         </tr>
                                     }
                                 </tbody>
@@ -168,9 +280,42 @@
                             <dt class="admin-label !mb-0">Sĩ số hiện tại</dt>
                             <dd class="mt-1 text-[32px] font-semibold leading-10 text-[#1a1c19]">@Model.EnrollmentCount học viên</dd>
                         </div>
+                        <div>
+                            <dt class="admin-label !mb-0">Kết quả lọc hiện tại</dt>
+                            <dd class="mt-1 text-[32px] font-semibold leading-10 text-[#1a1c19]">@Model.AvailableStudentCount học viên</dd>
+                        </div>
                     </dl>
                 </div>
             </div>
         </aside>
     </div>
 </section>
+
+@section Scripts {
+    <script>
+        (() => {
+            const selectAll = document.querySelector('[data-select-all-students]');
+            const checkboxes = Array.from(document.querySelectorAll('[data-student-checkbox]'));
+            const countTarget = document.querySelector('[data-selected-count]');
+
+            if (!selectAll || checkboxes.length === 0 || !countTarget) {
+                return;
+            }
+
+            const updateCount = () => {
+                const selectedCount = checkboxes.filter(x => x.checked).length;
+                countTarget.textContent = selectedCount.toString();
+                selectAll.checked = selectedCount > 0 && selectedCount === checkboxes.length;
+                selectAll.indeterminate = selectedCount > 0 && selectedCount < checkboxes.length;
+            };
+
+            selectAll.addEventListener('change', () => {
+                checkboxes.forEach(checkbox => checkbox.checked = selectAll.checked);
+                updateCount();
+            });
+
+            checkboxes.forEach(checkbox => checkbox.addEventListener('change', updateCount));
+            updateCount();
+        })();
+    </script>
+}

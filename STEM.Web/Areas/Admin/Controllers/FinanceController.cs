@@ -103,6 +103,10 @@ public class FinanceController : Controller
             SearchTerm = searchTerm,
             TotalRevenue = totalRevenue,
             TotalOutstanding = totalOutstanding,
+            OutstandingInvoiceCount = await _context.Invoices.CountAsync(x => x.FinalAmount > (x.Payments.Sum(p => (decimal?)p.Amount) ?? 0m)),
+            PartialInvoiceCount = await _context.Invoices.CountAsync(x =>
+                (x.Payments.Sum(p => (decimal?)p.Amount) ?? 0m) > 0m &&
+                (x.Payments.Sum(p => (decimal?)p.Amount) ?? 0m) < x.FinalAmount),
             UnpaidInvoiceCount = await _context.Invoices.CountAsync(x => !x.Payments.Any()),
             PaymentCount = await _context.Payments.CountAsync(),
             Filters = filters,

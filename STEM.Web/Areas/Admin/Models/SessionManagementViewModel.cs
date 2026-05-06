@@ -44,9 +44,9 @@ public class CreateSessionViewModel : IValidatableObject
     [Display(Name = "Lớp học")]
     public int? ClassId { get; set; }
 
-    [Required(ErrorMessage = "Vui lòng nhập số buổi.")]
-    [Range(1, 1000, ErrorMessage = "Số buổi phải lớn hơn 0.")]
-    [Display(Name = "Số buổi")]
+    [Required(ErrorMessage = "Vui lòng nhập thứ tự buổi học.")]
+    [Range(1, 1000, ErrorMessage = "Thứ tự buổi học phải lớn hơn 0.")]
+    [Display(Name = "Thứ tự buổi học")]
     public int SessionNo { get; set; }
 
     [Required(ErrorMessage = "Vui lòng chọn ngày học.")]

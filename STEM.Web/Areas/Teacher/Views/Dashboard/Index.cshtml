@@ -1,3 +1,5 @@
+@model STEM.Web.Areas.Teacher.Models.TeacherDashboardViewModel
+
 @{
     ViewData["Title"] = "Bảng điều khiển";
 }
@@ -5,238 +7,238 @@
 <section class="teacher-page">
     <div class="teacher-page-header">
         <div>
-            <h1 class="teacher-page-title">Bảng điều khiển giáo viên</h1>
-            <p class="teacher-page-subtitle">Theo dõi lịch dạy, điểm danh và công việc cần hoàn tất trong ngày.</p>
+            <h1 class="teacher-page-title">Bảng điều khiển</h1>
+            <p class="teacher-page-subtitle">Theo dõi lịch dạy, điểm danh, minh chứng và thiết bị trong một màn hình.</p>
         </div>
 
         <div class="teacher-actions">
-            <button type="button" class="teacher-btn-secondary">
-                <span class="material-symbols-outlined text-[18px]">menu_book</span>
-                <span>Mở giáo án gần nhất</span>
-            </button>
-            <button type="button" class="teacher-btn-primary">
+            <a asp-area="Teacher" asp-controller="Schedule" asp-action="Index" class="teacher-btn-secondary">
+                <span class="material-symbols-outlined text-[18px]">calendar_month</span>
+                <span>Xem lịch dạy</span>
+            </a>
+            <a asp-area="Teacher" asp-controller="Attendances" asp-action="Index" class="teacher-btn-primary">
                 <span class="material-symbols-outlined text-[18px]">fact_check</span>
-                <span>Điểm danh buổi hiện tại</span>
-            </button>
+                <span>Mở điểm danh</span>
+            </a>
         </div>
     </div>
 
-    <div class="teacher-stat-grid">
-        <article class="teacher-stat-card">
-            <div class="flex items-start justify-between gap-4">
-                <span class="teacher-stat-label">Buổi dạy hôm nay</span>
-                <span class="material-symbols-outlined text-[20px] text-[#6a994e]">calendar_month</span>
+    <div class="teacher-card">
+        <div class="teacher-card-section">
+            <div class="teacher-inline-list items-center justify-between">
+                <div>
+                    <p class="teacher-section-title">@Model.TodayLabel</p>
+                    <p class="teacher-section-subtitle">Ưu tiên hoàn tất điểm danh và minh chứng trong ngày.</p>
+                </div>
+                <div class="teacher-inline-list">
+                    <a asp-area="Teacher" asp-controller="Evidence" asp-action="Index" class="teacher-filter">Minh chứng</a>
+                    <a asp-area="Teacher" asp-controller="Equipment" asp-action="Index" class="teacher-filter">Thiết bị</a>
+                </div>
             </div>
-            <div>
-                <div class="teacher-stat-value">3</div>
-                <p class="teacher-kicker">1 buổi đang diễn ra, 2 buổi tiếp theo trong ngày.</p>
-            </div>
-        </article>
+        </div>
+    </div>
 
+    <div class="teacher-stat-grid teacher-stat-grid--6">
         <article class="teacher-stat-card">
-            <div class="flex items-start justify-between gap-4">
-                <span class="teacher-stat-label">Học sinh cần điểm danh</span>
-                <span class="material-symbols-outlined text-[20px] text-[#6a994e]">groups</span>
-            </div>
-            <div>
-                <div class="teacher-stat-value">34</div>
-                <p class="teacher-kicker">Tổng số học sinh của các buổi còn lại hôm nay.</p>
-            </div>
+            <span class="teacher-stat-label">Lớp đang phụ trách</span>
+            <div class="teacher-stat-value">@Model.ActiveClassCount</div>
+            <p class="teacher-kicker">Các lớp đang trong thời gian học.</p>
         </article>
-
         <article class="teacher-stat-card">
-            <div class="flex items-start justify-between gap-4">
-                <span class="teacher-stat-label">Minh chứng cần tải lên</span>
-                <span class="material-symbols-outlined text-[20px] text-[#6a994e]">photo_library</span>
-            </div>
-            <div>
-                <div class="teacher-stat-value">8</div>
-                <p class="teacher-kicker">Ảnh hoặc video sản phẩm còn thiếu ở 2 buổi gần nhất.</p>
-            </div>
+            <span class="teacher-stat-label">Học viên đang theo lớp</span>
+            <div class="teacher-stat-value">@Model.TotalStudentCount</div>
+            <p class="teacher-kicker">Tổng số học viên trong các lớp bạn phụ trách.</p>
         </article>
-
         <article class="teacher-stat-card">
-            <div class="flex items-start justify-between gap-4">
-                <span class="teacher-stat-label">Nhận xét AI chờ hoàn tất</span>
-                <span class="material-symbols-outlined text-[20px] text-[#6a994e]">auto_awesome</span>
-            </div>
-            <div>
-                <div class="teacher-stat-value">5</div>
-                <p class="teacher-kicker">Nhận xét đã lưu nhưng chưa gửi.</p>
-            </div>
+            <span class="teacher-stat-label">Buổi học hôm nay</span>
+            <div class="teacher-stat-value">@Model.TodaySessionCount</div>
+            <p class="teacher-kicker">Theo lịch dạy trong ngày.</p>
+        </article>
+        <article class="teacher-stat-card">
+            <span class="teacher-stat-label">Buổi chưa đủ điểm danh</span>
+            <div class="teacher-stat-value">@Model.PendingAttendanceCount</div>
+            <p class="teacher-kicker">Nên xử lý trước khi kết thúc ngày.</p>
+        </article>
+        <article class="teacher-stat-card">
+            <span class="teacher-stat-label">Buổi sắp tới</span>
+            <div class="teacher-stat-value">@Model.UpcomingSessionCount</div>
+            <p class="teacher-kicker">Các buổi học tiếp theo của bạn.</p>
+        </article>
+        <article class="teacher-stat-card">
+            <span class="teacher-stat-label">Thiết bị đang mượn</span>
+            <div class="teacher-stat-value">@Model.ActiveBorrowCount</div>
+            <p class="teacher-kicker">Theo dõi để trả đúng buổi.</p>
         </article>
     </div>
 
-    <div class="teacher-grid-two">
-        <div class="space-y-6">
+    <div class="teacher-panel-grid">
+        <div class="teacher-stack">
             <div class="teacher-card">
                 <div class="teacher-card-section">
-                    <div class="flex items-center justify-between gap-4">
+                    <div class="teacher-page-header !gap-6 !flex-col lg:!flex-row lg:!items-center">
                         <div>
-                            <h2 class="teacher-section-title">Lịch dạy hôm nay</h2>
-                            <p class="teacher-section-subtitle">Lịch dạy trong ngày của bạn.</p>
+                            <h2 class="teacher-section-title">Buổi học hôm nay</h2>
+                            <p class="teacher-section-subtitle">Mở nhanh điểm danh hoặc xem giáo án.</p>
                         </div>
-                        <span class="teacher-tag teacher-tag--neutral">03/05/2026</span>
+                        <a asp-area="Teacher" asp-controller="Attendances" asp-action="Index" asp-route-filter="today" class="teacher-btn-secondary">
+                            <span class="material-symbols-outlined text-[18px]">fact_check</span>
+                            <span>Xem tất cả</span>
+                        </a>
                     </div>
 
-                    <div class="teacher-list">
-                        <article class="teacher-list-item">
-                            <div class="flex items-start justify-between gap-4">
-                                <div>
-                                    <p class="text-sm font-semibold text-[#1a1c19]">RBX-2405-A · Robotics Explorer</p>
-                                    <p class="mt-1 text-sm text-[#73796b]">08:00 - 10:00 · Phòng STEM 01 · 12 học sinh</p>
-                                </div>
-                                <span class="teacher-tag teacher-tag--success">Đang diễn ra</span>
-                            </div>
-                            <div class="mt-4 flex flex-wrap gap-3">
-                                <button type="button" class="teacher-btn-primary !h-10">Mở giáo án</button>
-                                <button type="button" class="teacher-btn-secondary !h-10">Điểm danh</button>
-                            </div>
-                        </article>
-
-                        <article class="teacher-list-item">
-                            <div class="flex items-start justify-between gap-4">
-                                <div>
-                                    <p class="text-sm font-semibold text-[#1a1c19]">SCR-2405-B · Scratch Creative Lab</p>
-                                    <p class="mt-1 text-sm text-[#73796b]">13:30 - 15:30 · Phòng STEM 02 · 15 học sinh</p>
-                                </div>
-                                <span class="teacher-tag teacher-tag--warning">Sắp bắt đầu</span>
-                            </div>
-                            <div class="mt-4 flex flex-wrap gap-3">
-                                <button type="button" class="teacher-btn-secondary !h-10">Chuẩn bị giáo án</button>
-                                <button type="button" class="teacher-btn-secondary !h-10">Xem danh sách lớp</button>
-                            </div>
-                        </article>
-
-                        <article class="teacher-list-item">
-                            <div class="flex items-start justify-between gap-4">
-                                <div>
-                                    <p class="text-sm font-semibold text-[#1a1c19]">AIJ-2406-C · AI Junior Builder</p>
-                                    <p class="mt-1 text-sm text-[#73796b]">16:00 - 18:00 · Phòng STEM Lab · 7 học sinh</p>
-                                </div>
-                                <span class="teacher-tag teacher-tag--neutral">Cuối ngày</span>
-                            </div>
-                            <div class="mt-4 flex flex-wrap gap-3">
-                                <button type="button" class="teacher-btn-secondary !h-10">Mượn thiết bị</button>
-                                <button type="button" class="teacher-btn-secondary !h-10">Mở checklist buổi học</button>
-                            </div>
-                        </article>
+                    <div class="teacher-list mt-6">
+                        @if (Model.TodaySessions.Count == 0)
+                        {
+                            <p class="teacher-empty">Hôm nay chưa có buổi học nào trong lịch của bạn.</p>
+                        }
+                        else
+                        {
+                            @foreach (var item in Model.TodaySessions)
+                            {
+                                <article class="teacher-data-row">
+                                    <div class="teacher-session-card">
+                                        <div class="teacher-session-main">
+                                            <div class="flex flex-wrap items-center gap-3">
+                                                <span class="teacher-tag teacher-tag--success">@item.SessionLabel</span>
+                                                <span class="teacher-tag teacher-tag--neutral">@item.AttendancePercent%</span>
+                                            </div>
+                                            <h3 class="teacher-section-title mt-4">@item.ClassCode · @item.CourseName</h3>
+                                            <p class="teacher-section-subtitle mt-1">@item.Topic</p>
+                                            <div class="teacher-meta-row mt-4">
+                                                <span>@item.ScheduleText</span>
+                                                <span>@item.StudentCount học viên</span>
+                                                <span>@item.AttendanceCount đã ghi nhận</span>
+                                            </div>
+                                        </div>
+                                        <div class="teacher-session-side !min-w-[260px]">
+                                            <div class="teacher-inline-list w-full justify-end">
+                                                <a asp-area="Teacher" asp-controller="Schedule" asp-action="Details" asp-route-id="@item.SessionId" class="teacher-btn-secondary">Chi tiết</a>
+                                                <a asp-area="Teacher" asp-controller="Attendances" asp-action="Board" asp-route-sessionId="@item.SessionId" class="teacher-btn-primary">Điểm danh</a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </article>
+                            }
+                        }
                     </div>
                 </div>
             </div>
 
             <div class="teacher-card">
                 <div class="teacher-card-section">
-                    <h2 class="teacher-section-title">Tác vụ trọng tâm cuối buổi</h2>
-                    <p class="teacher-section-subtitle">Các việc cần hoàn tất sau buổi học.</p>
+                    <div class="teacher-page-header !gap-6 !flex-col lg:!flex-row lg:!items-center">
+                        <div>
+                            <h2 class="teacher-section-title">Lịch gần tới</h2>
+                            <p class="teacher-section-subtitle">Xem trước chủ đề và chuẩn bị giáo án cho các buổi kế tiếp.</p>
+                        </div>
+                        <a asp-area="Teacher" asp-controller="Schedule" asp-action="Index" asp-route-filter="upcoming" class="teacher-btn-secondary">
+                            <span class="material-symbols-outlined text-[18px]">calendar_month</span>
+                            <span>Mở lịch dạy</span>
+                        </a>
+                    </div>
 
-                    <div class="teacher-quick-grid">
-                        <article class="teacher-quick-card">
-                            <div class="flex items-center justify-between gap-3">
-                                <h3 class="text-base font-semibold text-[#1a1c19]">Điểm danh học sinh</h3>
-                                <span class="material-symbols-outlined text-[20px] text-[#6a994e]">fact_check</span>
-                            </div>
-                            <p>Chọn buổi học kết thúc, đánh dấu có mặt/vắng và ghi nhận tình trạng tham gia của từng học sinh.</p>
-                            <button type="button" class="teacher-btn-primary mt-auto !h-10">Mở danh sách điểm danh</button>
-                        </article>
-
-                        <article class="teacher-quick-card">
-                            <div class="flex items-center justify-between gap-3">
-                                <h3 class="text-base font-semibold text-[#1a1c19]">Tải ảnh / video sản phẩm</h3>
-                                <span class="material-symbols-outlined text-[20px] text-[#6a994e]">upload</span>
-                            </div>
-                            <p>Tải minh chứng thực hành của từng bé hoặc ảnh không khí cả lớp lên cloud để trả URL về hệ thống.</p>
-                            <button type="button" class="teacher-btn-secondary mt-auto !h-10">Chuẩn bị thư viện minh chứng</button>
-                        </article>
-
-                        <article class="teacher-quick-card">
-                            <div class="flex items-center justify-between gap-3">
-                                <h3 class="text-base font-semibold text-[#1a1c19]">AI tạo nhận xét</h3>
-                                <span class="material-symbols-outlined text-[20px] text-[#6a994e]">auto_awesome</span>
-                            </div>
-                            <p>Nhập ý chính để tạo nhận xét gửi phụ huynh.</p>
-                            <button type="button" class="teacher-btn-secondary mt-auto !h-10">Mở AI Copilot</button>
-                        </article>
-
-                        <article class="teacher-quick-card">
-                            <div class="flex items-center justify-between gap-3">
-                                <h3 class="text-base font-semibold text-[#1a1c19]">Mượn / trả thiết bị</h3>
-                                <span class="material-symbols-outlined text-[20px] text-[#6a994e]">inventory_2</span>
-                            </div>
-                            <p>Theo dõi các bộ kit đã mượn cho từng session, cập nhật trạng thái trả lại hoặc báo hỏng nếu cần.</p>
-                            <button type="button" class="teacher-btn-secondary mt-auto !h-10">Mở phiếu thiết bị</button>
-                        </article>
+                    <div class="teacher-list mt-6">
+                        @if (Model.UpcomingSessions.Count == 0)
+                        {
+                            <p class="teacher-empty">Chưa có buổi học nào trong 7 ngày tới.</p>
+                        }
+                        else
+                        {
+                            @foreach (var item in Model.UpcomingSessions)
+                            {
+                                <article class="teacher-data-row">
+                                    <div class="teacher-session-card">
+                                        <div class="teacher-session-main">
+                                            <div class="flex flex-wrap items-center gap-3">
+                                                <span class="teacher-tag teacher-tag--warning">@item.SessionLabel</span>
+                                            </div>
+                                            <h3 class="teacher-section-title mt-4">@item.ClassCode · @item.CourseName</h3>
+                                            <p class="teacher-section-subtitle mt-1">@item.Topic</p>
+                                            <div class="teacher-meta-row mt-4">
+                                                <span>@item.ScheduleText</span>
+                                                <span>@item.StudentCount học viên</span>
+                                            </div>
+                                        </div>
+                                        <div class="teacher-session-side !min-w-[200px]">
+                                            <a asp-area="Teacher" asp-controller="Schedule" asp-action="Details" asp-route-id="@item.SessionId" class="teacher-btn-secondary w-full">Xem chi tiết</a>
+                                        </div>
+                                    </div>
+                                </article>
+                            }
+                        }
                     </div>
                 </div>
             </div>
         </div>
 
-        <aside class="space-y-6">
+        <div class="teacher-stack">
             <div class="teacher-card">
                 <div class="teacher-card-section">
-                    <h2 class="teacher-section-title">Tiến độ hoàn tất hôm nay</h2>
-                    <p class="teacher-section-subtitle">Tóm tắt nhanh các đầu việc giáo viên cần đóng trong ngày.</p>
+                    <h2 class="teacher-section-title">Minh chứng cần bổ sung</h2>
+                    <p class="teacher-section-subtitle">Ưu tiên hoàn tất các buổi còn thiếu ghi chú hoặc media.</p>
 
-                    <div class="mt-6 space-y-5">
-                        <div>
-                            <div class="mb-2 flex items-center justify-between text-sm text-[#42493d]">
-                                <span>Điểm danh</span>
-                                <span>68%</span>
-                            </div>
-                            <div class="teacher-progress">
-                                <div class="teacher-progress-bar" style="width:68%;"></div>
-                            </div>
-                        </div>
-                        <div>
-                            <div class="mb-2 flex items-center justify-between text-sm text-[#42493d]">
-                                <span>Minh chứng sản phẩm</span>
-                                <span>45%</span>
-                            </div>
-                            <div class="teacher-progress">
-                                <div class="teacher-progress-bar" style="width:45%;"></div>
-                            </div>
-                        </div>
-                        <div>
-                            <div class="mb-2 flex items-center justify-between text-sm text-[#42493d]">
-                                <span>Nhận xét AI</span>
-                                <span>32%</span>
-                            </div>
-                            <div class="teacher-progress">
-                                <div class="teacher-progress-bar" style="width:32%;"></div>
-                            </div>
-                        </div>
-                        <div>
-                            <div class="mb-2 flex items-center justify-between text-sm text-[#42493d]">
-                                <span>Đối soát thiết bị</span>
-                                <span>80%</span>
-                            </div>
-                            <div class="teacher-progress">
-                                <div class="teacher-progress-bar" style="width:80%;"></div>
-                            </div>
-                        </div>
+                    <div class="teacher-list mt-6">
+                        @if (Model.EvidenceQueue.Count == 0)
+                        {
+                            <p class="teacher-empty">Các buổi gần đây đã có đủ ghi chú và media.</p>
+                        }
+                        else
+                        {
+                            @foreach (var item in Model.EvidenceQueue)
+                            {
+                                <a asp-area="Teacher" asp-controller="Evidence" asp-action="Details" asp-route-id="@item.AttendanceId" class="teacher-data-row">
+                                    <div class="flex items-start justify-between gap-4">
+                                        <div>
+                                            <p class="text-sm font-semibold text-[#1a1c19]">@item.StudentName</p>
+                                            <p class="teacher-section-subtitle mt-1">@item.ClassCode · @item.SessionLabel</p>
+                                        </div>
+                                        <span class="@item.StatusBadgeClass">@item.StatusLabel</span>
+                                    </div>
+                                </a>
+                            }
+                        }
                     </div>
                 </div>
             </div>
 
             <div class="teacher-card">
                 <div class="teacher-card-section">
-                    <h2 class="teacher-section-title">Nhắc việc trong ngày</h2>
-                    <div class="teacher-list">
-                        <article class="teacher-list-item">
-                            <p class="text-sm font-semibold text-[#1a1c19]">Buổi Robotics A1 còn thiếu 3 ảnh sản phẩm</p>
-                            <p class="mt-1 text-sm text-[#73796b]">Nên hoàn tất trước 11:00.</p>
-                        </article>
-                        <article class="teacher-list-item">
-                            <p class="text-sm font-semibold text-[#1a1c19]">Session 04 đã có ghi chú, chưa tạo nhận xét</p>
-                            <p class="mt-1 text-sm text-[#73796b]">Hoàn tất để gửi nhận xét trong ngày.</p>
-                        </article>
-                        <article class="teacher-list-item">
-                            <p class="text-sm font-semibold text-[#1a1c19]">Laptop LTP-014 chưa xác nhận trả</p>
-                            <p class="mt-1 text-sm text-[#73796b]">Kiểm tra lại phiếu mượn trả thiết bị sau buổi chiều.</p>
-                        </article>
+                    <h2 class="teacher-section-title">Thiết bị đang giữ</h2>
+                    <p class="teacher-section-subtitle">Theo dõi để trả đúng buổi hoặc chuyển buổi khi cần.</p>
+
+                    <div class="teacher-list mt-6">
+                        @if (Model.ActiveBorrows.Count == 0)
+                        {
+                            <p class="teacher-empty">Hiện tại bạn chưa có thiết bị nào đang mượn.</p>
+                        }
+                        else
+                        {
+                            @foreach (var item in Model.ActiveBorrows)
+                            {
+                                <article class="teacher-data-row">
+                                    <div class="flex items-start gap-4">
+                                        @if (!string.IsNullOrWhiteSpace(item.ImageUrl))
+                                        {
+                                            <img class="h-14 w-14 rounded-xl border border-[#e3e3de] object-cover" src="@item.ImageUrl" alt="@item.EquipmentSerialNumber" />
+                                        }
+                                        else
+                                        {
+                                            <div class="flex h-14 w-14 items-center justify-center rounded-xl border border-[#e3e3de] bg-[#f2f7f0] text-[#3b6722]">
+                                                <span class="material-symbols-outlined text-[22px]">inventory_2</span>
+                                            </div>
+                                        }
+                                        <div>
+                                            <p class="text-sm font-semibold text-[#1a1c19]">@item.EquipmentSerialNumber</p>
+                                            <p class="teacher-section-subtitle mt-1">@item.SessionLabel</p>
+                                            <p class="teacher-list-note mt-2">Mượn lúc @item.BorrowTimeText</p>
+                                        </div>
+                                    </div>
+                                </article>
+                            }
+                        }
                     </div>
                 </div>
             </div>
-        </aside>
+        </div>
     </div>
 </section>

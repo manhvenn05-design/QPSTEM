@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Linq;
 using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace STEM.Web.Areas.Admin.Models;
@@ -49,14 +50,18 @@ public class AttendanceBoardViewModel
     public int AttendanceCount { get; set; }
     public int PresentCount { get; set; }
     public int AbsentCount { get; set; }
+    public int MissingCount { get; set; }
+    public int CompletionPercent { get; set; }
     public string StatusLabel { get; set; } = string.Empty;
     public string StatusBadgeClass { get; set; } = string.Empty;
-    public bool HasStudents => Students.Count > 0;
-    public IReadOnlyList<AttendanceBoardStudentItemViewModel> Students { get; set; } = [];
+    public bool HasStudents => Rows.Count > 0;
+    public bool HasMissingRows => Rows.Any(x => x.AttendanceStatus == "pending");
+    public IReadOnlyList<AttendanceBoardStudentRowViewModel> Rows { get; set; } = [];
 }
 
-public class AttendanceBoardStudentItemViewModel
+public class AttendanceBoardStudentRowViewModel
 {
+    public int SessionId { get; set; }
     public int StudentId { get; set; }
     public string StudentName { get; set; } = string.Empty;
     public string StudentUsername { get; set; } = string.Empty;
@@ -64,10 +69,26 @@ public class AttendanceBoardStudentItemViewModel
     public bool HasAttendance { get; set; }
     public int? AttendanceId { get; set; }
     public bool IsPresent { get; set; }
+    public string AttendanceStatus { get; set; } = "pending";
     public string PresenceLabel { get; set; } = string.Empty;
     public string PresenceBadgeClass { get; set; } = string.Empty;
     public string NotePreview { get; set; } = string.Empty;
     public string MediaSummary { get; set; } = string.Empty;
+    public string? TeacherRawNote { get; set; }
+    public string? ProductMediaUrls { get; set; }
+}
+
+public class AttendanceQuickUpdateViewModel
+{
+    public int SessionId { get; set; }
+    public int StudentId { get; set; }
+    public int? AttendanceId { get; set; }
+
+    [Required(ErrorMessage = "Vui lòng chọn trạng thái.")]
+    public string AttendanceStatus { get; set; } = "present";
+
+    public string? TeacherRawNote { get; set; }
+    public string? ProductMediaUrls { get; set; }
 }
 
 public class CreateAttendanceViewModel

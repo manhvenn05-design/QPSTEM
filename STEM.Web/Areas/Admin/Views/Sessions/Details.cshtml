@@ -8,10 +8,11 @@
     <div class="admin-page-header">
         <div>
             <h1 class="admin-page-title">Chi tiết buổi học</h1>
-            <p class="admin-page-subtitle">Theo dõi đầy đủ dữ liệu của một buổi học, gồm lịch học, lớp liên quan, tài nguyên giảng dạy, điểm danh và mượn trả thiết bị.</p>
+            <p class="admin-page-subtitle">Theo dõi lịch học, tài liệu và tình trạng điểm danh của buổi này.</p>
         </div>
 
         <div class="admin-actions">
+            <a asp-area="Admin" asp-controller="Attendances" asp-action="Board" asp-route-sessionId="@Model.Id" class="admin-btn-secondary">Mở điểm danh</a>
             <a asp-area="Admin" asp-controller="Sessions" asp-action="Edit" asp-route-id="@Model.Id" class="admin-btn-primary">Cập nhật</a>
             <a asp-area="Admin" asp-controller="Sessions" asp-action="Index" class="admin-btn-secondary">Quay lại</a>
         </div>
@@ -79,8 +80,13 @@
 
             <div class="admin-card">
                 <div class="admin-card-section">
-                    <h2 class="admin-section-title">Điểm danh học viên</h2>
-                    <p class="admin-section-subtitle">Dữ liệu lấy trực tiếp từ bảng <code>Attendances</code> của buổi học này.</p>
+                    <div class="flex items-center justify-between gap-4">
+                        <div>
+                            <h2 class="admin-section-title">Điểm danh học viên</h2>
+                            <p class="admin-section-subtitle">Danh sách học viên đã được ghi nhận trong buổi này.</p>
+                        </div>
+                        <a asp-area="Admin" asp-controller="Attendances" asp-action="Board" asp-route-sessionId="@Model.Id" class="admin-btn-secondary !h-10">Mở sổ điểm danh</a>
+                    </div>
 
                     @if (Model.Attendances.Count == 0)
                     {
@@ -94,7 +100,7 @@
                                     <tr>
                                         <th>Học viên</th>
                                         <th>Trạng thái</th>
-                                        <th>AI Process</th>
+                                        <th>Ghi nhận</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -120,7 +126,7 @@
             <div class="admin-card">
                 <div class="admin-card-section">
                     <h2 class="admin-section-title">Mượn / trả thiết bị</h2>
-                    <p class="admin-section-subtitle">Lịch sử thiết bị được dùng trong buổi học này, lấy từ bảng <code>EquipmentBorrows</code>.</p>
+                    <p class="admin-section-subtitle">Theo dõi thiết bị đã dùng trong buổi học này.</p>
 
                     @if (Model.EquipmentBorrows.Count == 0)
                     {
@@ -171,7 +177,7 @@
 
             <div class="admin-card">
                 <div class="admin-card-section">
-                    <h2 class="admin-section-title">Liên kết lớp học</h2>
+                    <h2 class="admin-section-title">Tóm tắt nhanh</h2>
                     <dl class="mt-5 space-y-4">
                         <div>
                             <dt class="admin-label !mb-0">Thời gian lớp</dt>

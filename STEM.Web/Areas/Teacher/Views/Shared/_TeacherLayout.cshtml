@@ -24,8 +24,6 @@
             --teacher-primary: #6a994e;
             --teacher-primary-strong: #3b6722;
             --teacher-primary-soft: #f2f7f0;
-            --teacher-accent: #eef6ec;
-            --teacher-shadow: 0 20px 40px rgba(26, 28, 25, 0.08);
         }
 
         .material-symbols-outlined {
@@ -44,7 +42,7 @@
         }
 
         .teacher-sidebar {
-            background: rgba(255, 255, 255, 0.9);
+            background: rgba(255, 255, 255, 0.92);
             border-right: 1px solid var(--teacher-border);
             backdrop-filter: blur(12px);
         }
@@ -83,18 +81,14 @@
             margin-top: 4px;
         }
 
-        .teacher-nav-link,
-        .teacher-nav-muted {
+        .teacher-nav-link {
             align-items: center;
             border-radius: 8px;
+            color: var(--teacher-text-muted);
             display: flex;
             gap: 12px;
             min-height: 48px;
             padding: 12px 16px;
-        }
-
-        .teacher-nav-link {
-            color: var(--teacher-text-muted);
             transition: background-color 0.2s ease, color 0.2s ease;
         }
 
@@ -110,17 +104,13 @@
             font-weight: 600;
         }
 
-        .teacher-nav-muted {
-            color: var(--teacher-text-soft);
-            justify-content: space-between;
-        }
-
         .teacher-badge {
             background: var(--teacher-primary-soft);
             border-radius: 9999px;
             color: var(--teacher-primary-strong);
             font-size: 12px;
             font-weight: 600;
+            margin-left: auto;
             padding: 6px 10px;
         }
 
@@ -182,10 +172,36 @@
             max-width: 760px;
         }
 
-        .teacher-actions {
+        .teacher-actions,
+        .teacher-toolbar,
+        .teacher-filter-list,
+        .teacher-search-form,
+        .teacher-meta-row,
+        .teacher-session-card,
+        .teacher-board-student,
+        .teacher-checkbox,
+        .teacher-inline-list {
             display: flex;
+        }
+
+        .teacher-actions,
+        .teacher-filter-list,
+        .teacher-inline-list {
             flex-wrap: wrap;
             gap: 12px;
+        }
+
+        .teacher-toolbar {
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        @@media (min-width: 1180px) {
+            .teacher-toolbar {
+                align-items: center;
+                flex-direction: row;
+                justify-content: space-between;
+            }
         }
 
         .teacher-btn-primary,
@@ -212,6 +228,18 @@
             color: var(--teacher-text-muted);
         }
 
+        .teacher-card,
+        .teacher-stat-card {
+            background: var(--teacher-surface);
+            border: 1px solid var(--teacher-border);
+            border-radius: 8px;
+        }
+
+        .teacher-card-section,
+        .teacher-stat-card {
+            padding: 24px;
+        }
+
         .teacher-stat-grid {
             display: grid;
             gap: 24px;
@@ -224,30 +252,20 @@
         }
 
         @@media (min-width: 1280px) {
-            .teacher-stat-grid {
+            .teacher-stat-grid.teacher-stat-grid--4 {
                 grid-template-columns: repeat(4, minmax(0, 1fr));
+            }
+
+            .teacher-stat-grid.teacher-stat-grid--6 {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
             }
         }
 
-        .teacher-card {
-            background: var(--teacher-surface);
-            border: 1px solid var(--teacher-border);
-            border-radius: 8px;
-        }
-
-        .teacher-card-section {
-            padding: 24px;
-        }
-
         .teacher-stat-card {
-            background: var(--teacher-surface);
-            border: 1px solid var(--teacher-border);
-            border-radius: 8px;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
             min-height: 160px;
-            padding: 24px;
         }
 
         .teacher-stat-label {
@@ -272,17 +290,6 @@
             margin-top: 8px;
         }
 
-        .teacher-grid-two {
-            display: grid;
-            gap: 24px;
-        }
-
-        @@media (min-width: 1280px) {
-            .teacher-grid-two {
-                grid-template-columns: minmax(0, 1.5fr) minmax(340px, 1fr);
-            }
-        }
-
         .teacher-section-title {
             font-size: 20px;
             font-weight: 600;
@@ -297,17 +304,70 @@
             margin-top: 4px;
         }
 
-        .teacher-list {
+        .teacher-list,
+        .teacher-board,
+        .teacher-stack {
             display: grid;
             gap: 16px;
-            margin-top: 24px;
         }
 
-        .teacher-list-item {
-            background: var(--teacher-surface-soft);
-            border: 1px solid var(--teacher-border);
+        .teacher-panel-grid {
+            display: grid;
+            gap: 24px;
+        }
+
+        @@media (min-width: 1280px) {
+            .teacher-panel-grid {
+                grid-template-columns: minmax(0, 1.4fr) minmax(320px, 0.9fr);
+            }
+        }
+
+        .teacher-search-form {
+            width: 100%;
+        }
+
+        @@media (min-width: 1180px) {
+            .teacher-search-form {
+                max-width: 360px;
+            }
+        }
+
+        .teacher-search-box {
+            align-items: center;
+            background: #fff;
+            border: 1px solid var(--teacher-border-strong);
             border-radius: 8px;
-            padding: 16px;
+            display: flex;
+            gap: 12px;
+            height: 48px;
+            padding: 0 16px;
+        }
+
+        .teacher-search-box input {
+            background: transparent;
+            border: 0;
+            color: var(--teacher-text);
+            outline: 0;
+            width: 100%;
+        }
+
+        .teacher-filter {
+            align-items: center;
+            background: #fff;
+            border: 1px solid var(--teacher-border);
+            border-radius: 9999px;
+            color: var(--teacher-text-muted);
+            display: inline-flex;
+            font-size: 14px;
+            font-weight: 600;
+            height: 40px;
+            padding: 0 16px;
+        }
+
+        .teacher-filter.is-active {
+            background: var(--teacher-primary);
+            border-color: var(--teacher-primary);
+            color: #fff;
         }
 
         .teacher-tag {
@@ -334,47 +394,259 @@
             color: #42493d;
         }
 
-        .teacher-progress {
-            background: #eeeee9;
-            border-radius: 9999px;
-            height: 8px;
-            overflow: hidden;
+        .teacher-session-card {
+            align-items: center;
+            flex-direction: column;
+            gap: 20px;
         }
 
-        .teacher-progress-bar {
-            background: var(--teacher-primary);
-            border-radius: 9999px;
-            height: 8px;
+        @@media (min-width: 1180px) {
+            .teacher-session-card {
+                align-items: stretch;
+                flex-direction: row;
+                justify-content: space-between;
+            }
         }
 
-        .teacher-quick-grid {
+        .teacher-session-main {
+            flex: 1 1 auto;
+        }
+
+        .teacher-session-side {
+            align-items: center;
+            display: flex;
+            min-width: 220px;
+        }
+
+        .teacher-meta-row {
+            color: var(--teacher-text-muted);
+            flex-wrap: wrap;
+            gap: 16px;
+            font-size: 14px;
+            line-height: 20px;
+        }
+
+        .teacher-board-row,
+        .teacher-data-row {
+            background: var(--teacher-surface-soft);
+            border: 1px solid var(--teacher-border);
+            border-radius: 8px;
+            display: grid;
+            gap: 20px;
+            padding: 20px;
+        }
+
+        @@media (min-width: 1180px) {
+            .teacher-board-row {
+                grid-template-columns: minmax(240px, 280px) minmax(0, 1fr);
+            }
+        }
+
+        .teacher-board-student {
+            align-items: center;
+            gap: 16px;
+        }
+
+        .teacher-board-fields,
+        .teacher-form-grid,
+        .teacher-info-grid {
             display: grid;
             gap: 16px;
-            margin-top: 24px;
         }
 
-        @@media (min-width: 768px) {
-            .teacher-quick-grid {
+        @@media (min-width: 900px) {
+            .teacher-form-grid.teacher-form-grid--2,
+            .teacher-info-grid.teacher-info-grid--2 {
                 grid-template-columns: repeat(2, minmax(0, 1fr));
             }
         }
 
-        .teacher-quick-card {
-            background: linear-gradient(180deg, #ffffff 0%, #fafaf4 100%);
-            border: 1px solid var(--teacher-border);
-            border-radius: 8px;
+        .teacher-toggle {
+            align-items: center;
             display: flex;
-            flex-direction: column;
-            gap: 16px;
-            min-height: 176px;
-            padding: 20px;
         }
 
-        .teacher-quick-card p {
+        .teacher-checkbox {
+            align-items: center;
+            gap: 10px;
+            color: var(--teacher-text-muted);
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .teacher-checkbox input {
+            accent-color: var(--teacher-primary);
+            height: 18px;
+            width: 18px;
+        }
+
+        .teacher-field {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .teacher-field label {
+            color: var(--teacher-text-muted);
+            font-size: 14px;
+            font-weight: 600;
+            line-height: 20px;
+        }
+
+        .teacher-field input,
+        .teacher-field select,
+        .teacher-field textarea {
+            background: #fff;
+            border: 1px solid var(--teacher-border-strong);
+            border-radius: 8px;
+            color: var(--teacher-text);
+            padding: 14px 16px;
+            resize: vertical;
+        }
+
+        .teacher-field input:focus,
+        .teacher-field select:focus,
+        .teacher-field textarea:focus {
+            border-color: var(--teacher-primary);
+            box-shadow: 0 0 0 3px rgba(106, 153, 78, 0.12);
+            outline: none;
+        }
+
+        .teacher-field-hint,
+        .teacher-empty,
+        .teacher-list-note {
             color: var(--teacher-text-soft);
             font-size: 14px;
             line-height: 20px;
             margin: 0;
+        }
+
+        .teacher-field-error {
+            color: #ba1a1a;
+            font-size: 13px;
+            line-height: 18px;
+        }
+
+        .teacher-alert {
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            line-height: 20px;
+            padding: 14px 16px;
+        }
+
+        .teacher-alert--success {
+            background: #edf7e8;
+            border: 1px solid #c9ddbf;
+            color: #456c3f;
+        }
+
+        .teacher-alert--error {
+            background: #fff1ef;
+            border: 1px solid #f2c4bc;
+            color: #ba1a1a;
+        }
+
+        .teacher-key-value {
+            background: var(--teacher-surface-soft);
+            border: 1px solid var(--teacher-border);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .teacher-key-value dt {
+            color: var(--teacher-text-soft);
+            font-size: 13px;
+            font-weight: 600;
+            line-height: 18px;
+        }
+
+        .teacher-key-value dd {
+            color: var(--teacher-text);
+            font-size: 15px;
+            line-height: 22px;
+            margin-top: 8px;
+        }
+
+        .teacher-media-grid {
+            display: grid;
+            gap: 12px;
+        }
+
+        @@media (min-width: 900px) {
+            .teacher-media-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        .teacher-media-link {
+            align-items: center;
+            background: var(--teacher-surface-soft);
+            border: 1px solid var(--teacher-border);
+            border-radius: 8px;
+            color: var(--teacher-text-muted);
+            display: flex;
+            gap: 12px;
+            min-height: 56px;
+            padding: 14px 16px;
+        }
+
+        .teacher-media-link:hover {
+            border-color: var(--teacher-primary);
+            color: var(--teacher-primary-strong);
+        }
+
+        .teacher-avatar {
+            border: 1px solid var(--teacher-border);
+            border-radius: 9999px;
+            height: 44px;
+            object-fit: cover;
+            width: 44px;
+        }
+
+        .teacher-avatar-fallback {
+            align-items: center;
+            background: var(--teacher-primary-soft);
+            border: 1px solid var(--teacher-border);
+            border-radius: 9999px;
+            color: var(--teacher-primary-strong);
+            display: inline-flex;
+            font-size: 14px;
+            font-weight: 700;
+            height: 44px;
+            justify-content: center;
+            width: 44px;
+        }
+
+        .teacher-divider {
+            border-top: 1px solid var(--teacher-border);
+        }
+
+        .teacher-modal-backdrop {
+            align-items: center;
+            background: rgba(26, 28, 25, 0.28);
+            display: none;
+            inset: 0;
+            justify-content: center;
+            padding: 24px;
+            position: fixed;
+            z-index: 70;
+        }
+
+        .teacher-modal-backdrop.is-open {
+            display: flex;
+        }
+
+        .teacher-modal {
+            background: #fff;
+            border: 1px solid var(--teacher-border);
+            border-radius: 8px;
+            max-width: 420px;
+            width: 100%;
+        }
+
+        .teacher-modal-content {
+            padding: 24px;
         }
     </style>
 </head>
@@ -413,41 +685,27 @@
                     <span class="material-symbols-outlined text-[20px]">dashboard</span>
                     <span>Bảng điều khiển</span>
                 </a>
-                <div class="teacher-nav-muted">
-                    <div class="flex items-center gap-3">
-                        <span class="material-symbols-outlined text-[20px]">calendar_month</span>
-                        <span>Lịch dạy</span>
-                    </div>
-                    <span class="teacher-badge">Sắp làm</span>
-                </div>
-                <div class="teacher-nav-muted">
-                    <div class="flex items-center gap-3">
-                        <span class="material-symbols-outlined text-[20px]">fact_check</span>
-                        <span>Điểm danh</span>
-                    </div>
-                    <span class="teacher-badge">Sắp làm</span>
-                </div>
-                <div class="teacher-nav-muted">
-                    <div class="flex items-center gap-3">
-                        <span class="material-symbols-outlined text-[20px]">photo_library</span>
-                        <span>Minh chứng</span>
-                    </div>
-                    <span class="teacher-badge">Sắp làm</span>
-                </div>
-                <div class="teacher-nav-muted">
-                    <div class="flex items-center gap-3">
-                        <span class="material-symbols-outlined text-[20px]">auto_awesome</span>
-                        <span>AI Copilot</span>
-                    </div>
-                    <span class="teacher-badge">Sắp làm</span>
-                </div>
-                <div class="teacher-nav-muted">
-                    <div class="flex items-center gap-3">
-                        <span class="material-symbols-outlined text-[20px]">inventory_2</span>
-                        <span>Mượn / Trả thiết bị</span>
-                    </div>
-                    <span class="teacher-badge">Sắp làm</span>
-                </div>
+                <a class="@NavClass("Schedule")" asp-area="Teacher" asp-controller="Schedule" asp-action="Index">
+                    <span class="material-symbols-outlined text-[20px]">calendar_month</span>
+                    <span>Lịch dạy</span>
+                </a>
+                <a class="@NavClass("Attendances")" asp-area="Teacher" asp-controller="Attendances" asp-action="Index">
+                    <span class="material-symbols-outlined text-[20px]">fact_check</span>
+                    <span>Điểm danh</span>
+                </a>
+                <a class="@NavClass("Evidence")" asp-area="Teacher" asp-controller="Evidence" asp-action="Index">
+                    <span class="material-symbols-outlined text-[20px]">photo_library</span>
+                    <span>Minh chứng</span>
+                </a>
+                <a class="@NavClass("AICopilot")" asp-area="Teacher" asp-controller="AICopilot" asp-action="Index">
+                    <span class="material-symbols-outlined text-[20px]">auto_awesome</span>
+                    <span>AI Copilot</span>
+                    <span class="teacher-badge">Chuẩn bị</span>
+                </a>
+                <a class="@NavClass("Equipment")" asp-area="Teacher" asp-controller="Equipment" asp-action="Index">
+                    <span class="material-symbols-outlined text-[20px]">inventory_2</span>
+                    <span>Mượn / Trả thiết bị</span>
+                </a>
             </div>
         </nav>
 
@@ -455,11 +713,11 @@
             <div class="flex items-center gap-3 px-2">
                 @if (!string.IsNullOrWhiteSpace(currentTeacherAvatarUrl))
                 {
-                    <img alt="@currentTeacherName" class="h-10 w-10 rounded-full border border-[#c2c9b9] object-cover" src="@currentTeacherAvatarUrl" />
+                    <img alt="@currentTeacherName" class="teacher-avatar" src="@currentTeacherAvatarUrl" />
                 }
                 else
                 {
-                    <div class="flex h-10 w-10 items-center justify-center rounded-full border border-[#c2c9b9] bg-[#f2f7f0] text-sm font-semibold text-[#3b6722]">
+                    <div class="teacher-avatar-fallback">
                         @currentTeacherName.Trim()[0].ToString().ToUpperInvariant()
                     </div>
                 }
@@ -479,15 +737,19 @@
                 <span class="font-semibold text-[#3b6722]">@ViewData["Title"]</span>
             </div>
 
-            <div class="flex items-center gap-5">
-                <button type="button" class="text-[#73796b] transition hover:text-[#3b6722]" title="Thông báo">
-                    <span class="material-symbols-outlined text-[22px]">notifications</span>
+            <div class="flex items-center gap-3">
+                <a asp-area="Teacher" asp-controller="Schedule" asp-action="Index" class="teacher-btn-secondary !h-10 !px-4">
+                    <span class="material-symbols-outlined text-[18px]">calendar_month</span>
+                    <span>Lịch dạy</span>
+                </a>
+                <a asp-area="Teacher" asp-controller="Attendances" asp-action="Index" class="teacher-btn-secondary !h-10 !px-4">
+                    <span class="material-symbols-outlined text-[18px]">fact_check</span>
+                    <span>Điểm danh</span>
+                </a>
+                <button type="button" class="teacher-btn-secondary !h-10 !px-4" data-teacher-logout-open>
+                    <span class="material-symbols-outlined text-[18px]">logout</span>
+                    <span>Đăng xuất</span>
                 </button>
-                <form asp-area="" asp-controller="Account" asp-action="Logout" method="post">
-                    <button type="submit" class="text-[#73796b] transition hover:text-[#ba1a1a]" title="Đăng xuất">
-                        <span class="material-symbols-outlined text-[22px]">logout</span>
-                    </button>
-                </form>
             </div>
         </header>
 
@@ -495,6 +757,44 @@
             @RenderBody()
         </div>
     </main>
+
+    <div class="teacher-modal-backdrop" data-teacher-logout-modal>
+        <div class="teacher-modal">
+            <div class="teacher-modal-content">
+                <h2 class="teacher-section-title">Đăng xuất</h2>
+                <p class="teacher-page-subtitle mt-3 max-w-none">Bạn có muốn đăng xuất khỏi khu vực giáo viên không?</p>
+                <div class="mt-6 flex justify-end gap-3">
+                    <button type="button" class="teacher-btn-secondary" data-teacher-logout-close>Ở lại</button>
+                    <form asp-area="" asp-controller="Account" asp-action="Logout" method="post">
+                        <button type="submit" class="teacher-btn-primary">Đăng xuất</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (() => {
+            const modal = document.querySelector('[data-teacher-logout-modal]');
+            const openButton = document.querySelector('[data-teacher-logout-open]');
+            const closeButtons = document.querySelectorAll('[data-teacher-logout-close]');
+
+            if (!modal || !openButton) {
+                return;
+            }
+
+            const openModal = () => modal.classList.add('is-open');
+            const closeModal = () => modal.classList.remove('is-open');
+
+            openButton.addEventListener('click', openModal);
+            closeButtons.forEach(button => button.addEventListener('click', closeModal));
+            modal.addEventListener('click', event => {
+                if (event.target === modal) {
+                    closeModal();
+                }
+            });
+        })();
+    </script>
 
     @await RenderSectionAsync("Scripts", required: false)
 </body>

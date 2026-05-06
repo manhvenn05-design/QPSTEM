@@ -9,6 +9,8 @@ public class FinanceManagementViewModel
     public string SearchTerm { get; set; } = string.Empty;
     public decimal TotalRevenue { get; set; }
     public decimal TotalOutstanding { get; set; }
+    public int OutstandingInvoiceCount { get; set; }
+    public int PartialInvoiceCount { get; set; }
     public int UnpaidInvoiceCount { get; set; }
     public int PaymentCount { get; set; }
     public IReadOnlyList<FinanceFilterViewModel> Filters { get; set; } = [];
@@ -36,6 +38,7 @@ public class InvoiceManagementItemViewModel
     public string PaidAmountText { get; set; } = string.Empty;
     public string DueAmountText { get; set; } = string.Empty;
     public byte Status { get; set; }
+    public bool CanCollectPayment => DueAmount > 0;
     public string StatusLabel { get; set; } = string.Empty;
     public string StatusBadgeClass { get; set; } = string.Empty;
 }

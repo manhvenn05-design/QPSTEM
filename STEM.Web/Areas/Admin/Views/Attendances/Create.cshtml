@@ -2,13 +2,15 @@
 
 @{
     ViewData["Title"] = "Thêm điểm danh";
+    var lockSession = Model.SessionId.HasValue;
+    var lockStudent = Model.StudentId.HasValue;
 }
 
 <section class="admin-page">
     <div class="admin-page-header">
         <div>
             <h1 class="admin-page-title">Ghi điểm danh</h1>
-            <p class="admin-page-subtitle">Form này chỉ giữ các trường admin thực sự cần thao tác: học viên, trạng thái có mặt, ghi chú và minh chứng sản phẩm.</p>
+            <p class="admin-page-subtitle">Chọn học viên, cập nhật trạng thái và ghi chú khi cần.</p>
         </div>
 
         <div class="admin-actions">
@@ -32,17 +34,33 @@
                 <div class="admin-field-grid two-col">
                     <div class="md:col-span-2">
                         <label asp-for="SessionId" class="admin-label"></label>
-                        <select asp-for="SessionId" asp-items="Model.SessionOptions" class="admin-select" id="SessionId">
-                            <option value="">Chọn buổi học</option>
-                        </select>
+                        @if (lockSession)
+                        {
+                            <input asp-for="SessionId" type="hidden" />
+                            <div class="admin-static-field">@Model.SessionSummary</div>
+                        }
+                        else
+                        {
+                            <select asp-for="SessionId" asp-items="Model.SessionOptions" class="admin-select" id="SessionId">
+                                <option value="">Chọn buổi học</option>
+                            </select>
+                        }
                         <span asp-validation-for="SessionId" class="admin-validation"></span>
                     </div>
 
                     <div class="md:col-span-2">
                         <label asp-for="StudentId" class="admin-label"></label>
-                        <select asp-for="StudentId" asp-items="Model.StudentOptions" class="admin-select" id="StudentId">
-                            <option value="">Chọn học viên thuộc lớp</option>
-                        </select>
+                        @if (lockStudent)
+                        {
+                            <input asp-for="StudentId" type="hidden" />
+                            <div class="admin-static-field">@Model.StudentSummary</div>
+                        }
+                        else
+                        {
+                            <select asp-for="StudentId" asp-items="Model.StudentOptions" class="admin-select" id="StudentId">
+                                <option value="">Chọn học viên thuộc lớp</option>
+                            </select>
+                        }
                         <span asp-validation-for="StudentId" class="admin-validation"></span>
                     </div>
 
@@ -51,22 +69,17 @@
                             <input asp-for="IsPresent" />
                             <span>
                                 <span class="block text-sm font-semibold text-[#1a1c19]">Đánh dấu có mặt</span>
-                                <span class="mt-1 block text-sm text-[#73796b]">Nếu bỏ chọn, hệ thống sẽ lưu học viên ở trạng thái vắng.</span>
+                                <span class="mt-1 block text-sm text-[#73796b]">Bỏ chọn nếu học viên vắng trong buổi học này.</span>
                             </span>
                         </label>
                     </div>
 
                     <div class="md:col-span-2">
                         <label asp-for="TeacherRawNote" class="admin-label"></label>
-                        <textarea asp-for="TeacherRawNote" class="admin-textarea" rows="4" placeholder="Tóm tắt ngắn: thái độ, tiến độ, điểm cần lưu ý của học viên..."></textarea>
+                        <textarea asp-for="TeacherRawNote" class="admin-textarea" rows="4" placeholder="Ghi ngắn về tiến độ, thái độ hoặc điều cần lưu ý."></textarea>
                         <span asp-validation-for="TeacherRawNote" class="admin-validation"></span>
                     </div>
 
-                    <div class="md:col-span-2">
-                        <label asp-for="ProductMediaUrls" class="admin-label"></label>
-                        <textarea asp-for="ProductMediaUrls" class="admin-textarea" rows="4" placeholder="Dán URL ảnh/video sản phẩm của học viên nếu đã có"></textarea>
-                        <span asp-validation-for="ProductMediaUrls" class="admin-validation"></span>
-                    </div>
                 </div>
             </div>
         </div>
@@ -75,7 +88,7 @@
             <summary class="admin-card-section cursor-pointer">
                 <div>
                     <h2 class="admin-section-title">Thông tin bổ sung</h2>
-                    <p class="admin-section-subtitle">Mở khi cần cập nhật thêm dữ liệu liên quan.</p>
+                    <p class="admin-section-subtitle">Mở khi cần lưu thêm dữ liệu liên quan.</p>
                 </div>
             </summary>
             <div class="admin-divider"></div>

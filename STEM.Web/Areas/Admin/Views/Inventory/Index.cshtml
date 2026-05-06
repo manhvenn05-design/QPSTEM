@@ -206,7 +206,20 @@
                                     <td>@item.BorrowSummary</td>
                                     <td>@item.MaintenanceCount nhật ký</td>
                                     <td>
-                                        <div class="flex justify-end">
+                                        <div class="flex justify-end gap-2">
+                                            @if (item.HasActiveBorrow && item.ActiveBorrowId.HasValue)
+                                            {
+                                                <form asp-area="Admin" asp-controller="Inventory" asp-action="ReturnBorrow" asp-route-id="@item.ActiveBorrowId.Value" method="post">
+                                                    @Html.AntiForgeryToken()
+                                                    <button type="submit" class="admin-btn-primary !h-10">Xác nhận trả</button>
+                                                </form>
+                                            }
+                                            else if (item.Status == 1)
+                                            {
+                                                <a asp-area="Admin" asp-controller="Inventory" asp-action="CreateBorrow" asp-route-equipmentId="@item.Id" class="admin-btn-primary !h-10">
+                                                    Mượn
+                                                </a>
+                                            }
                                             <details class="relative">
                                                 <summary class="admin-btn-secondary !h-10 !w-10 !px-0 list-none cursor-pointer justify-center">
                                                     <span class="material-symbols-outlined text-[18px]">more_horiz</span>
