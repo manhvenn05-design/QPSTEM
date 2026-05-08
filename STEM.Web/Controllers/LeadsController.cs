@@ -44,6 +44,7 @@ public class LeadsController : Controller
         {
             ParentName = model.ParentName!,
             Phone = model.Phone!,
+            Email = model.Email,
             InterestedId = model.InterestedId,
             Status = 0 // 0: Chưa liên hệ (Mặc định)
         };

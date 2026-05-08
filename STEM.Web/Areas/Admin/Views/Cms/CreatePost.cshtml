@@ -7,73 +7,176 @@
 <section class="admin-page">
     <div class="admin-page-header">
         <div>
-            <h1 class="admin-page-title">Tạo bài viết</h1>
-            <p class="admin-page-subtitle">Nhập tiêu đề, slug và nội dung hiển thị.</p>
+            <h1 class="admin-page-title">Tạo bài viết mới</h1>
+            <p class="admin-page-subtitle">Điền tiêu đề, nội dung và xuất bản lên trang tin tức.</p>
         </div>
-
         <div class="admin-actions">
             <a asp-area="Admin" asp-controller="Cms" asp-action="Index" class="admin-btn-secondary">Quay lại danh sách</a>
         </div>
     </div>
 
-    <form method="post" asp-area="Admin" asp-controller="Cms" asp-action="CreatePost" class="grid gap-6 xl:grid-cols-[1.55fr_0.9fr]">
+    <form method="post" asp-area="Admin" asp-controller="Cms" asp-action="CreatePost"
+          enctype="multipart/form-data">
         @Html.AntiForgeryToken()
 
-        <div class="space-y-6">
-            <div class="admin-card">
-                <div class="admin-card-section space-y-5">
-                    <div>
-                        <h2 class="admin-section-title">Nội dung bài viết</h2>
-                        <p class="admin-section-subtitle">Slug nên ngắn gọn để dễ dùng cho đường dẫn.</p>
-                    </div>
+        <div class="grid gap-6 xl:grid-cols-[1.55fr_0.9fr]">
 
-                    <div asp-validation-summary="ModelOnly" class="admin-validation-summary"></div>
-
-                    <div class="grid gap-5">
+            @* ── Cột trái: nội dung chính ── *@
+            <div class="space-y-6">
+                <div class="admin-card">
+                    <div class="admin-card-section space-y-5">
                         <div>
-                            <label asp-for="AuthorId" class="admin-label"></label>
-                            <select asp-for="AuthorId" asp-items="Model.AuthorOptions" class="admin-select">
-                                <option value="">Chọn tác giả</option>
-                            </select>
-                            <span asp-validation-for="AuthorId" class="admin-field-validation"></span>
+                            <h2 class="admin-section-title">Nội dung bài viết</h2>
+                            <p class="admin-section-subtitle">Tiêu đề rõ ràng, slug SEO-friendly, nội dung đầy đủ.</p>
                         </div>
 
-                        <div>
-                            <label asp-for="Title" class="admin-label"></label>
-                            <input asp-for="Title" class="admin-input" placeholder="Nhập tiêu đề bài viết" />
-                            <span asp-validation-for="Title" class="admin-field-validation"></span>
-                        </div>
+                        <div asp-validation-summary="ModelOnly" class="admin-validation-summary"></div>
 
-                        <div>
-                            <label asp-for="Slug" class="admin-label"></label>
-                            <input asp-for="Slug" class="admin-input" placeholder="Vi-du-duong-dan" />
-                            <span asp-validation-for="Slug" class="admin-field-validation"></span>
-                        </div>
+                        <div class="grid gap-5">
+                            <div>
+                                <label asp-for="AuthorId" class="admin-label"></label>
+                                <select asp-for="AuthorId" asp-items="Model.AuthorOptions" class="admin-select">
+                                    <option value="">— Chọn tác giả —</option>
+                                </select>
+                                <span asp-validation-for="AuthorId" class="admin-field-validation"></span>
+                            </div>
 
-                        <div>
-                            <label asp-for="Content" class="admin-label"></label>
-                            <textarea asp-for="Content" rows="14" class="admin-textarea" placeholder="Nhập nội dung bài viết"></textarea>
-                            <span asp-validation-for="Content" class="admin-field-validation"></span>
+                            <div>
+                                <label asp-for="Title" class="admin-label"></label>
+                                <input asp-for="Title" id="post-title" class="admin-input"
+                                       placeholder="Nhập tiêu đề bài viết" autocomplete="off" />
+                                <span asp-validation-for="Title" class="admin-field-validation"></span>
+                            </div>
+
+                            <div>
+                                <label asp-for="Slug" class="admin-label"></label>
+                                <input asp-for="Slug" id="post-slug" class="admin-input"
+                                       placeholder="vd: giao-duc-stem-2025" autocomplete="off" />
+                                <p class="text-xs text-[#73796b] mt-1">
+                                    URL công khai: /News/Details/<strong id="slug-preview">...</strong>
+                                </p>
+                                <span asp-validation-for="Slug" class="admin-field-validation"></span>
+                            </div>
+
+                            <div>
+                                <label asp-for="Excerpt" class="admin-label"></label>
+                                <textarea asp-for="Excerpt" rows="3" class="admin-textarea"
+                                          placeholder="Mô tả ngắn hiển thị ở trang danh sách (tối đa 500 ký tự)"></textarea>
+                                <span asp-validation-for="Excerpt" class="admin-field-validation"></span>
+                            </div>
+
+                            <div>
+                                <label asp-for="Content" class="admin-label">Nội dung bài viết</label>
+                                <textarea asp-for="Content" id="post-content" class="tinymce-editor"></textarea>
+                                <span asp-validation-for="Content" class="admin-field-validation"></span>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
+
+            @* ── Cột phải: metadata & xuất bản ── *@
+            <aside class="space-y-6">
+                <div class="admin-card">
+                    <div class="admin-card-section space-y-4">
+                        <h2 class="admin-section-title">Xuất bản</h2>
+                        <label class="inline-flex items-center gap-3 text-sm font-medium text-[#1a1c19]">
+                            <input asp-for="IsPublished" class="admin-checkbox" />
+                            <span>Hiển thị ngay trên trang tin tức</span>
+                        </label>
+                        <button type="submit" class="admin-btn-primary w-full">Lưu bài viết</button>
+                        <a asp-area="Admin" asp-controller="Cms" asp-action="Index"
+                           class="admin-btn-secondary w-full text-center">Huỷ</a>
+                    </div>
+                </div>
+
+                <div class="admin-card">
+                    <div class="admin-card-section space-y-4">
+                        <h2 class="admin-section-title">Danh mục &amp; Ảnh</h2>
+
+                        <div>
+                            <label asp-for="Category" class="admin-label"></label>
+                            <input asp-for="Category" class="admin-input"
+                                   placeholder="Vd: STEM, Công nghệ, Giáo dục"
+                                   list="category-list" autocomplete="off" />
+                            <datalist id="category-list">
+                                @foreach (var cat in Model.CategorySuggestions)
+                                {
+                                    <option value="@cat" />
+                                }
+                            </datalist>
+                            <span asp-validation-for="Category" class="admin-field-validation"></span>
+                        </div>
+
+                        <div>
+                            <label asp-for="ThumbnailFile" class="admin-label"></label>
+                            <input asp-for="ThumbnailFile" type="file"
+                                   accept="image/jpeg,image/png,image/webp"
+                                   class="admin-input py-2" />
+                            <p class="text-xs text-[#73796b] mt-1">JPG, PNG, WEBP – tối đa 5 MB. Tỷ lệ 16:9 tốt nhất.</p>
+                            <span asp-validation-for="ThumbnailFile" class="admin-field-validation"></span>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+
         </div>
-
-        <aside class="space-y-6">
-            <div class="admin-card">
-                <div class="admin-card-section space-y-4">
-                    <label class="inline-flex items-center gap-3 text-sm font-medium text-[#1a1c19]">
-                        <input asp-for="IsPublished" class="admin-checkbox" />
-                        <span>Hiển thị ngay</span>
-                    </label>
-                    <button type="submit" class="admin-btn-primary w-full">Lưu bài viết</button>
-                </div>
-            </div>
-        </aside>
     </form>
 </section>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.8.2/tinymce.min.js" referrerpolicy="origin"></script>
+    <script>
+        tinymce.init({
+            selector: '.tinymce-editor',
+            height: 500,
+            menubar: false,
+            plugins: 'advlist autolink lists link image charmap preview anchor searchreplace visualblocks code fullscreen insertdatetime media table code help wordcount',
+            toolbar: 'undo redo | blocks | ' +
+            'bold italic forecolor | alignleft aligncenter ' +
+            'alignright alignjustify | bullist numlist outdent indent | ' +
+            'image media link | removeformat | help',
+            content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:16px }'
+        });
+
+        // Tự động tạo slug từ tiêu đề
+        (function () {
+            const titleInput = document.getElementById('post-title');
+            const slugInput  = document.getElementById('post-slug');
+            const preview    = document.getElementById('slug-preview');
+            let slugTouched  = !!slugInput.value;
+
+            const map = {
+                'à':'a','á':'a','ạ':'a','ả':'a','ã':'a','â':'a','ầ':'a','ấ':'a','ậ':'a','ẩ':'a','ẫ':'a',
+                'ă':'a','ằ':'a','ắ':'a','ặ':'a','ẳ':'a','ẵ':'a','è':'e','é':'e','ẹ':'e','ẻ':'e','ẽ':'e',
+                'ê':'e','ề':'e','ế':'e','ệ':'e','ể':'e','ễ':'e','ì':'i','í':'i','ị':'i','ỉ':'i','ĩ':'i',
+                'ò':'o','ó':'o','ọ':'o','ỏ':'o','õ':'o','ô':'o','ồ':'o','ố':'o','ộ':'o','ổ':'o','ỗ':'o',
+                'ơ':'o','ờ':'o','ớ':'o','ợ':'o','ở':'o','ỡ':'o','ù':'u','ú':'u','ụ':'u','ủ':'u','ũ':'u',
+                'ư':'u','ừ':'u','ứ':'u','ự':'u','ử':'u','ữ':'u','ỳ':'y','ý':'y','ỵ':'y','ỷ':'y','ỹ':'y','đ':'d'
+            };
+
+            function toSlug(text) {
+                return text.toLowerCase()
+                    .split('').map(c => map[c] || c).join('')
+                    .replace(/[^a-z0-9]+/g, '-')
+                    .replace(/^-+|-+$/g, '');
+            }
+
+            function sync() { preview.textContent = slugInput.value || '...'; }
+
+            slugInput.addEventListener('input', () => { 
+                slugTouched = true; 
+                if (slugInput.value === '') slugTouched = false;
+                sync(); 
+            });
+            
+            titleInput.addEventListener('input', () => {
+                if (!slugTouched) { slugInput.value = toSlug(titleInput.value); }
+                sync();
+            });
+
+            sync();
+        })();
+    </script>
 }

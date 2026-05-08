@@ -409,3 +409,13 @@ Khi triển khai feature mới cho dự án STEM, Codex phải hiểu guide này
 - Ưu tiên code đúng cấu trúc thư mục trước rồi mới tối ưu thêm
 
 Nếu một yêu cầu mới không ghi rõ vị trí đặt file, Codex phải mặc định suy ra từ guide này thay vì tự phát minh cấu trúc mới.
+
+## AI Integration Strategy
+
+Dự án ưu tiên việc tích hợp AI (Artificial Intelligence) một cách liền mạch vào quy trình làm việc của người dùng, thay vì tạo ra các công cụ AI nằm ở menu riêng lẻ. Cụ thể với tính năng **AI Copilot** dành cho giáo viên:
+
+- **Nguyên tắc vị trí:** AI không nằm ở sidebar như một menu rời. Thay vào đó, AI được "nhúng" (embed) trực tiếp vào các form tác vụ cụ thể của giáo viên (ví dụ: Sổ điểm danh, Chấm bài, Xem minh chứng).
+- **Nguyên tắc chức năng:**
+  - `Hỗ trợ nhận xét (Text Refinement):` Tích hợp cạnh ô ghi chú thô của giáo viên. Mục tiêu là giúp biên tập, làm mềm mỏng hóa câu từ trước khi gửi cho phụ huynh.
+  - `Phân tích minh chứng (Video/Media Analysis):` Tích hợp tại khu vực nhập link media (ví dụ: Video thuyết trình dự án của học viên). AI sẽ tự động phân tích Điểm mạnh, Điểm yếu và đưa ra Đề xuất cải thiện.
+- **Nguyên tắc giao diện:** Các nút bấm gọi AI nên được làm nổi bật tinh tế (ví dụ dùng icon ✨ và màu sắc phân biệt) nhưng không phá vỡ layout tổng thể. Kết quả AI trả về phải rõ ràng, dễ đọc (dùng markdown hoặc format đẹp) và luôn cho phép giáo viên chỉnh sửa lại (Human in the loop) trước khi lưu.

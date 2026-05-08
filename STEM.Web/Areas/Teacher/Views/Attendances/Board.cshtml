@@ -134,17 +134,125 @@
                                     </label>
                                 </div>
 
-                                <div class="teacher-field">
-                                    <label asp-for="Rows[@i].TeacherRawNote">Ghi chú giáo viên</label>
+                                <div class="teacher-field relative">
+                                    <div class="flex items-center justify-between">
+                                        <label asp-for="Rows[@i].TeacherRawNote">Ghi chú giáo viên</label>
+                                        <button type="button" class="text-xs font-semibold text-[#6a994e] flex items-center gap-1 hover:text-[#3b6722] transition-colors" onclick="openAITextModal('Rows_@(i)__TeacherRawNote')">
+                                            <span class="material-symbols-outlined text-[16px]">auto_awesome</span> Nhờ AI viết lại
+                                        </button>
+                                    </div>
                                     <textarea asp-for="Rows[@i].TeacherRawNote" rows="3" placeholder="Ghi chú ngắn về tiến độ, thái độ hoặc điều cần lưu ý."></textarea>
                                     <span asp-validation-for="Rows[@i].TeacherRawNote" class="teacher-field-error"></span>
                                 </div>
 
-                                <div class="teacher-field">
-                                    <label asp-for="Rows[@i].ProductMediaUrls">Media sản phẩm</label>
-                                    <textarea asp-for="Rows[@i].ProductMediaUrls" rows="3" placeholder="Mỗi dòng một link ảnh hoặc video."></textarea>
-                                    <p class="teacher-field-hint">@Model.Rows[i].MediaHint</p>
+                                <div class="teacher-field relative mt-4">
+                                    <label class="font-medium text-[#1a1c19]">Tải lên Video Sản phẩm</label>
+                                    <input type="hidden" asp-for="Rows[@i].ProductMediaUrls" id="Rows_@(i)__ProductMediaUrls" />
+                                    
+                                    <!-- Khu vực kéo thả / Upload video -->
+                                    <div class="mt-2 flex cursor-pointer justify-center rounded-xl border-2 border-dashed border-[#c2c9b9] bg-[#f8faf7] px-6 py-6 transition-colors hover:border-[#3b6722] hover:bg-[#f2f7f0]" id="upload-area-@(i)" onclick="document.getElementById('file-upload-@(i)').click()">
+                                        <div class="text-center">
+                                            <span class="material-symbols-outlined text-[36px] text-[#73796b]">cloud_upload</span>
+                                            <div class="mt-2 flex justify-center text-sm leading-6 text-[#42493f]">
+                                                <label for="file-upload-@(i)" class="relative cursor-pointer rounded-md font-semibold text-[#3b6722] hover:text-[#2d4f19]" onclick="event.stopPropagation()">
+                                                    <span>Tải video từ máy</span>
+                                                    <input id="file-upload-@(i)" name="file-upload-@(i)" type="file" class="sr-only" accept="video/*" onchange="mockUploadVideo(this, @(i))">
+                                                </label>
+                                                <p class="pl-1">hoặc kéo thả vào đây</p>
+                                            </div>
+                                            <p class="text-xs leading-5 text-[#73796b]">Hỗ trợ video MP4, MOV, AVI dưới 50MB</p>
+                                        </div>
+                                    </div>
+
+                                    <!-- Preview Video sau khi chọn -->
+                                    <div id="video-preview-@(i)" class="mt-3 hidden items-center justify-between rounded-lg border border-[#c2c9b9] bg-white p-3 shadow-sm">
+                                        <div class="flex items-center gap-3 overflow-hidden">
+                                            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded bg-[#e3e3de] text-[#42493f]">
+                                                <span class="material-symbols-outlined text-[24px]">movie</span>
+                                            </div>
+                                            <div class="min-w-0 flex-1">
+                                                <p class="truncate text-sm font-semibold text-[#1a1c19]" id="video-filename-@(i)">video_thuyet_trinh.mp4</p>
+                                                <div class="mt-1 flex items-center gap-2">
+                                                    <div class="h-1.5 w-24 overflow-hidden rounded-full bg-[#e3e3de]">
+                                                        <div class="h-full rounded-full bg-[#3b6722]" style="width: 100%"></div>
+                                                    </div>
+                                                    <span class="text-[10px] font-medium text-[#3b6722]">Đã tải lên xong</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <button type="button" class="ml-4 shrink-0 text-[#ba1a1a] transition-colors hover:text-[#93000a]" onclick="removeMockVideo(@(i))" title="Xóa video này">
+                                            <span class="material-symbols-outlined">delete</span>
+                                        </button>
+                                    </div>
+
+                                    <p class="teacher-field-hint mt-2">@Model.Rows[i].MediaHint</p>
                                     <span asp-validation-for="Rows[@i].ProductMediaUrls" class="teacher-field-error"></span>
+
+                                    <!-- Nút AI nổi bật mới -->
+                                    <button type="button" class="mt-3 flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-[#b26a00] to-[#e79211] px-4 py-2.5 text-sm font-bold text-white shadow-md transition-all hover:from-[#9f5d00] hover:to-[#cf810c] hover:shadow-lg active:scale-[0.98]" onclick="analyzeVideoInline(this, 'Rows_@(i)__ProductMediaUrls', 'ai-result-@(i)')">
+                                        <span class="material-symbols-outlined text-[20px]">auto_awesome</span>
+                                        Phân tích Video bằng AI
+                                    </button>
+
+                                    <!-- Khu vực hiển thị kết quả phân tích AI ngay bên dưới -->
+                                    <div id="ai-result-@(i)" class="mt-4 hidden overflow-hidden rounded-xl border border-[#e3e3de] bg-white shadow-sm">
+                                        <div class="border-b border-[#e3e3de] bg-[#fffaf3] px-4 py-3">
+                                            <h4 class="flex items-center gap-2 text-sm font-bold text-[#b26a00]">
+                                                <span class="material-symbols-outlined text-[18px]">analytics</span>
+                                                Báo cáo Phân tích AI
+                                            </h4>
+                                        </div>
+                                        
+                                        <!-- Trạng thái Loading -->
+                                        <div class="ai-loading-state flex flex-col items-center justify-center py-8">
+                                            <div class="h-10 w-10 animate-spin rounded-full border-4 border-[#f2f7f0] border-t-[#e79211]"></div>
+                                            <p class="mt-4 animate-pulse text-sm font-medium text-[#b26a00]">AI đang phân tích khung hình & giọng nói...</p>
+                                        </div>
+
+                                        <!-- Nội dung kết quả -->
+                                        <div class="ai-analysis-content hidden p-4">
+                                            <div class="mb-5 flex items-center justify-between rounded-lg bg-[#f2f7f0] p-3">
+                                                <span class="text-xs font-bold text-[#42493f] uppercase">Điểm đánh giá chung</span>
+                                                <div class="flex items-center gap-3">
+                                                    <div class="h-2 w-32 overflow-hidden rounded-full bg-[#e3e3de]">
+                                                        <div class="h-full w-[85%] rounded-full bg-[#3b6722]"></div>
+                                                    </div>
+                                                    <span class="text-base font-black text-[#1a1c19]">85/100</span>
+                                                </div>
+                                            </div>
+
+                                            <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                                <div class="rounded-lg border border-[#e3e3de] p-3 shadow-sm">
+                                                    <h5 class="mb-2 flex items-center gap-1 text-xs font-bold text-[#3b6722]">
+                                                        <span class="material-symbols-outlined text-[16px]">thumb_up</span> Điểm sáng
+                                                    </h5>
+                                                    <ul class="list-disc space-y-1 pl-5 text-sm text-[#42493f]">
+                                                        <li>Phát âm rõ ràng, có ngữ điệu.</li>
+                                                        <li>Giao tiếp bằng mắt tốt với camera.</li>
+                                                    </ul>
+                                                </div>
+                                                <div class="rounded-lg border border-[#e3e3de] p-3 shadow-sm">
+                                                    <h5 class="mb-2 flex items-center gap-1 text-xs font-bold text-[#ba1a1a]">
+                                                        <span class="material-symbols-outlined text-[16px]">trending_up</span> Cần cải thiện
+                                                    </h5>
+                                                    <ul class="list-disc space-y-1 pl-5 text-sm text-[#42493f]">
+                                                        <li>Phần đầu giới thiệu còn hơi vội.</li>
+                                                        <li>Dùng sai từ chuyên ngành ("trục xoay" thay vì "ròng rọc").</li>
+                                                    </ul>
+                                                </div>
+                                            </div>
+
+                                            <div class="mt-4 rounded-lg border border-[#d2e3fc] bg-[#f5f9fc] p-4">
+                                                <div class="mb-2 flex items-center justify-between">
+                                                    <strong class="text-sm text-[#1a1c19]">Gợi ý phản hồi</strong>
+                                                    <button type="button" class="flex items-center gap-1 rounded bg-[#1a73e8] px-2 py-1 text-xs font-medium text-white transition-colors hover:bg-[#1557b0]" onclick="applyAIComment('Rows_@(i)__TeacherRawNote', this)">
+                                                        <span class="material-symbols-outlined text-[14px]">edit_note</span> Chép vào Ghi chú
+                                                    </button>
+                                                </div>
+                                                <p class="ai-comment-text text-sm italic text-[#42493f]">"Bài thuyết trình dự án của con rất xuất sắc! Lần tới, con chú ý nói chậm lại một chút ở phần mở đầu nhé!"</p>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </article>
@@ -164,3 +272,148 @@
         </form>
     }
 </section>
+
+<!-- AI Text Modal -->
+<div class="teacher-modal-backdrop" id="aiTextModal">
+    <div class="teacher-modal shadow-xl">
+        <div class="teacher-modal-content relative">
+            <button type="button" class="absolute top-4 right-4 text-[#73796b] hover:text-[#1a1c19]" onclick="closeAIModals()">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+            <div class="flex items-center gap-2 mb-4 text-[#6a994e]">
+                <span class="material-symbols-outlined">auto_awesome</span>
+                <h2 class="text-lg font-semibold text-[#1a1c19]">AI Viết Lại Nhận Xét</h2>
+            </div>
+            
+            <div id="aiTextLoading" class="py-8 text-center text-[#73796b] hidden">
+                <span class="material-symbols-outlined animate-spin text-[32px] text-[#6a994e] mb-2" style="animation: spin 1s linear infinite;">refresh</span>
+                <p class="text-sm">AI đang suy nghĩ và biên tập câu từ...</p>
+                <style>@@keyframes spin { 100% { transform: rotate(360deg); } }</style>
+            </div>
+
+            <div id="aiTextResult" class="hidden">
+                <p class="text-sm font-medium text-[#42493d] mb-2">Gợi ý từ AI (Dành cho Phụ huynh):</p>
+                <div class="p-4 bg-[#f2f7f0] border border-[#c9ddbf] rounded-lg text-sm text-[#1a1c19] mb-4" id="aiTextSuggestion">
+                    <!-- fake text -->
+                </div>
+                <div class="flex justify-end gap-3">
+                    <button type="button" class="teacher-btn-secondary !h-10" onclick="closeAIModals()">Huỷ</button>
+                    <button type="button" class="teacher-btn-primary !h-10" onclick="applyAIText()">Thay thế nhận xét</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+@section Scripts {
+    <script>
+        let currentTextTarget = null;
+
+        function openAITextModal(targetId) {
+            currentTextTarget = targetId;
+            const originalText = document.getElementById(targetId)?.value;
+            if(!originalText || originalText.trim() === '') {
+                alert("Hãy gõ vài dòng ghi chú thô của bạn trước để AI có thể viết lại nhé!");
+                return;
+            }
+
+            document.getElementById('aiTextModal').classList.add('is-open');
+            document.getElementById('aiTextLoading').classList.remove('hidden');
+            document.getElementById('aiTextResult').classList.add('hidden');
+
+            setTimeout(() => {
+                document.getElementById('aiTextLoading').classList.add('hidden');
+                document.getElementById('aiTextResult').classList.remove('hidden');
+                document.getElementById('aiTextSuggestion').innerHTML = 
+                    "<strong>[Bản nháp từ AI]</strong><br/>" + 
+                    "Hôm nay con đã nỗ lực hoàn thành tốt các nhiệm vụ trong lớp. Tuy đôi lúc con còn mất tập trung nhẹ, nhưng sau khi thầy/cô nhắc nhở, con đã nhanh chóng bắt nhịp lại. Kính mong gia đình cùng động viên để con phát huy sự chủ động tốt hơn trong buổi tới.";
+            }, 1200);
+        }
+
+        function applyAIText() {
+            if(currentTextTarget) {
+                const sugg = document.getElementById('aiTextSuggestion').innerText.replace("[Bản nháp từ AI]\n", "");
+                document.getElementById(currentTextTarget).value = sugg;
+            }
+            closeAIModals();
+        }
+
+        function mockUploadVideo(inputElem, index) {
+            if (inputElem.files && inputElem.files[0]) {
+                const file = inputElem.files[0];
+                
+                // Ẩn khu vực upload, hiện khu vực preview
+                document.getElementById('upload-area-' + index).classList.add('hidden');
+                document.getElementById('video-preview-' + index).classList.remove('hidden');
+                document.getElementById('video-preview-' + index).classList.add('flex');
+                
+                // Đổi tên file hiển thị
+                document.getElementById('video-filename-' + index).innerText = file.name;
+
+                // Gắn đại 1 url giả vào thẻ hidden để giả lập validate hợp lệ
+                document.getElementById('Rows_' + index + '__ProductMediaUrls').value = "uploaded://" + file.name;
+            }
+        }
+
+        function removeMockVideo(index) {
+            // Xóa file trong input
+            document.getElementById('file-upload-' + index).value = '';
+            document.getElementById('Rows_' + index + '__ProductMediaUrls').value = '';
+
+            // Ẩn preview, hiện lại khung upload
+            document.getElementById('video-preview-' + index).classList.add('hidden');
+            document.getElementById('video-preview-' + index).classList.remove('flex');
+            document.getElementById('upload-area-' + index).classList.remove('hidden');
+
+            // Đóng khung kết quả phân tích AI nếu đang mở
+            document.getElementById('ai-result-' + index).classList.add('hidden');
+        }
+
+        function analyzeVideoInline(btnElement, mediaInputId, resultContainerId) {
+            const mediaLinks = document.getElementById(mediaInputId)?.value;
+            if(!mediaLinks) {
+                alert("Vui lòng tải lên một video trước khi yêu cầu AI phân tích!");
+                return;
+            }
+
+            const resultContainer = document.getElementById(resultContainerId);
+            const loadingState = resultContainer.querySelector('.ai-loading-state');
+            const contentState = resultContainer.querySelector('.ai-analysis-content');
+
+            // Hiển thị khung loading
+            resultContainer.classList.remove('hidden');
+            loadingState.classList.remove('hidden');
+            contentState.classList.add('hidden');
+            
+            // Vô hiệu hóa nút trong lúc chờ
+            const originalHtml = btnElement.innerHTML;
+            btnElement.disabled = true;
+            btnElement.innerHTML = '<span class="material-symbols-outlined animate-spin text-[20px]">sync</span> Đang phân tích...';
+
+            setTimeout(() => {
+                loadingState.classList.add('hidden');
+                contentState.classList.remove('hidden');
+                
+                btnElement.disabled = false;
+                btnElement.innerHTML = originalHtml;
+            }, 2000);
+        }
+
+        function applyAIComment(targetInputId, btnElement) {
+            const txtArea = document.getElementById(targetInputId);
+            if(txtArea) {
+                // Tìm text từ element cùng khối với button (sibling)
+                const sugg = btnElement.closest('.bg-\\[\\#f5f9fc\\]').querySelector('.ai-comment-text').innerText;
+                txtArea.value = (txtArea.value ? txtArea.value + "\n\n" : "") + "--- Đánh giá Video (AI) ---\n" + sugg;
+                alert("Đã chép gợi ý AI vào phần Ghi chú giáo viên!");
+            }
+        }
+
+        function closeAIModals() {
+            document.getElementById('aiTextModal')?.classList.remove('is-open');
+            document.getElementById('aiVideoModal')?.classList.remove('is-open');
+        }
+    </script>
+}

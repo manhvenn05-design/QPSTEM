@@ -862,7 +862,8 @@
         var todaySessionCount = await DbContext.Sessions.AsNoTracking().CountAsync(x => x.Date == today);
         var openMaintenanceCount = await DbContext.MaintenanceLogs.AsNoTracking().CountAsync(x => x.Status == 1 || x.Status == 2);
         var unpaidInvoiceCount = await DbContext.Invoices.AsNoTracking().CountAsync(x => !x.Payments.Any() || x.Payments.Sum(p => (decimal?)p.Amount) < x.FinalAmount);
-        var notificationCount = todaySessionCount + openMaintenanceCount + unpaidInvoiceCount;
+        var pendingLeadsCount = await DbContext.Leads.AsNoTracking().CountAsync(x => x.Status == 0);
+        var notificationCount = todaySessionCount + openMaintenanceCount + unpaidInvoiceCount + pendingLeadsCount;
         string NavClass(string controller) => currentController == controller ? "admin-nav-link is-active" : "admin-nav-link";
     }
 
@@ -908,6 +909,14 @@
                 <a class="@NavClass("Inventory")" asp-area="Admin" asp-controller="Inventory" asp-action="Index">
                     <span class="material-symbols-outlined text-[20px]">inventory_2</span>
                     <span>Kho thiết bị</span>
+                </a>
+                <a class="@NavClass("Leads")" asp-area="Admin" asp-controller="Leads" asp-action="Index">
+                    <span class="material-symbols-outlined text-[20px]">support_agent</span>
+                    <span class="flex-1">Khách tư vấn</span>
+                    @if (pendingLeadsCount > 0)
+                    {
+                        <span class="flex h-5 items-center justify-center rounded-full bg-[#ba1a1a] px-2 text-[11px] font-medium text-white">@pendingLeadsCount</span>
+                    }
                 </a>
                 <a class="@NavClass("Cms")" asp-area="Admin" asp-controller="Cms" asp-action="Index">
                     <span class="material-symbols-outlined text-[20px]">article</span>

@@ -13,8 +13,11 @@ public class LeadViewModel
     [StringLength(20, ErrorMessage = "Số điện thoại không được vượt quá 20 ký tự.")]
     public string? Phone { get; init; }
 
-    [Required(ErrorMessage = "Vui lòng chọn khóa học bạn quan tâm.")]
-    public int? InterestedId { get; init; }
+    [EmailAddress(ErrorMessage = "Email không hợp lệ.")]
+    [StringLength(150, ErrorMessage = "Email không được vượt quá 150 ký tự.")]
+    public string? Email { get; init; }
+
+    public int? InterestedId { get; set; }
 
     [Range(typeof(bool), "true", "true", ErrorMessage = "Bạn phải đồng ý với điều khoản dịch vụ.")]
     public bool AcceptTerms { get; init; }

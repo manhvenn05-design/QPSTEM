@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace STEM.Web.Models;
@@ -14,6 +14,8 @@ public partial class Invoice
     public string InvoiceNo { get; set; } = null!;
 
     public decimal FinalAmount { get; set; }
+
+    public DateTime? DueDate { get; set; }
 
     public byte Status { get; set; }
 

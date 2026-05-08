@@ -80,6 +80,9 @@ public partial class ApplicationDbContext : DbContext
 
             entity.Property(e => e.IsActive).HasDefaultValue(true);
             entity.Property(e => e.Title).HasMaxLength(100);
+            entity.Property(e => e.SortOrder).HasDefaultValue(0);
+            entity.Property(e => e.ImageUrl).HasMaxLength(500);
+            entity.Property(e => e.LinkUrl).HasMaxLength(500);
         });
 
         modelBuilder.Entity<Class>(entity =>
@@ -266,6 +269,10 @@ public partial class ApplicationDbContext : DbContext
                 .HasMaxLength(200)
                 .IsUnicode(false);
             entity.Property(e => e.Title).HasMaxLength(200);
+            entity.Property(e => e.Excerpt).HasMaxLength(500);
+            entity.Property(e => e.Category).HasMaxLength(100);
+            entity.Property(e => e.ImageUrl).HasMaxLength(500);
+            entity.Property(e => e.PublishedAt).HasColumnType("datetime");
 
             entity.HasOne(d => d.Author).WithMany(p => p.Posts)
                 .HasForeignKey(d => d.AuthorId)
