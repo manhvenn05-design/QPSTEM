@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace STEM.Web.Areas.Teacher.Models;
@@ -58,8 +58,12 @@ public class TeacherScheduleIndexViewModel
     public string SelectedFilter { get; set; } = "today";
     public string SearchTerm { get; set; } = string.Empty;
     public int TotalSessions { get; set; }
+    public DateTime TargetDate { get; set; }
+    public DateTime WeekStart { get; set; }
+    public DateTime WeekEnd { get; set; }
     public IReadOnlyList<TeacherScheduleFilterViewModel> Filters { get; set; } = [];
     public IReadOnlyList<TeacherScheduleItemViewModel> Sessions { get; set; } = [];
+    public IReadOnlyList<TeacherScheduleItemViewModel> CalendarSessions { get; set; } = [];
 }
 
 public class TeacherScheduleFilterViewModel
@@ -74,6 +78,9 @@ public class TeacherScheduleItemViewModel
     public string SessionLabel { get; set; } = string.Empty;
     public string ClassCode { get; set; } = string.Empty;
     public string CourseName { get; set; } = string.Empty;
+    public DateTime Date { get; set; }
+    public TimeOnly StartTime { get; set; }
+    public TimeOnly EndTime { get; set; }
     public string ScheduleText { get; set; } = string.Empty;
     public string Topic { get; set; } = string.Empty;
     public int StudentCount { get; set; }

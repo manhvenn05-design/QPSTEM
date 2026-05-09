@@ -45,6 +45,7 @@
                 </header>
 
                 <form class="reg-form" asp-controller="Leads" asp-action="Consultation" method="post">
+                    @Html.AntiForgeryToken()
                     <div asp-validation-summary="All" style="color: #dc3545; font-size: 0.9rem; margin-bottom: 16px; padding: 10px; background: #f8d7da; border-radius: 4px; display: @(ViewData.ModelState.IsValid ? "none" : "block")"></div>
                     
                     <div class="form-field">
@@ -60,11 +61,17 @@
                                    placeholder="0901234567" value="@Model?.Phone" autocomplete="tel" />
                         </div>
                         <div class="form-field">
-                            <label for="InterestedId">Khóa học quan tâm</label>
-                            <select asp-for="InterestedId" asp-items="@(new SelectList(ViewBag.Courses, "Id", "Name"))" class="form-control" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px;">
-                                <option value="">-- Chọn khóa học --</option>
-                            </select>
+                            <label for="Email">Địa chỉ Email</label>
+                            <input id="Email" name="Email" type="email"
+                                   placeholder="example@gmail.com" value="@Model?.Email" autocomplete="email" />
                         </div>
+                    </div>
+                    
+                    <div class="form-field" style="margin-top: 16px;">
+                        <label for="InterestedId">Khóa học quan tâm</label>
+                        <select asp-for="InterestedId" asp-items="@(new SelectList(ViewBag.Courses, "Id", "Name"))" class="form-control" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px;">
+                            <option value="">-- Chọn khóa học --</option>
+                        </select>
                     </div>
 
                     <label class="checkbox-row checkbox-row-start">

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace STEM.Web.Models;
@@ -14,4 +14,8 @@ public partial class Banner
     public string? LinkUrl { get; set; }
 
     public bool IsActive { get; set; }
+
+    /// <summary>Thứ tự hiển thị banner (số nhỏ hiển thị trước)</summary>
+    public int SortOrder { get; set; }
 }
+

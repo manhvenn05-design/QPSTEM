@@ -19,7 +19,7 @@ public class ScheduleController : Controller
     }
 
     [HttpGet]
-    public async Task<IActionResult> Index(string filter = "today", string? q = null)
+    public async Task<IActionResult> Index(string filter = "today", string? q = null, DateTime? date = null)
     {
         var teacherId = GetCurrentTeacherId();
         if (!teacherId.HasValue)
@@ -43,6 +43,14 @@ public class ScheduleController : Controller
 
         var today = DateOnly.FromDateTime(DateTime.Today);
         var searchTerm = q?.Trim() ?? string.Empty;
+
+        // Tính toán khoảng thời gian cho Lịch tuần
+        var targetDateTime = date ?? DateTime.Today;
+        var diff = (7 + (targetDateTime.DayOfWeek - DayOfWeek.Monday)) % 7;
+        var weekStart = targetDateTime.AddDays(-1 * diff).Date;
+        var weekEnd = weekStart.AddDays(6).Date;
+        var weekStartDateOnly = DateOnly.FromDateTime(weekStart);
+        var weekEndDateOnly = DateOnly.FromDateTime(weekEnd);
 
         var query = _context.Sessions
             .AsNoTracking()
@@ -85,11 +93,38 @@ public class ScheduleController : Controller
             .ThenBy(x => x.SessionNo)
             .ToListAsync();
 
+        // Truy vấn riêng dữ liệu cho Lịch tuần (từ Thứ 2 đến Chủ nhật của tuần TargetDate)
+        var calendarQuery = _context.Sessions
+            .AsNoTracking()
+            .Where(x => x.Class.TeacherId == teacherId.Value && x.Date >= weekStartDateOnly && x.Date <= weekEndDateOnly)
+            .Select(x => new
+            {
+                x.Id,
+                x.SessionNo,
+                x.Date,
+                x.StartTime,
+                x.EndTime,
+                x.Topic,
+                x.TeachingMaterialUrl,
+                ClassCode = x.Class.ClassCode,
+                CourseName = x.Class.Course.Name,
+                StudentCount = x.Class.Enrollments.Count,
+                AttendanceCount = x.Attendances.Count
+            });
+
+        var calendarRawSessions = await calendarQuery
+            .OrderBy(x => x.Date)
+            .ThenBy(x => x.StartTime)
+            .ToListAsync();
+
         var model = new TeacherScheduleIndexViewModel
         {
             SelectedFilter = normalizedFilter,
             SearchTerm = searchTerm,
             TotalSessions = sessions.Count,
+            TargetDate = targetDateTime,
+            WeekStart = weekStart,
+            WeekEnd = weekEnd,
             Filters = filters,
             Sessions = sessions.Select(x => new TeacherScheduleItemViewModel
             {
@@ -97,6 +132,9 @@ public class ScheduleController : Controller
                 SessionLabel = $"Buổi số {x.SessionNo:00}",
                 ClassCode = x.ClassCode,
                 CourseName = x.CourseName,
+                Date = x.Date.ToDateTime(TimeOnly.MinValue),
+                StartTime = x.StartTime,
+                EndTime = x.EndTime,
                 ScheduleText = $"{x.Date:dd/MM/yyyy} · {x.StartTime:HH\\:mm} - {x.EndTime:HH\\:mm}",
                 Topic = string.IsNullOrWhiteSpace(x.Topic) ? "Chưa cập nhật chủ đề" : x.Topic,
                 StudentCount = x.StudentCount,
@@ -109,7 +147,21 @@ public class ScheduleController : Controller
                     ? "teacher-tag teacher-tag--warning"
                     : x.Date < today
                         ? "teacher-tag teacher-tag--neutral"
-                        : "teacher-tag teacher-tag--success"
+                        : "teacher-tag teacher-tag--info"
+            }).ToList(),
+            CalendarSessions = calendarRawSessions.Select(x => new TeacherScheduleItemViewModel
+            {
+                SessionId = x.Id,
+                SessionLabel = $"Buổi số {x.SessionNo:00}",
+                ClassCode = x.ClassCode,
+                CourseName = x.CourseName,
+                Date = x.Date.ToDateTime(TimeOnly.MinValue),
+                StartTime = x.StartTime,
+                EndTime = x.EndTime,
+                ScheduleText = $"{x.StartTime:HH\\:mm} - {x.EndTime:HH\\:mm}",
+                Topic = string.IsNullOrWhiteSpace(x.Topic) ? "Chưa cập nhật chủ đề" : x.Topic,
+                StudentCount = x.StudentCount,
+                AttendanceCount = x.AttendanceCount
             }).ToList()
         };
 

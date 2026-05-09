@@ -1,6 +1,6 @@
 @model STEM.Web.Models.NewsDetailViewModel
 @{
-    ViewData["Title"] = "Chi tiết bài viết";
+    ViewData["Title"] = Model.Article.Title;
 }
 
 <main class="news-detail-page">
@@ -16,114 +16,133 @@
         <div class="news-detail-main">
             <header class="news-detail-header">
                 <div class="news-detail-meta">
-                    <span class="news-category-badge">@Model.Article.Category</span>
-                    <span><span class="material-symbols-outlined" aria-hidden="true">calendar_today</span>@Model.Article.PublishedDateText</span>
-                    <span><span class="material-symbols-outlined" aria-hidden="true">person</span>@Model.Article.AuthorName</span>
-                    <span><span class="material-symbols-outlined" aria-hidden="true">schedule</span>@Model.Article.ReadTimeText</span>
+                    @if (!string.IsNullOrEmpty(Model.Article.Category))
+                    {
+                        <a asp-controller="News" asp-action="Index" asp-route-category="@Model.Article.Category" class="news-category-badge" style="text-decoration:none;">@Model.Article.Category</a>
+                    }
+                    @if (!string.IsNullOrEmpty(Model.Article.PublishedDateText))
+                    {
+                        <span><span class="material-symbols-outlined" aria-hidden="true">calendar_today</span>@Model.Article.PublishedDateText</span>
+                    }
+                    @if (!string.IsNullOrEmpty(Model.Article.AuthorName))
+                    {
+                        <span><span class="material-symbols-outlined" aria-hidden="true">person</span>@Model.Article.AuthorName</span>
+                    }
+                    @if (!string.IsNullOrEmpty(Model.Article.ReadTimeText))
+                    {
+                        <span><span class="material-symbols-outlined" aria-hidden="true">schedule</span>@Model.Article.ReadTimeText</span>
+                    }
                 </div>
                 <h1>@Model.Article.Title</h1>
+                @if (!string.IsNullOrEmpty(Model.Article.Excerpt))
+                {
+                    <p style="font-size:1.05rem; color:var(--text-secondary,#6b6b63); line-height:1.7; margin-top:0.75rem;">@Model.Article.Excerpt</p>
+                }
             </header>
 
-            <div class="news-detail-hero">
-                <img src="@Model.HeroImageUrl" alt="@Model.Article.Title" />
-            </div>
+            @if (!string.IsNullOrEmpty(Model.HeroImageUrl))
+            {
+                <div class="news-detail-hero">
+                    <img src="@Model.HeroImageUrl" alt="@Model.Article.Title" />
+                </div>
+            }
 
             <article class="news-article-content">
-                @foreach (var contentSection in Model.Sections)
-                {
-                    <section class="news-content-section">
-                        <h2>@contentSection.Heading</h2>
-                        @foreach (var paragraph in contentSection.Paragraphs)
-                        {
-                            <p>@paragraph</p>
-                        }
-                    </section>
-                }
-
-                <ul class="news-key-points">
-                    @foreach (var point in Model.KeyPoints)
-                    {
-                        <li>
-                            <span class="material-symbols-outlined" aria-hidden="true">check_circle</span>
-                            <span>@point</span>
-                        </li>
-                    }
-                </ul>
+                @Html.Raw(Model.ContentHtml)
 
                 <div class="news-share-row">
                     <span>Chia sẻ bài viết:</span>
-                    <button type="button">Facebook</button>
-                    <button type="button">Twitter</button>
+                    <a href="https://www.facebook.com/sharer/sharer.php?u=@Uri.EscapeDataString($"{Context.Request.Scheme}://{Context.Request.Host}{Context.Request.Path}")"
+                       target="_blank" rel="noopener" class="button button-sm">Facebook</a>
                 </div>
 
-                <div class="news-author-box">
-                    <div class="news-author-box-avatar">
-                        <img src="@Model.Article.AuthorAvatarUrl" alt="@Model.Article.AuthorName" />
+                @if (!string.IsNullOrEmpty(Model.Article.AuthorName))
+                {
+                    <div class="news-author-box">
+                        <div class="news-author-box-avatar" style="background:var(--surface-container,#eeeee9); display:flex; align-items:center; justify-content:center;">
+                            <span class="material-symbols-outlined" style="font-size:2rem; color:var(--on-surface-variant,#42493d);" aria-hidden="true">person</span>
+                        </div>
+                        <div>
+                            <h3>@Model.Article.AuthorName</h3>
+                            @if (!string.IsNullOrEmpty(Model.AuthorBio))
+                            {
+                                <p>@Model.AuthorBio</p>
+                            }
+                            else
+                            {
+                                <p>Tác giả tại QPSTEM.</p>
+                            }
+                        </div>
                     </div>
-                    <div>
-                        <h3>@Model.Article.AuthorName</h3>
-                        <p>@Model.AuthorBio</p>
-                    </div>
-                </div>
+                }
             </article>
 
-            <section class="news-related-section">
-                <div class="section-heading section-heading-left">
-                    <h2>Bài viết liên quan</h2>
-                </div>
-
-                <div class="news-related-grid">
-                    @foreach (var article in Model.RelatedArticles)
-                    {
-                        <article class="news-related-card">
-                            <div class="news-related-image">
-                                <img src="@article.ImageUrl" alt="@article.Title" />
-                            </div>
-                            <div class="news-related-body">
-                                <h3>@article.Title</h3>
-                                <span>@article.PublishedDateText</span>
-                            </div>
-                        </article>
-                    }
-                </div>
-            </section>
+            @if (Model.RelatedArticles.Count > 0)
+            {
+                <section class="news-related-section">
+                    <div class="section-heading section-heading-left">
+                        <h2>Bài viết liên quan</h2>
+                    </div>
+                    <div class="news-related-grid">
+                        @foreach (var article in Model.RelatedArticles)
+                        {
+                            <a asp-controller="News" asp-action="Details" asp-route-slug="@article.Slug" class="news-related-card" style="text-decoration:none; color:inherit; display:block;">
+                                <div class="news-related-image">
+                                    <img src="@article.ImageUrl" alt="@article.Title" loading="lazy" />
+                                </div>
+                                <div class="news-related-body">
+                                    <h3>@article.Title</h3>
+                                    <span>@article.PublishedDateText</span>
+                                </div>
+                            </a>
+                        }
+                    </div>
+                </section>
+            }
         </div>
 
         <aside class="news-detail-sidebar">
-            <section class="news-sidebar-card">
-                <h3>Bài viết nổi bật</h3>
-                <div class="news-featured-list">
-                    @foreach (var article in Model.FeaturedArticles)
-                    {
-                        <article class="news-featured-item">
-                            <div class="news-featured-thumb">
-                                <img src="@article.ImageUrl" alt="@article.Title" />
-                            </div>
-                            <div>
-                                <h4>@article.Title</h4>
-                                <span>@article.PublishedDateText</span>
-                            </div>
-                        </article>
-                    }
-                </div>
-            </section>
+            @if (Model.FeaturedArticles.Count > 0)
+            {
+                <section class="news-sidebar-card">
+                    <h3>Bài viết nổi bật</h3>
+                    <div class="news-featured-list">
+                        @foreach (var article in Model.FeaturedArticles)
+                        {
+                            <a asp-controller="News" asp-action="Details" asp-route-slug="@article.Slug" class="news-featured-item" style="text-decoration:none; color:inherit; display:flex; gap:0.75rem; align-items:flex-start;">
+                                <div class="news-featured-thumb">
+                                    <img src="@article.ImageUrl" alt="@article.Title" loading="lazy" />
+                                </div>
+                                <div>
+                                    <h4>@article.Title</h4>
+                                    <span>@article.PublishedDateText</span>
+                                </div>
+                            </a>
+                        }
+                    </div>
+                </section>
+            }
 
             <section class="news-newsletter-card">
                 <h3>Đăng ký nhận tin</h3>
-                <p>Cập nhật những kiến thức giáo dục STEM mới nhất mỗi tuần.</p>
-                <input type="email" placeholder="Email của bạn..." />
-                <button type="button" class="button button-block news-newsletter-button">Đăng ký</button>
+                <p>Cập nhật những kiến thức giáo dục STEM mới nhất.</p>
+                <a asp-controller="Leads" asp-action="Consultation" class="button button-block news-newsletter-button">
+                    Đăng ký tư vấn ngay
+                </a>
             </section>
 
-            <section class="news-sidebar-card">
-                <h3>Tags</h3>
-                <div class="news-tag-list">
-                    @foreach (var tag in Model.Tags)
-                    {
-                        <span class="news-tag">@tag</span>
-                    }
-                </div>
-            </section>
+            @if (Model.Tags.Count > 0)
+            {
+                <section class="news-sidebar-card">
+                    <h3>Tags</h3>
+                    <div class="news-tag-list">
+                        @foreach (var tag in Model.Tags)
+                        {
+                            <span class="news-tag">@tag</span>
+                        }
+                    </div>
+                </section>
+            }
         </aside>
     </section>
 </main>

@@ -1,0 +1,101 @@
+@model STEM.Web.Areas.Admin.Models.ConvertLeadViewModel
+@{
+    ViewData["Title"] = "Chốt đăng ký & Tạo tài khoản";
+}
+
+<div class="mb-6">
+    <a asp-action="Index" class="inline-flex items-center gap-1 text-sm font-medium text-[#73796b] hover:text-[#3b6722]">
+        <span class="material-symbols-outlined text-[18px]">arrow_back</span>
+        Quay lại danh sách
+    </a>
+</div>
+
+<div class="mb-8">
+    <h1 class="admin-section-title">Chốt đăng ký & Tạo tài khoản học viên</h1>
+    <p class="admin-section-subtitle">Chuyển đổi thông tin đăng ký tư vấn thành tài khoản Học sinh chính thức trên hệ thống.</p>
+</div>
+
+<div class="admin-grid-two">
+    <div class="admin-card">
+        <form asp-action="Convert" method="post" class="admin-card-section flex flex-col gap-6">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="LeadId" />
+            <input type="hidden" asp-for="ParentName" />
+            <input type="hidden" asp-for="Phone" />
+            <input type="hidden" asp-for="Email" />
+
+            <!-- Thông tin từ form tư vấn -->
+            <div class="rounded-lg bg-[#f2f7f0] p-4 border border-[#e3e3de]">
+                <h3 class="mb-3 text-sm font-semibold text-[#1a1c19]">Thông tin khách hàng đã đăng ký:</h3>
+                <div class="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                        <p class="text-[#73796b]">Phụ huynh / Khách hàng:</p>
+                        <p class="font-medium text-[#1a1c19]">@Model.ParentName</p>
+                    </div>
+                    <div>
+                        <p class="text-[#73796b]">Số điện thoại:</p>
+                        <p class="font-medium text-[#3b6722]">@Model.Phone</p>
+                    </div>
+                    @if (!string.IsNullOrEmpty(Model.Email))
+                    {
+                        <div class="col-span-2">
+                            <p class="text-[#73796b]">Email:</p>
+                            <p class="font-medium text-[#1a1c19]">@Model.Email</p>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Nhập thông tin học viên -->
+            <div>
+                <h3 class="mb-4 text-lg font-semibold text-[#1a1c19]">Thiết lập tài khoản Học sinh</h3>
+                
+                <div class="grid gap-5">
+                    <div class="flex flex-col gap-1.5">
+                        <label asp-for="StudentName" class="text-sm font-medium text-[#42493f]"></label>
+                        <input asp-for="StudentName" class="h-10 w-full rounded-md border border-[#c2c9b9] bg-white px-3 text-sm outline-none focus:border-[#3b6722] focus:ring-1 focus:ring-[#3b6722]" placeholder="Nhập họ tên đầy đủ của học sinh..." />
+                        <span asp-validation-for="StudentName" class="text-xs text-[#ba1a1a]"></span>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="flex flex-col gap-1.5">
+                            <label asp-for="Username" class="text-sm font-medium text-[#42493f]"></label>
+                            <input asp-for="Username" class="h-10 w-full rounded-md border border-[#c2c9b9] bg-[#f2f7f0] px-3 text-sm font-medium text-[#1a1c19] outline-none focus:border-[#3b6722] focus:ring-1 focus:ring-[#3b6722]" />
+                            <span asp-validation-for="Username" class="text-xs text-[#ba1a1a]"></span>
+                            <p class="text-xs text-[#73796b]">Username được tự động tạo theo cú pháp hs_số_điện_thoại.</p>
+                        </div>
+
+                        <div class="flex flex-col gap-1.5">
+                            <label asp-for="Password" class="text-sm font-medium text-[#42493f]"></label>
+                            <input asp-for="Password" type="text" class="h-10 w-full rounded-md border border-[#c2c9b9] bg-white px-3 text-sm outline-none focus:border-[#3b6722] focus:ring-1 focus:ring-[#3b6722]" />
+                            <span asp-validation-for="Password" class="text-xs text-[#ba1a1a]"></span>
+                        </div>
+                    </div>
+                    
+                    <hr class="border-[#e3e3de]" />
+
+                    <div class="flex flex-col gap-1.5">
+                        <label asp-for="SelectedClassId" class="text-sm font-medium text-[#42493f]"></label>
+                        <select asp-for="SelectedClassId" asp-items="ViewBag.Classes" class="h-10 w-full rounded-md border border-[#c2c9b9] bg-white px-3 text-sm outline-none focus:border-[#3b6722] focus:ring-1 focus:ring-[#3b6722]">
+                            <option value="">-- Chỉ tạo tài khoản, chưa xếp lớp --</option>
+                        </select>
+                        <p class="text-xs text-[#73796b]">Danh sách các lớp đang mở thuộc khóa học mà khách quan tâm. Bạn có thể chọn để ghi danh ngay.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="admin-divider -mx-6 mt-2"></div>
+
+            <div class="flex justify-end gap-3 pt-2">
+                <a asp-action="Index" class="admin-btn-secondary">Hủy bỏ</a>
+                <button type="submit" class="admin-btn-primary gap-2">
+                    <span class="material-symbols-outlined text-[18px]">how_to_reg</span>
+                    Hoàn tất & Tạo tài khoản
+                </button>
+            </div>
+        </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

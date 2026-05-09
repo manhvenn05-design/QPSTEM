@@ -280,8 +280,8 @@ input {
 
 .hero-grid {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(360px, 520px);
-    gap: 72px;
+    grid-template-columns: minmax(0, 1fr) minmax(400px, 640px);
+    gap: 56px;
     align-items: center;
 }
 
@@ -322,7 +322,7 @@ input {
 }
 
 .hero-media img {
-    aspect-ratio: 1 / 0.95;
+    aspect-ratio: 16 / 10;
     width: 100%;
     object-fit: cover;
     border-radius: var(--radius-lg);
@@ -2533,4 +2533,99 @@ input {
     .about-stats-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
+}
+
+/* ── Animations & Scroll Reveal ── */
+.reveal {
+    opacity: 0;
+    transform: translateY(40px);
+    transition: all 0.8s cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+
+.reveal.active {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Delay for staggered animations */
+.reveal.delay-100 { transition-delay: 100ms; }
+.reveal.delay-200 { transition-delay: 200ms; }
+.reveal.delay-300 { transition-delay: 300ms; }
+
+/* Hero section animations */
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes floatGlow {
+    0% { transform: translateY(0) scale(1); opacity: 0.4; }
+    50% { transform: translateY(-20px) scale(1.05); opacity: 0.6; }
+    100% { transform: translateY(0) scale(1); opacity: 0.4; }
+}
+
+.hero-copy h1 { animation: fadeInUp 0.8s cubic-bezier(0.165, 0.84, 0.44, 1) forwards; }
+.hero-copy p { animation: fadeInUp 0.8s cubic-bezier(0.165, 0.84, 0.44, 1) 150ms forwards; opacity: 0; }
+.hero-actions { animation: fadeInUp 0.8s cubic-bezier(0.165, 0.84, 0.44, 1) 300ms forwards; opacity: 0; }
+.hero-media { animation: fadeInUp 1s cubic-bezier(0.165, 0.84, 0.44, 1) 200ms forwards; opacity: 0; }
+
+.hero-glow {
+    animation: floatGlow 6s ease-in-out infinite;
+}
+
+/* Card Hover glow */
+.feature-card, .audience-card, .process-step {
+    transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+.feature-card:hover, .audience-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 22px 44px rgba(43, 62, 31, 0.12);
+}
+.process-step:hover {
+    transform: translateY(-5px);
+}
+.process-number {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.process-step:hover .process-number {
+    transform: scale(1.1) rotate(5deg);
+    box-shadow: 0 16px 32px rgba(59, 103, 34, 0.3);
+}
+
+/* ── Ambient/Continuous Animations ── */
+@keyframes heroFloat {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-12px); }
+}
+.hero-media img {
+    animation: heroFloat 6s ease-in-out infinite;
+}
+
+@keyframes softBounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+}
+.feature-icon {
+    animation: softBounce 3.5s ease-in-out infinite;
+}
+
+@keyframes slowZoom {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.08); }
+    100% { transform: scale(1); }
+}
+.audience-image img {
+    animation: slowZoom 18s linear infinite;
+}
+.audience-card:hover .audience-image img {
+    animation-play-state: paused;
+}
+
+@keyframes pulseButton {
+    0% { box-shadow: 0 0 0 0 rgba(59, 103, 34, 0.5); }
+    70% { box-shadow: 0 0 0 15px rgba(59, 103, 34, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(59, 103, 34, 0); }
+}
+.hero-actions .button-primary {
+    animation: pulseButton 2.5s infinite;
 }
