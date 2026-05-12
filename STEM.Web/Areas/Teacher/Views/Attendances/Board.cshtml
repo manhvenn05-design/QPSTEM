@@ -156,7 +156,7 @@
                                             <div class="mt-2 flex justify-center text-sm leading-6 text-[#42493f]">
                                                 <label for="file-upload-@(i)" class="relative cursor-pointer rounded-md font-semibold text-[#3b6722] hover:text-[#2d4f19]" onclick="event.stopPropagation()">
                                                     <span>Tải video từ máy</span>
-                                                    <input id="file-upload-@(i)" name="file-upload-@(i)" type="file" class="sr-only" accept="video/*" onchange="mockUploadVideo(this, @(i))">
+                                                    <input id="file-upload-@(i)" name="file-upload-@(i)" type="file" class="sr-only" accept="video/*" onchange="uploadVideoAsync(this, @(i))">
                                                 </label>
                                                 <p class="pl-1">hoặc kéo thả vào đây</p>
                                             </div>
@@ -180,7 +180,7 @@
                                                 </div>
                                             </div>
                                         </div>
-                                        <button type="button" class="ml-4 shrink-0 text-[#ba1a1a] transition-colors hover:text-[#93000a]" onclick="removeMockVideo(@(i))" title="Xóa video này">
+                                        <button type="button" class="ml-4 shrink-0 text-[#ba1a1a] transition-colors hover:text-[#93000a]" onclick="removeVideo(@(i))" title="Xóa video này">
                                             <span class="material-symbols-outlined">delete</span>
                                         </button>
                                     </div>
@@ -215,9 +215,9 @@
                                                 <span class="text-xs font-bold text-[#42493f] uppercase">Điểm đánh giá chung</span>
                                                 <div class="flex items-center gap-3">
                                                     <div class="h-2 w-32 overflow-hidden rounded-full bg-[#e3e3de]">
-                                                        <div class="h-full w-[85%] rounded-full bg-[#3b6722]"></div>
+                                                        <div id="ai-score-bar-@(i)" class="h-full w-[0%] rounded-full bg-[#3b6722]"></div>
                                                     </div>
-                                                    <span class="text-base font-black text-[#1a1c19]">85/100</span>
+                                                    <span id="ai-score-@(i)" class="text-base font-black text-[#1a1c19]">--/100</span>
                                                 </div>
                                             </div>
 
@@ -226,18 +226,16 @@
                                                     <h5 class="mb-2 flex items-center gap-1 text-xs font-bold text-[#3b6722]">
                                                         <span class="material-symbols-outlined text-[16px]">thumb_up</span> Điểm sáng
                                                     </h5>
-                                                    <ul class="list-disc space-y-1 pl-5 text-sm text-[#42493f]">
-                                                        <li>Phát âm rõ ràng, có ngữ điệu.</li>
-                                                        <li>Giao tiếp bằng mắt tốt với camera.</li>
+                                                    <ul id="ai-strengths-@(i)" class="list-disc space-y-1 pl-5 text-sm text-[#42493f]">
+                                                        <!-- dynamic -->
                                                     </ul>
                                                 </div>
                                                 <div class="rounded-lg border border-[#e3e3de] p-3 shadow-sm">
                                                     <h5 class="mb-2 flex items-center gap-1 text-xs font-bold text-[#ba1a1a]">
                                                         <span class="material-symbols-outlined text-[16px]">trending_up</span> Cần cải thiện
                                                     </h5>
-                                                    <ul class="list-disc space-y-1 pl-5 text-sm text-[#42493f]">
-                                                        <li>Phần đầu giới thiệu còn hơi vội.</li>
-                                                        <li>Dùng sai từ chuyên ngành ("trục xoay" thay vì "ròng rọc").</li>
+                                                    <ul id="ai-weaknesses-@(i)" class="list-disc space-y-1 pl-5 text-sm text-[#42493f]">
+                                                        <!-- dynamic -->
                                                     </ul>
                                                 </div>
                                             </div>
@@ -249,7 +247,7 @@
                                                         <span class="material-symbols-outlined text-[14px]">edit_note</span> Chép vào Ghi chú
                                                     </button>
                                                 </div>
-                                                <p class="ai-comment-text text-sm italic text-[#42493f]">"Bài thuyết trình dự án của con rất xuất sắc! Lần tới, con chú ý nói chậm lại một chút ở phần mở đầu nhé!"</p>
+                                                <p id="ai-suggestion-@(i)" class="ai-comment-text text-sm italic text-[#42493f]"></p>
                                             </div>
                                         </div>
                                     </div>
@@ -275,7 +273,7 @@
 
 <!-- AI Text Modal -->
 <div class="teacher-modal-backdrop" id="aiTextModal">
-    <div class="teacher-modal shadow-xl">
+    <div class="teacher-modal shadow-xl" style="width: 100%; max-width: 650px;">
         <div class="teacher-modal-content relative">
             <button type="button" class="absolute top-4 right-4 text-[#73796b] hover:text-[#1a1c19]" onclick="closeAIModals()">
                 <span class="material-symbols-outlined">close</span>
@@ -292,8 +290,8 @@
             </div>
 
             <div id="aiTextResult" class="hidden">
-                <p class="text-sm font-medium text-[#42493d] mb-2">Gợi ý từ AI (Dành cho Phụ huynh):</p>
-                <div class="p-4 bg-[#f2f7f0] border border-[#c9ddbf] rounded-lg text-sm text-[#1a1c19] mb-4" id="aiTextSuggestion">
+                <p class="text-sm font-medium text-[#42493d] mb-3">Phiên bản nhận xét đã được tinh chỉnh:</p>
+                <div class="p-5 bg-gradient-to-br from-[#f2f7f0] to-[#e6f0e3] border border-[#c9ddbf] rounded-xl text-base text-[#1a1c19] mb-5 min-h-[160px] leading-relaxed shadow-inner" id="aiTextSuggestion">
                     <!-- fake text -->
                 </div>
                 <div class="flex justify-end gap-3">
@@ -308,56 +306,106 @@
 
 
 @section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         let currentTextTarget = null;
+        let currentSuggestion = "";
 
-        function openAITextModal(targetId) {
+        async function openAITextModal(targetId) {
             currentTextTarget = targetId;
             const originalText = document.getElementById(targetId)?.value;
+            
             if(!originalText || originalText.trim() === '') {
-                alert("Hãy gõ vài dòng ghi chú thô của bạn trước để AI có thể viết lại nhé!");
+                Swal.fire({ icon: 'warning', title: 'Thiếu thông tin', text: 'Hãy gõ vài dòng ghi chú thô của bạn trước để AI có thể viết lại nhé!', confirmButtonColor: '#6a994e' });
+                return;
+            }
+
+            if(originalText.trim().length < 10) {
+                Swal.fire({ icon: 'warning', title: 'Ghi chú quá ngắn', text: 'Thầy/Cô vui lòng viết chi tiết hơn (ít nhất 10 ký tự, nêu rõ ưu/khuyết điểm) để AI có cơ sở viết lại nhé.', confirmButtonColor: '#6a994e' });
                 return;
             }
 
             document.getElementById('aiTextModal').classList.add('is-open');
             document.getElementById('aiTextLoading').classList.remove('hidden');
             document.getElementById('aiTextResult').classList.add('hidden');
+            currentSuggestion = "";
 
-            setTimeout(() => {
-                document.getElementById('aiTextLoading').classList.add('hidden');
-                document.getElementById('aiTextResult').classList.remove('hidden');
-                document.getElementById('aiTextSuggestion').innerHTML = 
-                    "<strong>[Bản nháp từ AI]</strong><br/>" + 
-                    "Hôm nay con đã nỗ lực hoàn thành tốt các nhiệm vụ trong lớp. Tuy đôi lúc con còn mất tập trung nhẹ, nhưng sau khi thầy/cô nhắc nhở, con đã nhanh chóng bắt nhịp lại. Kính mong gia đình cùng động viên để con phát huy sự chủ động tốt hơn trong buổi tới.";
-            }, 1200);
+            try {
+                const response = await fetch('/Teacher/AICopilot/RefineNote', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ rawNote: originalText })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    currentSuggestion = data.suggestion;
+                    document.getElementById('aiTextLoading').classList.add('hidden');
+                    document.getElementById('aiTextResult').classList.remove('hidden');
+                    document.getElementById('aiTextSuggestion').innerHTML = 
+                        "<strong>[Gợi ý từ AI]</strong><br/>" + 
+                        data.suggestion.replace(/\n/g, '<br/>');
+                } else {
+                    Swal.fire({ icon: 'error', title: 'Có lỗi xảy ra', text: data.message || 'Lỗi khi gọi AI. Vui lòng thử lại.', confirmButtonColor: '#6a994e' });
+                    closeAIModals();
+                }
+            } catch (error) {
+                console.error('Error calling AI API:', error);
+                Swal.fire({ icon: 'error', title: 'Mất kết nối', text: 'Không thể kết nối đến máy chủ AI. Vui lòng thử lại sau.', confirmButtonColor: '#6a994e' });
+                closeAIModals();
+            }
         }
 
         function applyAIText() {
-            if(currentTextTarget) {
-                const sugg = document.getElementById('aiTextSuggestion').innerText.replace("[Bản nháp từ AI]\n", "");
-                document.getElementById(currentTextTarget).value = sugg;
+            if(currentTextTarget && currentSuggestion) {
+                document.getElementById(currentTextTarget).value = currentSuggestion;
             }
             closeAIModals();
         }
 
-        function mockUploadVideo(inputElem, index) {
+        async function uploadVideoAsync(inputElem, index) {
             if (inputElem.files && inputElem.files[0]) {
                 const file = inputElem.files[0];
                 
-                // Ẩn khu vực upload, hiện khu vực preview
+                if(file.size > 50 * 1024 * 1024) {
+                    Swal.fire({ icon: 'error', title: 'File quá lớn', text: 'Vui lòng chọn video dưới 50MB.', confirmButtonColor: '#6a994e' });
+                    inputElem.value = '';
+                    return;
+                }
+
+                // Hiển thị trạng thái đang tải lên
                 document.getElementById('upload-area-' + index).classList.add('hidden');
                 document.getElementById('video-preview-' + index).classList.remove('hidden');
                 document.getElementById('video-preview-' + index).classList.add('flex');
+                document.getElementById('video-filename-' + index).innerText = "Đang tải lên: " + file.name + "...";
                 
-                // Đổi tên file hiển thị
-                document.getElementById('video-filename-' + index).innerText = file.name;
+                const formData = new FormData();
+                formData.append('file', file);
 
-                // Gắn đại 1 url giả vào thẻ hidden để giả lập validate hợp lệ
-                document.getElementById('Rows_' + index + '__ProductMediaUrls').value = "uploaded://" + file.name;
+                try {
+                    const response = await fetch('/Teacher/Attendances/UploadVideo', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    const result = await response.json();
+
+                    if (result.success) {
+                        document.getElementById('video-filename-' + index).innerText = file.name;
+                        document.getElementById('Rows_' + index + '__ProductMediaUrls').value = result.url;
+                        Swal.fire({ icon: 'success', title: 'Đã tải lên', text: 'Tải video thành công, bạn có thể phân tích bằng AI.', timer: 1500, showConfirmButton: false });
+                    } else {
+                        throw new Error(result.message);
+                    }
+                } catch (error) {
+                    console.error('Lỗi upload:', error);
+                    Swal.fire({ icon: 'error', title: 'Upload thất bại', text: error.message || 'Lỗi khi tải video lên server.', confirmButtonColor: '#6a994e' });
+                    removeVideo(index);
+                }
             }
         }
 
-        function removeMockVideo(index) {
+        function removeVideo(index) {
             // Xóa file trong input
             document.getElementById('file-upload-' + index).value = '';
             document.getElementById('Rows_' + index + '__ProductMediaUrls').value = '';
@@ -371,16 +419,20 @@
             document.getElementById('ai-result-' + index).classList.add('hidden');
         }
 
-        function analyzeVideoInline(btnElement, mediaInputId, resultContainerId) {
+        async function analyzeVideoInline(btnElement, mediaInputId, resultContainerId) {
             const mediaLinks = document.getElementById(mediaInputId)?.value;
             if(!mediaLinks) {
-                alert("Vui lòng tải lên một video trước khi yêu cầu AI phân tích!");
+                Swal.fire({ icon: 'info', title: 'Chưa có Video', text: 'Vui lòng tải lên một video trước khi yêu cầu AI phân tích!', confirmButtonColor: '#b26a00' });
                 return;
             }
 
             const resultContainer = document.getElementById(resultContainerId);
             const loadingState = resultContainer.querySelector('.ai-loading-state');
             const contentState = resultContainer.querySelector('.ai-analysis-content');
+            
+            // Extract index from resultContainerId like 'ai-result-0'
+            const indexMatch = resultContainerId.match(/\d+$/);
+            const idx = indexMatch ? indexMatch[0] : '0';
 
             // Hiển thị khung loading
             resultContainer.classList.remove('hidden');
@@ -392,13 +444,45 @@
             btnElement.disabled = true;
             btnElement.innerHTML = '<span class="material-symbols-outlined animate-spin text-[20px]">sync</span> Đang phân tích...';
 
-            setTimeout(() => {
-                loadingState.classList.add('hidden');
-                contentState.classList.remove('hidden');
-                
+            try {
+                const response = await fetch('/Teacher/AICopilot/AnalyzeVideo', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ videoUrl: mediaLinks })
+                });
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    const res = data.result;
+                    // res: { score: "85/100", strengths: [], weaknesses: [], suggestion: "" }
+
+                    document.getElementById(`ai-score-${idx}`).innerText = res.score;
+                    // Lấy phần trăm điểm số
+                    const scoreNum = parseInt(res.score) || 0;
+                    document.getElementById(`ai-score-bar-${idx}`).style.width = scoreNum + '%';
+
+                    const strList = document.getElementById(`ai-strengths-${idx}`);
+                    strList.innerHTML = res.strengths.map(s => `<li>${s}</li>`).join('');
+
+                    const weakList = document.getElementById(`ai-weaknesses-${idx}`);
+                    weakList.innerHTML = res.weaknesses.map(w => `<li>${w}</li>`).join('');
+
+                    document.getElementById(`ai-suggestion-${idx}`).innerText = `"${res.suggestion}"`;
+
+                    loadingState.classList.add('hidden');
+                    contentState.classList.remove('hidden');
+                } else {
+                    Swal.fire({ icon: 'error', title: 'Lỗi phân tích', text: data.message || 'Có lỗi xảy ra khi phân tích video.', confirmButtonColor: '#b26a00' });
+                    resultContainer.classList.add('hidden');
+                }
+            } catch (error) {
+                console.error(error);
+                Swal.fire({ icon: 'error', title: 'Mất kết nối', text: 'Không thể kết nối với hệ thống AI.', confirmButtonColor: '#b26a00' });
+                resultContainer.classList.add('hidden');
+            } finally {
                 btnElement.disabled = false;
                 btnElement.innerHTML = originalHtml;
-            }, 2000);
+            }
         }
 
         function applyAIComment(targetInputId, btnElement) {
@@ -407,7 +491,7 @@
                 // Tìm text từ element cùng khối với button (sibling)
                 const sugg = btnElement.closest('.bg-\\[\\#f5f9fc\\]').querySelector('.ai-comment-text').innerText;
                 txtArea.value = (txtArea.value ? txtArea.value + "\n\n" : "") + "--- Đánh giá Video (AI) ---\n" + sugg;
-                alert("Đã chép gợi ý AI vào phần Ghi chú giáo viên!");
+                Swal.fire({ icon: 'success', title: 'Thành công', text: 'Đã chép gợi ý AI vào phần Ghi chú giáo viên!', timer: 2000, showConfirmButton: false });
             }
         }
 

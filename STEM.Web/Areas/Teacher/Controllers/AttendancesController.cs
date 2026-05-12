@@ -13,10 +13,12 @@ namespace STEM.Web.Areas.Teacher.Controllers;
 public class AttendancesController : Controller
 {
     private readonly ApplicationDbContext _context;
+    private readonly IWebHostEnvironment _env;
 
-    public AttendancesController(ApplicationDbContext context)
+    public AttendancesController(ApplicationDbContext context, IWebHostEnvironment env)
     {
         _context = context;
+        _env = env;
     }
 
     [HttpGet]
@@ -406,6 +408,45 @@ public class AttendancesController : Controller
     private static string? NormalizeText(string? value)
     {
         return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+    }
+
+    [HttpPost]
+    [RequestSizeLimit(52428800)] // 50MB
+    public async Task<IActionResult> UploadVideo(IFormFile? file)
+    {
+        if (file == null || file.Length == 0)
+        {
+            return Json(new { success = false, message = "Vui lòng chọn một file video hợp lệ." });
+        }
+
+        if (file.Length > 50 * 1024 * 1024)
+        {
+            return Json(new { success = false, message = "File video quá lớn. Vui lòng chọn file dưới 50MB." });
+        }
+
+        try
+        {
+            var uploadsFolder = Path.Combine(_env.WebRootPath, "uploads", "videos");
+            if (!Directory.Exists(uploadsFolder))
+            {
+                Directory.CreateDirectory(uploadsFolder);
+            }
+
+            var uniqueFileName = Guid.NewGuid().ToString() + "_" + Path.GetFileName(file.FileName);
+            var filePath = Path.Combine(uploadsFolder, uniqueFileName);
+
+            using (var stream = new FileStream(filePath, FileMode.Create))
+            {
+                await file.CopyToAsync(stream);
+            }
+
+            var fileUrl = $"/uploads/videos/{uniqueFileName}";
+            return Json(new { success = true, url = fileUrl, fileName = file.FileName });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = "Lỗi khi lưu file: " + ex.Message });
+        }
     }
 
     private sealed class SessionProjection
