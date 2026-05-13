@@ -202,7 +202,7 @@ public class StudentPortalController : Controller
     [HttpGet]
     public async Task<IActionResult> Schedule(
         string filter = "upcoming",
-        string view   = "list",
+        string view   = "calendar",
         int?   month  = null,
         int?   year   = null)
     {
@@ -213,56 +213,19 @@ public class StudentPortalController : Controller
             return RedirectToAction("Login", "Account");
 
         // Validate params
-        view   = view is "list" or "calendar" ? view : "list";
+        view   = view is "list" or "calendar" ? view : "calendar";
         filter = new[] { "upcoming", "past", "all" }.Contains(filter) ? filter : "upcoming";
 
-        var today    = DateOnly.FromDateTime(DateTime.Today);
-        var classIds = await _context.Enrollments
-            .AsNoTracking()
-            .Where(x => x.StudentId == studentId.Value)
-            .Select(x => x.ClassId)
-            .ToListAsync();
+        var today = DateOnly.FromDateTime(DateTime.Today);
 
         // ── CALENDAR VIEW ──────────────────────────────────────────────────
         if (view == "calendar")
         {
-            var calYear  = Math.Max(2020, year  ?? today.Year);
+            var calYear  = Math.Max(2020, year ?? today.Year);
             var calMonth = Math.Clamp(month ?? today.Month, 1, 12);
             var firstDay = new DateOnly(calYear, calMonth, 1);
-            var lastDay  = firstDay.AddMonths(1).AddDays(-1);
-
-            var calSessions = await _context.Sessions
-                .AsNoTracking()
-                .Where(x => classIds.Contains(x.ClassId) && x.Date >= firstDay && x.Date <= lastDay)
-                .OrderBy(x => x.Date)
-                .ThenBy(x => x.StartTime)
-                .Select(x => new
-                {
-                    x.Id, x.SessionNo, x.Date, x.StartTime, x.EndTime, x.Topic,
-                    CourseName = x.Class.Course.Name,
-                    x.Class.ClassCode,
-                    Attendance = x.Attendances
-                        .Where(a => a.StudentId == studentId.Value)
-                        .Select(a => new { a.IsPresent })
-                        .FirstOrDefault()
-                })
-                .ToListAsync();
-
-            var calItems = calSessions.Select(x => new StudentScheduleSessionViewModel
-            {
-                SessionId     = x.Id,
-                CourseName    = x.CourseName,
-                ClassCode     = x.ClassCode,
-                SessionNo     = x.SessionNo,
-                Date          = x.Date,
-                StartTime     = x.StartTime,
-                EndTime       = x.EndTime,
-                Topic         = x.Topic,
-                IsToday       = x.Date == today,
-                IsPast        = x.Date < today,
-                HasAttendance = x.Attendance != null,
-                WasPresent    = x.Attendance?.IsPresent
-            }).ToList();
+            var lastDay = firstDay.AddMonths(1).AddDays(-1);
+            var calItems = await GetStudentScheduleSessionsAsync(studentId.Value, today, firstDay, lastDay);
 
             return View(new StudentSchedulePageViewModel
             {
@@ -276,52 +239,7 @@ public class StudentPortalController : Controller
         }
 
         // ── LIST VIEW ──────────────────────────────────────────────────────
-        var sessionsQuery = _context.Sessions
-            .AsNoTracking()
-            .Where(x => classIds.Contains(x.ClassId));
-
-        sessionsQuery = filter switch
-        {
-            "upcoming" => sessionsQuery.Where(x => x.Date >= today),
-            "past"     => sessionsQuery.Where(x => x.Date < today),
-            _          => sessionsQuery
-        };
-
-        var sessions = await sessionsQuery
-            .OrderBy(x => filter == "past" ? -x.Date.DayNumber : x.Date.DayNumber)
-            .ThenBy(x => x.StartTime)
-            .Select(x => new
-            {
-                x.Id,
-                CourseName = x.Class.Course.Name,
-                x.Class.ClassCode,
-                x.SessionNo,
-                x.Date,
-                x.StartTime,
-                x.EndTime,
-                x.Topic,
-                Attendance = x.Attendances
-                    .Where(a => a.StudentId == studentId.Value)
-                    .Select(a => new { a.IsPresent })
-                    .FirstOrDefault()
-            })
-            .ToListAsync();
-
-        var items = sessions.Select(x => new StudentScheduleSessionViewModel
-        {
-            SessionId     = x.Id,
-            CourseName    = x.CourseName,
-            ClassCode     = x.ClassCode,
-            SessionNo     = x.SessionNo,
-            Date          = x.Date,
-            StartTime     = x.StartTime,
-            EndTime       = x.EndTime,
-            Topic         = x.Topic,
-            IsToday       = x.Date == today,
-            IsPast        = x.Date < today,
-            HasAttendance = x.Attendance != null,
-            WasPresent    = x.Attendance?.IsPresent
-        }).ToList();
+        var items = await GetStudentScheduleSessionsAsync(studentId.Value, today, filter: filter);
 
         if (filter == "past")
             items = items.OrderByDescending(x => x.Date).ThenBy(x => x.StartTime).ToList();
@@ -334,6 +252,56 @@ public class StudentPortalController : Controller
             TotalCount = items.Count,
             CalendarYear  = today.Year,
             CalendarMonth = today.Month
+        });
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> ScheduleCalendarData(int month, int year)
+    {
+        var studentId = GetCurrentStudentId();
+        if (!studentId.HasValue)
+            return Unauthorized();
+
+        var today = DateOnly.FromDateTime(DateTime.Today);
+        var calYear = Math.Max(2020, year);
+        var calMonth = Math.Clamp(month, 1, 12);
+        var firstDay = new DateOnly(calYear, calMonth, 1);
+        var lastDay = firstDay.AddMonths(1).AddDays(-1);
+        var sessions = await GetStudentScheduleSessionsAsync(studentId.Value, today, firstDay, lastDay);
+        var initialDate = calYear == today.Year && calMonth == today.Month
+            ? today
+            : sessions.FirstOrDefault()?.Date ?? firstDay;
+
+        return Json(new
+        {
+            year = calYear,
+            month = calMonth,
+            totalCount = sessions.Count,
+            selectedDateKey = initialDate.ToString("yyyy-MM-dd"),
+            sessions = sessions.Select(x => new
+            {
+                sessionId = x.SessionId,
+                dateKey = x.Date.ToString("yyyy-MM-dd"),
+                dateDisplay = x.Date.ToString("dd/MM/yyyy"),
+                dayLabel = GetDayLabel(x.Date.DayOfWeek),
+                courseName = x.CourseName,
+                classCode = x.ClassCode,
+                sessionNo = x.SessionNo,
+                startTime = x.StartTime.ToString("HH:mm"),
+                endTime = x.EndTime.ToString("HH:mm"),
+                topic = x.Topic,
+                teacherName = x.TeacherName,
+                teachingMaterialUrl = x.TeachingMaterialUrl,
+                statusLabel = x.StatusLabel,
+                attendanceLabel = x.HasAttendance ? x.AttendanceLabel : "Chưa điểm danh",
+                hasAttendance = x.HasAttendance,
+                wasPresent = x.WasPresent,
+                isPast = x.IsPast,
+                isToday = x.IsToday,
+                evidenceUrl = x.IsPast && x.HasAttendance && x.WasPresent == true
+                    ? Url.Action("Evidence", "StudentPortal", new { sessionId = x.SessionId })
+                    : null
+            })
         });
     }
 
@@ -656,11 +624,74 @@ public class StudentPortalController : Controller
     // PRIVATE HELPERS
     // ─────────────────────────────────────────────────────────────────────────
 
+    private async Task<List<StudentScheduleSessionViewModel>> GetStudentScheduleSessionsAsync(
+        int studentId,
+        DateOnly today,
+        DateOnly? startDate = null,
+        DateOnly? endDate = null,
+        string? filter = null)
+    {
+        var query = _context.Sessions
+            .AsNoTracking()
+            .Where(x => x.Class.Enrollments.Any(e => e.StudentId == studentId));
+
+        if (startDate.HasValue)
+            query = query.Where(x => x.Date >= startDate.Value);
+
+        if (endDate.HasValue)
+            query = query.Where(x => x.Date <= endDate.Value);
+
+        query = filter switch
+        {
+            "upcoming" => query.Where(x => x.Date >= today),
+            "past" => query.Where(x => x.Date < today),
+            _ => query
+        };
+
+        return await query
+            .OrderBy(x => x.Date)
+            .ThenBy(x => x.StartTime)
+            .ThenBy(x => x.Class.ClassCode)
+            .ThenBy(x => x.SessionNo)
+            .Select(x => new StudentScheduleSessionViewModel
+            {
+                SessionId = x.Id,
+                CourseName = x.Class.Course.Name,
+                ClassCode = x.Class.ClassCode,
+                SessionNo = x.SessionNo,
+                Date = x.Date,
+                StartTime = x.StartTime,
+                EndTime = x.EndTime,
+                Topic = x.Topic,
+                TeacherName = x.Class.Teacher.FullName,
+                TeachingMaterialUrl = x.TeachingMaterialUrl,
+                IsToday = x.Date == today,
+                IsPast = x.Date < today,
+                HasAttendance = x.Attendances.Any(a => a.StudentId == studentId),
+                WasPresent = x.Attendances
+                    .Where(a => a.StudentId == studentId)
+                    .Select(a => (bool?)a.IsPresent)
+                    .FirstOrDefault()
+            })
+            .ToListAsync();
+    }
+
     private int? GetCurrentStudentId()
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         return int.TryParse(userId, out var id) ? id : null;
     }
+
+    private static string GetDayLabel(DayOfWeek dayOfWeek) => dayOfWeek switch
+    {
+        DayOfWeek.Monday => "Thứ hai",
+        DayOfWeek.Tuesday => "Thứ ba",
+        DayOfWeek.Wednesday => "Thứ tư",
+        DayOfWeek.Thursday => "Thứ năm",
+        DayOfWeek.Friday => "Thứ sáu",
+        DayOfWeek.Saturday => "Thứ bảy",
+        _ => "Chủ nhật"
+    };
 
     /// <summary>
     /// Parse ProductMediaUrls: thử JSON array trước, fallback split theo ký tự phân cách.

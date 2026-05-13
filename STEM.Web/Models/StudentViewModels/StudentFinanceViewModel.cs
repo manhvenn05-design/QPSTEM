@@ -32,7 +32,6 @@ public class StudentInvoiceDetailViewModel
         RemainingAmount > 0 &&
         DueDate.HasValue &&
         DueDate.Value.Date < DateTime.Today;
-
     public List<StudentPaymentItemViewModel> Payments { get; set; } = new();
 }
 
