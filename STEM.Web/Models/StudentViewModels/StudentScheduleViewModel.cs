@@ -9,7 +9,7 @@ public class StudentSchedulePageViewModel
     public int TotalCount { get; set; }
 
     // Calendar view
-    public string ViewMode { get; set; } = "list"; // "list" | "calendar"
+    public string ViewMode { get; set; } = "calendar"; // "list" | "calendar"
     public int CalendarYear { get; set; } = DateTime.Today.Year;
     public int CalendarMonth { get; set; } = DateTime.Today.Month;
 }
@@ -24,6 +24,8 @@ public class StudentScheduleSessionViewModel
     public TimeOnly StartTime { get; set; }
     public TimeOnly EndTime { get; set; }
     public string? Topic { get; set; }
+    public string? TeacherName { get; set; }
+    public string? TeachingMaterialUrl { get; set; }
     public bool IsToday { get; set; }
     public bool IsPast { get; set; }
     public bool HasAttendance { get; set; }
