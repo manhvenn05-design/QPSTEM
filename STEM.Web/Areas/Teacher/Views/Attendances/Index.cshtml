@@ -1,4 +1,4 @@
-@model STEM.Web.Areas.Teacher.Models.TeacherAttendanceIndexViewModel
+﻿@model STEM.Web.Areas.Teacher.Models.TeacherAttendanceIndexViewModel
 
 @{
     ViewData["Title"] = "Điểm danh";
@@ -8,7 +8,6 @@
     <div class="teacher-page-header">
         <div>
             <h1 class="teacher-page-title">Điểm danh</h1>
-            <p class="teacher-page-subtitle">Chọn buổi học để ghi nhận nhanh toàn bộ học viên trong lớp.</p>
         </div>
 
         <div class="teacher-actions">
@@ -24,25 +23,38 @@
         <div class="teacher-alert teacher-alert--success">@successMessage</div>
     }
 
+    <div class="teacher-stat-grid teacher-stat-grid--4">
+        <article class="teacher-stat-card">
+            <span class="teacher-stat-label">Cần làm ngay</span>
+            <div class="teacher-stat-value">@Model.OpenCount</div>
+            <p class="teacher-kicker">Buổi còn thiếu điểm danh.</p>
+        </article>
+        <article class="teacher-stat-card">
+            <span class="teacher-stat-label">Hôm nay</span>
+            <div class="teacher-stat-value">@Model.TodayCount</div>
+            <p class="teacher-kicker">Tổng số buổi trong ngày.</p>
+        </article>
+        <article class="teacher-stat-card">
+            <span class="teacher-stat-label">Sắp tới</span>
+            <div class="teacher-stat-value">@Model.UpcomingCount</div>
+            <p class="teacher-kicker">Các buổi tiếp theo.</p>
+        </article>
+        <article class="teacher-stat-card">
+            <span class="teacher-stat-label">Đã đủ</span>
+            <div class="teacher-stat-value">@Model.CompletedCount</div>
+            <p class="teacher-kicker">Buổi đã ghi nhận xong.</p>
+        </article>
+    </div>
+
     <div class="teacher-card">
         <div class="teacher-card-section">
             <div class="teacher-toolbar">
-                <div class="teacher-filter-list">
-                    @foreach (var filter in Model.Filters)
-                    {
-                        <a asp-area="Teacher"
-                           asp-controller="Attendances"
-                           asp-action="Index"
-                           asp-route-filter="@filter.Key"
-                           asp-route-q="@Model.SearchTerm"
-                           class="@(Model.SelectedFilter == filter.Key ? "teacher-filter is-active" : "teacher-filter")">
-                            @filter.Label
-                        </a>
-                    }
+                <div>
+                    <h2 class="teacher-section-title">Tìm buổi học</h2>
+                    <p class="teacher-section-subtitle">Theo lớp, khóa học hoặc chủ đề.</p>
                 </div>
 
                 <form method="get" class="teacher-search-form">
-                    <input type="hidden" name="filter" value="@Model.SelectedFilter" />
                     <label class="sr-only" for="teacher-attendance-search">Tìm buổi học</label>
                     <div class="teacher-search-box">
                         <span class="material-symbols-outlined text-[20px] text-[#73796b]">search</span>
@@ -50,57 +62,292 @@
                                name="q"
                                value="@Model.SearchTerm"
                                type="search"
-                               placeholder="Tìm theo lớp, khóa học hoặc chủ đề" />
+                               placeholder="Ví dụ: PYTHON-K2, Scratch..." />
                     </div>
                 </form>
             </div>
         </div>
     </div>
 
-    <div class="teacher-list">
-        @if (Model.Sessions.Count == 0)
-        {
-            <div class="teacher-card">
-                <div class="teacher-card-section">
-                    <p class="teacher-empty">Chưa có buổi học nào phù hợp với bộ lọc này.</p>
+    @if (Model.HasSearch)
+    {
+        <div class="teacher-card">
+            <div class="teacher-card-section">
+                <div class="teacher-toolbar">
+                    <div>
+                        <h2 class="teacher-section-title">Kết quả tìm kiếm</h2>
+                        <p class="teacher-section-subtitle">@Model.TotalSessions buổi phù hợp với “@Model.SearchTerm”.</p>
+                    </div>
+
+                    <a asp-area="Teacher" asp-controller="Attendances" asp-action="Index" class="teacher-btn-secondary">Xóa tìm kiếm</a>
                 </div>
             </div>
-        }
-        else
-        {
-            @foreach (var session in Model.Sessions)
-            {
-                <article class="teacher-card">
-                    <div class="teacher-card-section">
-                        <div class="teacher-session-card">
-                            <div class="teacher-session-main">
-                                <div class="flex flex-wrap items-center gap-3">
-                                    <span class="@session.StatusBadgeClass">@session.StatusLabel</span>
-                                    <span class="teacher-tag teacher-tag--neutral">@session.SessionLabel</span>
-                                </div>
-                                <h2 class="teacher-section-title mt-4">@session.ClassCode · @session.CourseName</h2>
-                                <p class="teacher-section-subtitle mt-1">@session.Topic</p>
-                                <div class="teacher-meta-row mt-4">
-                                    <span>@session.ScheduleText</span>
-                                    <span>@session.StudentCount học viên</span>
-                                </div>
-                                <p class="teacher-kicker mt-3">@session.CompletionText</p>
-                            </div>
+        </div>
 
-                            <div class="teacher-session-side">
-                                <a asp-area="Teacher"
-                                   asp-controller="Attendances"
-                                   asp-action="Board"
-                                   asp-route-sessionId="@session.SessionId"
-                                   class="teacher-btn-primary w-full justify-center">
-                                    <span class="material-symbols-outlined text-[18px]">fact_check</span>
-                                    <span>Mở sổ điểm danh</span>
-                                </a>
+        <div class="teacher-list">
+            @if (Model.Sessions.Count == 0)
+            {
+                <div class="teacher-card">
+                    <div class="teacher-card-section">
+                        <p class="teacher-empty">Không tìm thấy buổi học phù hợp.</p>
+                    </div>
+                </div>
+            }
+            else
+            {
+                @foreach (var session in Model.Sessions)
+                {
+                    <article class="teacher-card">
+                        <div class="teacher-card-section">
+                            <div class="teacher-session-card">
+                                <div class="teacher-session-main">
+                                    <div class="flex flex-wrap items-center gap-3">
+                                        <span class="@session.StatusBadgeClass">@session.StatusLabel</span>
+                                        <span class="teacher-tag teacher-tag--neutral">@session.SessionLabel</span>
+                                        @if (session.IsToday)
+                                        {
+                                            <span class="teacher-tag teacher-tag--success">Hôm nay</span>
+                                        }
+                                    </div>
+                                    <h2 class="teacher-section-title mt-4">@session.ClassCode · @session.CourseName</h2>
+                                    <p class="teacher-section-subtitle mt-1">@session.Topic</p>
+                                    <div class="teacher-meta-row mt-4">
+                                        <span>@session.ScheduleText</span>
+                                        <span>@session.StudentCount học viên</span>
+                                        <span>@session.CompletionText</span>
+                                    </div>
+                                    @if (session.NeedsAttention)
+                                    {
+                                        <p class="teacher-kicker mt-3">Còn thiếu @session.MissingAttendanceCount học viên.</p>
+                                    }
+                                </div>
+
+                                <div class="teacher-session-side">
+                                    <a asp-area="Teacher"
+                                       asp-controller="Attendances"
+                                       asp-action="Board"
+                                       asp-route-sessionId="@session.SessionId"
+                                       class="teacher-btn-primary w-full justify-center">
+                                        <span class="material-symbols-outlined text-[18px]">fact_check</span>
+                                        <span>Mở sổ điểm danh</span>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </article>
+                }
+            }
+        </div>
+    }
+    else
+    {
+        <div class="mt-6 grid gap-6 xl:grid-cols-[1.2fr,1fr]">
+            <section>
+                <div class="teacher-card">
+                    <div class="teacher-card-section">
+                        <div class="teacher-toolbar">
+                            <div>
+                                <h2 class="teacher-section-title">Cần làm ngay</h2>
+                                <p class="teacher-section-subtitle">Các buổi chưa ghi nhận đủ học viên.</p>
+                            </div>
+                            <span class="teacher-tag teacher-tag--warning">@Model.PrioritySessions.Count buổi</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="teacher-list">
+                    @if (Model.PrioritySessions.Count == 0)
+                    {
+                        <div class="teacher-card">
+                            <div class="teacher-card-section">
+                                <p class="teacher-empty">Không có buổi nào cần xử lý ngay.</p>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        @foreach (var session in Model.PrioritySessions)
+                        {
+                            <article class="teacher-card">
+                                <div class="teacher-card-section">
+                                    <div class="teacher-session-card">
+                                        <div class="teacher-session-main">
+                                            <div class="flex flex-wrap items-center gap-3">
+                                                <span class="@session.StatusBadgeClass">@session.StatusLabel</span>
+                                                <span class="teacher-tag teacher-tag--neutral">@session.SessionLabel</span>
+                                                @if (session.IsToday)
+                                                {
+                                                    <span class="teacher-tag teacher-tag--success">Hôm nay</span>
+                                                }
+                                            </div>
+                                            <h2 class="teacher-section-title mt-4">@session.ClassCode · @session.CourseName</h2>
+                                            <p class="teacher-section-subtitle mt-1">@session.Topic</p>
+                                            <div class="teacher-meta-row mt-4">
+                                                <span>@session.ScheduleText</span>
+                                                <span>@session.StudentCount học viên</span>
+                                                <span>Còn thiếu @session.MissingAttendanceCount</span>
+                                            </div>
+                                        </div>
+
+                                        <div class="teacher-session-side">
+                                            <a asp-area="Teacher"
+                                               asp-controller="Attendances"
+                                               asp-action="Board"
+                                               asp-route-sessionId="@session.SessionId"
+                                               class="teacher-btn-primary w-full justify-center">
+                                                <span class="material-symbols-outlined text-[18px]">fact_check</span>
+                                                <span>Điểm danh</span>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </article>
+                        }
+                    }
+                </div>
+            </section>
+
+            <div class="space-y-6">
+                <section>
+                    <div class="teacher-card">
+                        <div class="teacher-card-section">
+                            <div class="teacher-toolbar">
+                                <div>
+                                    <h2 class="teacher-section-title">Sắp tới</h2>
+                                    <p class="teacher-section-subtitle">Mở trước khi vào giờ học.</p>
+                                </div>
+                                <span class="teacher-tag teacher-tag--neutral">@Model.UpcomingSessions.Count buổi</span>
                             </div>
                         </div>
                     </div>
-                </article>
-            }
+
+                    <div class="teacher-list">
+                        @if (Model.UpcomingSessions.Count == 0)
+                        {
+                            <div class="teacher-card">
+                                <div class="teacher-card-section">
+                                    <p class="teacher-empty">Chưa có buổi sắp tới.</p>
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            @foreach (var session in Model.UpcomingSessions.Take(4))
+                            {
+                                <article class="teacher-card">
+                                    <div class="teacher-card-section">
+                                        <div class="teacher-session-card">
+                                            <div class="teacher-session-main">
+                                                <div class="flex flex-wrap items-center gap-3">
+                                                    <span class="@session.StatusBadgeClass">@session.StatusLabel</span>
+                                                    <span class="teacher-tag teacher-tag--neutral">@session.SessionLabel</span>
+                                                </div>
+                                                <h2 class="teacher-section-title mt-4">@session.ClassCode · @session.CourseName</h2>
+                                                <div class="teacher-meta-row mt-4">
+                                                    <span>@session.ScheduleText</span>
+                                                    <span>@session.StudentCount học viên</span>
+                                                </div>
+                                            </div>
+
+                                            <div class="teacher-session-side">
+                                                <a asp-area="Teacher"
+                                                   asp-controller="Attendances"
+                                                   asp-action="Board"
+                                                   asp-route-sessionId="@session.SessionId"
+                                                   class="teacher-btn-secondary w-full justify-center">
+                                                    <span>Mở buổi</span>
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </article>
+                            }
+                        }
+                    </div>
+                </section>
+
+                <section>
+                    <div class="teacher-card">
+                        <div class="teacher-card-section">
+                            <div class="teacher-toolbar">
+                                <div>
+                                    <h2 class="teacher-section-title">Đã đủ</h2>
+                                    <p class="teacher-section-subtitle">Các buổi đã xong gần đây.</p>
+                                </div>
+                                <span class="teacher-tag teacher-tag--success">@Model.CompletedSessions.Count buổi</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="teacher-list">
+                        @if (Model.CompletedSessions.Count == 0)
+                        {
+                            <div class="teacher-card">
+                                <div class="teacher-card-section">
+                                    <p class="teacher-empty">Chưa có buổi nào hoàn tất.</p>
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            @foreach (var session in Model.CompletedSessions.Take(4))
+                            {
+                                <article class="teacher-card">
+                                    <div class="teacher-card-section">
+                                        <div class="teacher-session-card">
+                                            <div class="teacher-session-main">
+                                                <div class="flex flex-wrap items-center gap-3">
+                                                    <span class="@session.StatusBadgeClass">@session.StatusLabel</span>
+                                                    <span class="teacher-tag teacher-tag--neutral">@session.SessionLabel</span>
+                                                </div>
+                                                <h2 class="teacher-section-title mt-4">@session.ClassCode · @session.CourseName</h2>
+                                                <div class="teacher-meta-row mt-4">
+                                                    <span>@session.ScheduleText</span>
+                                                    <span>@session.CompletionText</span>
+                                                </div>
+                                            </div>
+
+                                            <div class="teacher-session-side">
+                                                <a asp-area="Teacher"
+                                                   asp-controller="Attendances"
+                                                   asp-action="Board"
+                                                   asp-route-sessionId="@session.SessionId"
+                                                   class="teacher-btn-secondary w-full justify-center">
+                                                    <span>Xem lại</span>
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </article>
+                            }
+                        }
+                    </div>
+                </section>
+            </div>
+        </div>
+
+        @if (Model.EmptySessions.Count > 0)
+        {
+            <div class="teacher-card mt-6">
+                <div class="teacher-card-section">
+                    <div class="teacher-toolbar">
+                        <div>
+                            <h2 class="teacher-section-title">Chưa có học viên</h2>
+                            <p class="teacher-section-subtitle">Các lớp chưa thể điểm danh.</p>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 grid gap-4 md:grid-cols-2">
+                        @foreach (var session in Model.EmptySessions)
+                        {
+                            <div class="rounded-xl border border-dashed border-[#c2c9b9] bg-[#fafaf4] px-4 py-4 text-sm text-[#5f6759]">
+                                <p class="font-semibold text-[#1a1c19]">@session.ClassCode · @session.CourseName</p>
+                                <p class="mt-1">@session.ScheduleText</p>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
         }
-    </div>
+    }
 </section>

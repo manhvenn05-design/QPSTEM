@@ -6,3 +6,7 @@ buildverify/
 tmp/
 *.user
 *.suo
+stdout.log
+stderr.log
+error*.html
+TestGemini/

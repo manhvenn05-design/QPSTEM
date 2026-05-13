@@ -1,3 +1,4 @@
+﻿using System.Globalization;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -29,6 +30,7 @@ public class DashboardController : Controller
 
         var today = DateOnly.FromDateTime(DateTime.Today);
         var nextWeek = today.AddDays(7);
+        var vietnameseCulture = new CultureInfo("vi-VN");
 
         var todaySessions = await _context.Sessions
             .AsNoTracking()
@@ -117,7 +119,7 @@ public class DashboardController : Controller
 
         var model = new TeacherDashboardViewModel
         {
-            TodayLabel = $"Hôm nay · {DateTime.Today:dddd, dd/MM/yyyy}",
+            TodayLabel = $"Hôm nay · {DateTime.Today.ToString("dddd, dd/MM/yyyy", vietnameseCulture)}",
             ActiveClassCount = await _context.Classes.CountAsync(x =>
                 x.TeacherId == teacherId.Value &&
                 x.StartDate <= today &&

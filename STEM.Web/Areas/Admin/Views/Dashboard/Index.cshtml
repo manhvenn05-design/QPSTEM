@@ -1,120 +1,59 @@
-@model STEM.Web.Areas.Admin.Models.AdminDashboardViewModel
+﻿@model STEM.Web.Areas.Admin.Models.AdminDashboardViewModel
 
 @{
     ViewData["Title"] = "Tổng quan";
 }
 
 <section class="admin-page">
-    <div class="admin-card overflow-hidden">
-        <div class="grid gap-0 xl:grid-cols-[1.45fr_0.95fr]">
-            <div class="admin-card-section border-b border-[#e3e3de] xl:border-b-0 xl:border-r">
-                <p class="text-sm font-medium text-[#6a994e]">@Model.TodayLabel</p>
-                <h1 class="mt-3 text-[34px] font-semibold leading-[42px] tracking-[-0.02em] text-[#1a1c19]">Trung tâm điều hành</h1>
-                <p class="mt-3 max-w-[760px] text-[15px] leading-7 text-[#73796b]">
-                    Theo dõi lịch học, công nợ, thiết bị và các việc cần xử lý trong một màn hình.
-                </p>
+    <div class="admin-page-header">
+        <div>
+            <h1 class="admin-page-title">Tổng quan</h1>
+            <p class="admin-page-subtitle">@Model.TodayLabel</p>
+        </div>
 
-                <div class="mt-8 grid gap-4 sm:grid-cols-2 2xl:grid-cols-4">
-                    @foreach (var metric in Model.Metrics)
-                    {
-                        <article class="rounded-[12px] border border-[#e3e3de] bg-[#fafaf4] p-5">
-                            <div class="flex items-start justify-between gap-3">
-                                <span class="text-sm font-medium text-[#73796b]">@metric.Label</span>
-                                <span class="material-symbols-outlined text-[20px] text-[#6a994e]">@metric.Icon</span>
-                            </div>
-                            <div class="mt-6 text-[30px] font-semibold leading-[36px] tracking-[-0.02em] text-[#1a1c19]">@metric.Value</div>
-                            <p class="mt-2 text-sm leading-6 text-[#73796b]">@metric.Hint</p>
-                        </article>
-                    }
-                </div>
-            </div>
-
-            <div class="admin-card-section bg-[#fafaf4]">
-                <div class="flex items-center justify-between gap-4">
-                    <div>
-                        <h2 class="admin-section-title">Tạo nhanh</h2>
-                        <p class="admin-section-subtitle">Mở đúng chỗ khi cần thao tác.</p>
-                    </div>
-                </div>
-
-                <div class="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
-                    <a asp-area="Admin" asp-controller="Users" asp-action="Create" class="admin-card-soft flex items-center justify-between gap-3 p-4 hover:border-[#6a994e]">
-                        <span>
-                            <span class="block text-sm font-semibold text-[#1a1c19]">Thêm người dùng</span>
-                            <span class="mt-1 block text-xs text-[#73796b]">Tạo tài khoản mới</span>
-                        </span>
-                        <span class="material-symbols-outlined text-[20px] text-[#6a994e]">arrow_forward</span>
-                    </a>
-                    <a asp-area="Admin" asp-controller="Classes" asp-action="Create" class="admin-card-soft flex items-center justify-between gap-3 p-4 hover:border-[#6a994e]">
-                        <span>
-                            <span class="block text-sm font-semibold text-[#1a1c19]">Mở lớp học</span>
-                            <span class="mt-1 block text-xs text-[#73796b]">Tạo lớp mới</span>
-                        </span>
-                        <span class="material-symbols-outlined text-[20px] text-[#6a994e]">arrow_forward</span>
-                    </a>
-                    <a asp-area="Admin" asp-controller="Finance" asp-action="CreateInvoice" class="admin-card-soft flex items-center justify-between gap-3 p-4 hover:border-[#6a994e]">
-                        <span>
-                            <span class="block text-sm font-semibold text-[#1a1c19]">Tạo hóa đơn</span>
-                            <span class="mt-1 block text-xs text-[#73796b]">Ghi nhận công nợ mới</span>
-                        </span>
-                        <span class="material-symbols-outlined text-[20px] text-[#6a994e]">arrow_forward</span>
-                    </a>
-                    <a asp-area="Admin" asp-controller="Inventory" asp-action="CreateMaintenance" class="admin-card-soft flex items-center justify-between gap-3 p-4 hover:border-[#6a994e]">
-                        <span>
-                            <span class="block text-sm font-semibold text-[#1a1c19]">Báo sự cố thiết bị</span>
-                            <span class="mt-1 block text-xs text-[#73796b]">Mở phiếu xử lý mới</span>
-                        </span>
-                        <span class="material-symbols-outlined text-[20px] text-[#6a994e]">arrow_forward</span>
-                    </a>
-                </div>
-            </div>
+        <div class="admin-actions">
+            <a asp-area="Admin" asp-controller="Users" asp-action="Create" class="admin-btn-secondary">
+                <span class="material-symbols-outlined text-[18px]">person_add</span>
+                <span>Người dùng</span>
+            </a>
+            <a asp-area="Admin" asp-controller="Classes" asp-action="Create" class="admin-btn-secondary">
+                <span class="material-symbols-outlined text-[18px]">add</span>
+                <span>Lớp học</span>
+            </a>
+            <a asp-area="Admin" asp-controller="Finance" asp-action="CreateInvoice" class="admin-btn-primary">
+                <span class="material-symbols-outlined text-[18px]">receipt_long</span>
+                <span>Hóa đơn</span>
+            </a>
         </div>
     </div>
 
-    <div class="grid gap-6 xl:grid-cols-[1.45fr_0.95fr]">
-        <div class="space-y-6">
-            <div class="admin-card">
-                <div class="admin-card-section">
-                    <div class="flex items-center justify-between gap-4">
-                        <div>
-                            <h2 class="admin-section-title">Dòng tiền 6 tháng</h2>
-                            <p class="admin-section-subtitle">Tổng hợp từ các khoản thanh toán đã ghi nhận.</p>
-                        </div>
-                        <a asp-area="Admin" asp-controller="Finance" asp-action="Index" class="admin-btn-secondary !h-10">Mở tài chính</a>
-                    </div>
-
-                    <div class="mt-8 grid grid-cols-6 items-end gap-4">
-                        @foreach (var point in Model.RevenueSeries)
-                        {
-                            <div class="flex flex-col items-center gap-3">
-                                <div class="flex h-60 w-full items-end rounded-[12px] border border-[#e3e3de] bg-[#fafaf4] p-3">
-                                    <div class="w-full rounded-[8px] bg-[#6a994e]" style="height:@(point.HeightPercent)%;" title="@point.AmountText"></div>
-                                </div>
-                                <div class="text-center">
-                                    <p class="text-xs font-medium text-[#42493d]">@point.Label</p>
-                                    <p class="mt-1 text-[11px] text-[#8b8f85]">@point.AmountText</p>
-                                </div>
-                            </div>
-                        }
-                    </div>
+    <div class="admin-stat-grid four-col">
+        @foreach (var metric in Model.Metrics)
+        {
+            <article class="admin-stat-card">
+                <div class="flex items-start justify-between gap-3">
+                    <span class="admin-stat-label">@metric.Label</span>
+                    <span class="material-symbols-outlined text-[20px] text-[#6a994e]">@metric.Icon</span>
                 </div>
-            </div>
+                <div class="admin-stat-value">@metric.Value</div>
+            </article>
+        }
+    </div>
 
+    <div class="admin-grid-two">
+        <div class="space-y-6">
             <div class="admin-card overflow-hidden">
                 <div class="admin-card-section">
                     <div class="flex items-center justify-between gap-4">
-                        <div>
-                            <h2 class="admin-section-title">Buổi học hôm nay</h2>
-                            <p class="admin-section-subtitle">Theo dõi nhanh lịch dạy và tiến độ ghi sổ điểm danh.</p>
-                        </div>
-                        <a asp-area="Admin" asp-controller="Sessions" asp-action="Index" class="admin-btn-secondary !h-10">Mở buổi học</a>
+                        <h2 class="admin-section-title">Buổi hôm nay</h2>
+                        <a asp-area="Admin" asp-controller="Sessions" asp-action="Index" class="admin-btn-secondary !h-10">Mở lịch</a>
                     </div>
                 </div>
 
                 <div class="px-6 pb-6">
                     @if (Model.TodaySessions.Count == 0)
                     {
-                        <div class="admin-empty rounded-[12px] border border-dashed border-[#c2c9b9] bg-[#fafaf4] !py-10">Hôm nay chưa có buổi học nào.</div>
+                        <div class="admin-empty rounded-[12px] border border-dashed border-[#c2c9b9] bg-[#fafaf4] !py-10">Hôm nay chưa có buổi học.</div>
                     }
                     else
                     {
@@ -124,14 +63,14 @@
                                 <article class="rounded-[12px] border border-[#e3e3de] bg-[#fafaf4] p-4">
                                     <div class="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
                                         <div>
-                                            <div class="flex items-center gap-2">
+                                            <div class="flex flex-wrap items-center gap-2">
                                                 <p class="font-semibold text-[#1a1c19]">@session.ClassCode</p>
-                                                <span class="text-sm text-[#73796b]">· @session.CourseName</span>
+                                                <span class="text-sm text-[#73796b]">@session.CourseName</span>
                                             </div>
                                             <p class="mt-1 text-sm text-[#73796b]">@session.TimeRange · @session.TeacherName</p>
                                         </div>
 
-                                        <div class="xl:w-[260px]">
+                                        <div class="xl:w-[240px]">
                                             <div class="mb-2 flex items-center justify-between text-sm">
                                                 <span class="text-[#42493d]">@session.AttendanceCount/@session.EnrollmentCount đã ghi</span>
                                                 <span class="font-medium text-[#1a1c19]">@session.AttendancePercent%</span>
@@ -147,23 +86,85 @@
                     }
                 </div>
             </div>
+
+            <div class="admin-card">
+                <div class="admin-card-section">
+                    <div class="flex items-center justify-between gap-4">
+                        <h2 class="admin-section-title">Doanh thu 6 tháng</h2>
+                        <a asp-area="Admin" asp-controller="Finance" asp-action="Index" class="admin-btn-secondary !h-10">Tài chính</a>
+                    </div>
+
+                    <div class="mt-8 grid grid-cols-6 items-end gap-3">
+                        @foreach (var point in Model.RevenueSeries)
+                        {
+                            <div class="flex flex-col items-center gap-2">
+                                <div class="flex h-48 w-full items-end rounded-[12px] border border-[#e3e3de] bg-[#fafaf4] p-2">
+                                    <div class="w-full rounded-[8px] bg-[#6a994e]" style="height:@(point.HeightPercent)% ;" title="@point.AmountText"></div>
+                                </div>
+                                <p class="text-xs font-medium text-[#42493d]">@point.Label</p>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div class="space-y-6">
             <div class="admin-card">
                 <div class="admin-card-section">
                     <div class="flex items-center justify-between gap-4">
-                        <div>
-                            <h2 class="admin-section-title">Sắp khai giảng</h2>
-                            <p class="admin-section-subtitle">@Model.UpcomingClassCount lớp trong 14 ngày tới.</p>
-                        </div>
+                        <h2 class="admin-section-title">Cần xử lý</h2>
+                        <a asp-area="Admin" asp-controller="Finance" asp-action="Index" asp-route-filter="unpaid" class="admin-btn-secondary !h-10">Mở việc</a>
+                    </div>
+
+                    <div class="mt-6 space-y-3">
+                        @if (Model.InvoiceAlerts.Count == 0 && Model.MaintenanceAlerts.Count == 0)
+                        {
+                            <div class="admin-empty rounded-[12px] border border-dashed border-[#c2c9b9] bg-[#fafaf4] !py-8">Không có mục tồn đọng nổi bật.</div>
+                        }
+                        else
+                        {
+                            @foreach (var invoice in Model.InvoiceAlerts)
+                            {
+                                <article class="rounded-[12px] border border-[#e3e3de] bg-[#fafaf4] px-4 py-4">
+                                    <div class="flex items-start justify-between gap-4">
+                                        <div>
+                                            <p class="font-semibold text-[#1a1c19]">@invoice.InvoiceNo</p>
+                                            <p class="mt-1 text-sm text-[#73796b]">@invoice.StudentName</p>
+                                        </div>
+                                        <span class="admin-tag admin-tag--warning">@invoice.DueAmountText</span>
+                                    </div>
+                                </article>
+                            }
+
+                            @foreach (var item in Model.MaintenanceAlerts)
+                            {
+                                <article class="rounded-[12px] border border-[#e3e3de] bg-[#fafaf4] px-4 py-4">
+                                    <div class="flex items-start justify-between gap-4">
+                                        <div>
+                                            <p class="font-semibold text-[#1a1c19]">@item.EquipmentSerialNumber</p>
+                                            <p class="mt-1 text-sm text-[#73796b]">@item.Issue</p>
+                                        </div>
+                                        <span class="admin-tag @(item.StatusLabel == "Mới ghi nhận" ? "admin-tag--warning" : "admin-tag--neutral")">@item.StatusLabel</span>
+                                    </div>
+                                </article>
+                            }
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <div class="admin-card">
+                <div class="admin-card-section">
+                    <div class="flex items-center justify-between gap-4">
+                        <h2 class="admin-section-title">Sắp khai giảng</h2>
                         <a asp-area="Admin" asp-controller="Classes" asp-action="Index" asp-route-filter="upcoming" class="admin-btn-secondary !h-10">Xem lớp</a>
                     </div>
 
                     <div class="mt-6 space-y-3">
                         @if (Model.UpcomingClasses.Count == 0)
                         {
-                            <div class="admin-empty rounded-[12px] border border-dashed border-[#c2c9b9] bg-[#fafaf4] !py-8">Chưa có lớp nào sắp khai giảng.</div>
+                            <div class="admin-empty rounded-[12px] border border-dashed border-[#c2c9b9] bg-[#fafaf4] !py-8">Chưa có lớp sắp khai giảng.</div>
                         }
                         else
                         {
@@ -187,88 +188,18 @@
 
             <div class="admin-card">
                 <div class="admin-card-section">
-                    <div class="flex items-center justify-between gap-4">
-                        <div>
-                            <h2 class="admin-section-title">Cần xử lý</h2>
-                            <p class="admin-section-subtitle">Tập trung vào công nợ và thiết bị.</p>
-                        </div>
-                    </div>
-
-                    <div class="mt-6 space-y-5">
-                        <div>
-                            <div class="mb-3 flex items-center justify-between gap-3">
-                                <p class="text-sm font-semibold text-[#1a1c19]">Hóa đơn còn lại</p>
-                                <a asp-area="Admin" asp-controller="Finance" asp-action="Index" asp-route-filter="unpaid" class="text-xs font-medium text-[#6a994e]">Mở tài chính</a>
-                            </div>
-                            <div class="space-y-3">
-                                @if (Model.InvoiceAlerts.Count == 0)
-                                {
-                                    <div class="rounded-[12px] border border-dashed border-[#c2c9b9] bg-[#fafaf4] px-4 py-5 text-sm text-[#73796b]">Không có hóa đơn quá hạn theo dõi.</div>
-                                }
-                                else
-                                {
-                                    @foreach (var invoice in Model.InvoiceAlerts)
-                                    {
-                                        <article class="rounded-[12px] border border-[#e3e3de] bg-[#fafaf4] px-4 py-4">
-                                            <div class="flex items-start justify-between gap-4">
-                                                <div>
-                                                    <p class="font-semibold text-[#1a1c19]">@invoice.InvoiceNo</p>
-                                                    <p class="mt-1 text-sm text-[#73796b]">@invoice.StudentName</p>
-                                                </div>
-                                                <span class="admin-tag admin-tag--warning">@invoice.DueAmountText</span>
-                                            </div>
-                                        </article>
-                                    }
-                                }
-                            </div>
-                        </div>
-
-                        <div class="border-t border-[#e3e3de] pt-5">
-                            <div class="mb-3 flex items-center justify-between gap-3">
-                                <p class="text-sm font-semibold text-[#1a1c19]">Thiết bị đang xử lý</p>
-                                <a asp-area="Admin" asp-controller="Inventory" asp-action="Index" asp-route-filter="maintenance" class="text-xs font-medium text-[#6a994e]">Mở kho thiết bị</a>
-                            </div>
-                            <div class="space-y-3">
-                                @if (Model.MaintenanceAlerts.Count == 0)
-                                {
-                                    <div class="rounded-[12px] border border-dashed border-[#c2c9b9] bg-[#fafaf4] px-4 py-5 text-sm text-[#73796b]">Không có thiết bị nào đang xử lý.</div>
-                                }
-                                else
-                                {
-                                    @foreach (var item in Model.MaintenanceAlerts)
-                                    {
-                                        <article class="rounded-[12px] border border-[#e3e3de] bg-[#fafaf4] px-4 py-4">
-                                            <div class="flex items-start justify-between gap-4">
-                                                <div>
-                                                    <p class="font-semibold text-[#1a1c19]">@item.EquipmentSerialNumber</p>
-                                                    <p class="mt-1 text-sm text-[#73796b]">@item.Issue</p>
-                                                </div>
-                                                <span class="admin-tag @(item.StatusLabel == "Mới ghi nhận" ? "admin-tag--warning" : "admin-tag--neutral")">@item.StatusLabel</span>
-                                            </div>
-                                        </article>
-                                    }
-                                }
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="admin-card">
-                <div class="admin-card-section">
-                    <h2 class="admin-section-title">Tình trạng hệ thống</h2>
-                    <p class="admin-section-subtitle">Một vài chỉ số nền để kiểm tra nhanh.</p>
+                    <h2 class="admin-section-title">Hệ thống</h2>
 
                     <div class="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
                         <div class="rounded-[12px] border border-[#e3e3de] bg-[#fafaf4] p-4">
-                            <p class="text-sm font-medium text-[#73796b]">Nội dung đang hiển thị</p>
+                            <p class="text-sm font-medium text-[#73796b]">Nội dung</p>
                             <p class="mt-2 text-2xl font-semibold text-[#1a1c19]">@Model.PublishedPostCount bài viết</p>
                             <p class="mt-1 text-sm text-[#73796b]">@Model.ActiveBannerCount banner đang bật</p>
                         </div>
                         <div class="rounded-[12px] border border-[#e3e3de] bg-[#fafaf4] p-4">
-                            <p class="text-sm font-medium text-[#73796b]">Thiết bị cần xử lý</p>
+                            <p class="text-sm font-medium text-[#73796b]">Bảo trì</p>
                             <p class="mt-2 text-2xl font-semibold text-[#1a1c19]">@Model.OpenMaintenanceCount</p>
-                            <p class="mt-1 text-sm text-[#73796b]">Phiếu bảo trì đang mở</p>
+                            <p class="mt-1 text-sm text-[#73796b]">phiếu đang mở</p>
                         </div>
                     </div>
                 </div>

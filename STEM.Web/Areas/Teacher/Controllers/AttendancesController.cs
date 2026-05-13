@@ -1,4 +1,4 @@
-using System.Security.Claims;
+﻿using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -12,6 +12,24 @@ namespace STEM.Web.Areas.Teacher.Controllers;
 [Authorize(Roles = "Teacher")]
 public class AttendancesController : Controller
 {
+    private const long MaxVideoUploadBytes = 50 * 1024 * 1024;
+    private static readonly HashSet<string> AllowedVideoExtensions = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ".mp4",
+        ".mov",
+        ".avi",
+        ".m4v",
+        ".webm"
+    };
+
+    private static readonly HashSet<string> AllowedVideoContentTypes = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "video/mp4",
+        "video/quicktime",
+        "video/x-msvideo",
+        "video/webm"
+    };
+
     private readonly ApplicationDbContext _context;
     private readonly IWebHostEnvironment _env;
 
@@ -22,7 +40,7 @@ public class AttendancesController : Controller
     }
 
     [HttpGet]
-    public async Task<IActionResult> Index(string filter = "today", string? q = null)
+    public async Task<IActionResult> Index(string filter = "all", string? q = null)
     {
         var teacherId = GetCurrentTeacherId();
         if (!teacherId.HasValue)
@@ -39,16 +57,16 @@ public class AttendancesController : Controller
             new TeacherAttendanceFilterViewModel { Key = "all", Label = "Tất cả" }
         };
 
-        var normalizedFilter = string.IsNullOrWhiteSpace(filter) ? "today" : filter.Trim().ToLowerInvariant();
+        var normalizedFilter = string.IsNullOrWhiteSpace(filter) ? "all" : filter.Trim().ToLowerInvariant();
         if (filters.All(x => x.Key != normalizedFilter))
         {
-            normalizedFilter = "today";
+            normalizedFilter = "all";
         }
 
         var searchTerm = q?.Trim() ?? string.Empty;
         var today = DateOnly.FromDateTime(DateTime.Today);
 
-        var query = _context.Sessions
+        var baseQuery = _context.Sessions
             .AsNoTracking()
             .Where(x => x.Class.TeacherId == teacherId.Value)
             .Select(x => new SessionProjection
@@ -65,6 +83,14 @@ public class AttendancesController : Controller
                 AttendanceCount = x.Attendances.Count
             });
 
+        var overviewSessions = await baseQuery
+            .OrderBy(x => x.Date)
+            .ThenBy(x => x.StartTime)
+            .ThenBy(x => x.ClassCode)
+            .ThenBy(x => x.SessionNo)
+            .ToListAsync();
+
+        var query = baseQuery;
         if (!string.IsNullOrWhiteSpace(searchTerm))
         {
             query = query.Where(x =>
@@ -73,14 +99,24 @@ public class AttendancesController : Controller
                 (x.Topic != null && x.Topic.Contains(searchTerm)));
         }
 
-        query = ApplyFilter(query, normalizedFilter, today);
+        if (normalizedFilter != "all")
+        {
+            query = ApplyFilter(query, normalizedFilter, today);
+        }
 
-        var sessions = await query
+        var visibleSessions = await query
             .OrderBy(x => x.Date)
             .ThenBy(x => x.StartTime)
             .ThenBy(x => x.ClassCode)
             .ThenBy(x => x.SessionNo)
             .ToListAsync();
+
+        var mappedOverviewSessions = overviewSessions.Select(x => MapSessionItem(x, today)).ToList();
+        var mappedVisibleSessions = visibleSessions.Select(x => MapSessionItem(x, today)).ToList();
+
+        var sectionSource = string.IsNullOrWhiteSpace(searchTerm) && normalizedFilter == "all"
+            ? mappedOverviewSessions
+            : mappedVisibleSessions;
 
         ViewData["Title"] = "Điểm danh";
 
@@ -88,9 +124,33 @@ public class AttendancesController : Controller
         {
             SelectedFilter = normalizedFilter,
             SearchTerm = searchTerm,
-            TotalSessions = sessions.Count,
+            TotalSessions = mappedVisibleSessions.Count,
+            TodayCount = mappedOverviewSessions.Count(x => x.IsToday),
+            OpenCount = mappedOverviewSessions.Count(x => x.NeedsAttention),
+            UpcomingCount = mappedOverviewSessions.Count(x => x.IsUpcoming),
+            CompletedCount = mappedOverviewSessions.Count(x => x.IsCompleted),
             Filters = filters,
-            Sessions = sessions.Select(x => MapSessionItem(x, today)).ToList()
+            Sessions = mappedVisibleSessions,
+            PrioritySessions = sectionSource
+                .Where(x => x.NeedsAttention)
+                .OrderBy(x => x.Date)
+                .ThenBy(x => x.SessionLabel)
+                .ToList(),
+            UpcomingSessions = sectionSource
+                .Where(x => x.IsUpcoming)
+                .OrderBy(x => x.Date)
+                .ThenBy(x => x.SessionLabel)
+                .ToList(),
+            CompletedSessions = sectionSource
+                .Where(x => x.IsCompleted)
+                .OrderByDescending(x => x.Date)
+                .ThenBy(x => x.SessionLabel)
+                .ToList(),
+            EmptySessions = sectionSource
+                .Where(x => !x.HasStudents)
+                .OrderBy(x => x.Date)
+                .ThenBy(x => x.SessionLabel)
+                .ToList()
         });
     }
 
@@ -301,10 +361,11 @@ public class AttendancesController : Controller
                     .Where(a => a.SessionId == session.Id)
                     .Select(a => (int?)a.Id)
                     .FirstOrDefault(),
+                HasAttendance = x.Student.Attendances.Any(a => a.SessionId == session.Id),
                 IsPresent = x.Student.Attendances
                     .Where(a => a.SessionId == session.Id)
                     .Select(a => (bool?)a.IsPresent)
-                    .FirstOrDefault() ?? true,
+                    .FirstOrDefault() ?? false,
                 TeacherRawNote = x.Student.Attendances
                     .Where(a => a.SessionId == session.Id)
                     .Select(a => a.TeacherRawNote)
@@ -327,6 +388,7 @@ public class AttendancesController : Controller
                 }
 
                 row.AttendanceId = overrideRow.AttendanceId;
+                row.HasAttendance = overrideRow.HasAttendance || row.HasAttendance;
                 row.IsPresent = overrideRow.IsPresent;
                 row.TeacherRawNote = overrideRow.TeacherRawNote;
                 row.ProductMediaUrls = overrideRow.ProductMediaUrls;
@@ -338,6 +400,24 @@ public class AttendancesController : Controller
             row.MediaHint = string.IsNullOrWhiteSpace(row.ProductMediaUrls)
                 ? "Dán link ảnh hoặc video nếu đã có."
                 : "Có thể dán thêm link mới nếu cần.";
+
+            row.StatusLabel = !row.HasAttendance
+                ? "Chưa ghi nhận"
+                : row.IsPresent
+                    ? "Có mặt"
+                    : "Vắng";
+
+            row.StatusBadgeClass = !row.HasAttendance
+                ? "teacher-tag teacher-tag--neutral"
+                : row.IsPresent
+                    ? "teacher-tag teacher-tag--success"
+                    : "teacher-tag teacher-tag--warning";
+
+            row.StatusHelpText = !row.HasAttendance
+                ? "Học viên này chưa có bản ghi điểm danh cho buổi học."
+                : row.IsPresent
+                    ? "Đã được ghi nhận có mặt trong buổi học."
+                    : "Đã được ghi nhận vắng trong buổi học.";
         }
 
         return new TeacherAttendanceBoardViewModel
@@ -350,9 +430,10 @@ public class AttendancesController : Controller
             ScheduleText = $"{session.Date:dd/MM/yyyy} · {session.StartTime:HH\\:mm} - {session.EndTime:HH\\:mm}",
             TeachingMaterialUrl = session.TeachingMaterialUrl ?? string.Empty,
             StudentCount = session.StudentCount,
-            AttendanceCount = session.AttendanceCount,
-            PresentCount = studentRows.Count(x => x.IsPresent),
-            AbsentCount = studentRows.Count(x => !x.IsPresent),
+            AttendanceCount = studentRows.Count(x => x.HasAttendance),
+            MissingCount = studentRows.Count(x => !x.HasAttendance),
+            PresentCount = studentRows.Count(x => x.HasAttendance && x.IsPresent),
+            AbsentCount = studentRows.Count(x => x.HasAttendance && !x.IsPresent),
             Rows = studentRows
         };
     }
@@ -395,13 +476,27 @@ public class AttendancesController : Controller
             CourseName = item.CourseName,
             Topic = string.IsNullOrWhiteSpace(item.Topic) ? "Chưa có chủ đề" : item.Topic.Trim(),
             ScheduleText = $"{item.Date:dd/MM/yyyy} · {item.StartTime:HH\\:mm} - {item.EndTime:HH\\:mm}",
+            Date = item.Date,
             StudentCount = item.StudentCount,
             AttendanceCount = item.AttendanceCount,
+            MissingAttendanceCount = Math.Max(0, item.StudentCount - item.AttendanceCount),
             CompletionText = item.StudentCount == 0
                 ? "Lớp này chưa có học viên."
                 : $"{item.AttendanceCount}/{item.StudentCount} học viên đã được ghi nhận.",
             StatusLabel = statusLabel,
-            StatusBadgeClass = statusBadgeClass
+            StatusBadgeClass = statusBadgeClass,
+            ActionHint = item.Date > today
+                ? "Buổi này chưa diễn ra. Bạn có thể chuẩn bị trước nội dung."
+                : item.StudentCount == 0
+                    ? "Cần ghi danh học viên vào lớp trước khi điểm danh."
+                    : item.AttendanceCount >= item.StudentCount
+                        ? "Buổi này đã ghi nhận đủ học viên."
+                        : $"Còn thiếu {Math.Max(0, item.StudentCount - item.AttendanceCount)} học viên chưa ghi nhận.",
+            IsToday = item.Date == today,
+            IsUpcoming = item.Date > today,
+            IsCompleted = item.StudentCount > 0 && item.AttendanceCount >= item.StudentCount,
+            HasStudents = item.StudentCount > 0,
+            NeedsAttention = item.Date <= today && item.StudentCount > 0 && item.AttendanceCount < item.StudentCount
         };
     }
 
@@ -411,7 +506,8 @@ public class AttendancesController : Controller
     }
 
     [HttpPost]
-    [RequestSizeLimit(52428800)] // 50MB
+    [ValidateAntiForgeryToken]
+    [RequestSizeLimit(MaxVideoUploadBytes)]
     public async Task<IActionResult> UploadVideo(IFormFile? file)
     {
         if (file == null || file.Length == 0)
@@ -419,9 +515,20 @@ public class AttendancesController : Controller
             return Json(new { success = false, message = "Vui lòng chọn một file video hợp lệ." });
         }
 
-        if (file.Length > 50 * 1024 * 1024)
+        if (file.Length > MaxVideoUploadBytes)
         {
             return Json(new { success = false, message = "File video quá lớn. Vui lòng chọn file dưới 50MB." });
+        }
+
+        var extension = Path.GetExtension(file.FileName);
+        if (string.IsNullOrWhiteSpace(extension) || !AllowedVideoExtensions.Contains(extension))
+        {
+            return Json(new { success = false, message = "Định dạng video không được hỗ trợ." });
+        }
+
+        if (string.IsNullOrWhiteSpace(file.ContentType) || !AllowedVideoContentTypes.Contains(file.ContentType))
+        {
+            return Json(new { success = false, message = "Loại nội dung file không hợp lệ." });
         }
 
         try
@@ -432,7 +539,7 @@ public class AttendancesController : Controller
                 Directory.CreateDirectory(uploadsFolder);
             }
 
-            var uniqueFileName = Guid.NewGuid().ToString() + "_" + Path.GetFileName(file.FileName);
+            var uniqueFileName = $"{Guid.NewGuid():N}{extension.ToLowerInvariant()}";
             var filePath = Path.Combine(uploadsFolder, uniqueFileName);
 
             using (var stream = new FileStream(filePath, FileMode.Create))
@@ -443,9 +550,9 @@ public class AttendancesController : Controller
             var fileUrl = $"/uploads/videos/{uniqueFileName}";
             return Json(new { success = true, url = fileUrl, fileName = file.FileName });
         }
-        catch (Exception ex)
+        catch
         {
-            return Json(new { success = false, message = "Lỗi khi lưu file: " + ex.Message });
+            return Json(new { success = false, message = "Không thể lưu video lên hệ thống." });
         }
     }
 
@@ -463,3 +570,4 @@ public class AttendancesController : Controller
         public int AttendanceCount { get; set; }
     }
 }
+

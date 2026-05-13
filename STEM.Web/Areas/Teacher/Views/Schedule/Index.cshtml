@@ -1,154 +1,156 @@
-@model STEM.Web.Areas.Teacher.Models.TeacherScheduleIndexViewModel
+﻿@model STEM.Web.Areas.Teacher.Models.TeacherScheduleIndexViewModel
 
 @{
     ViewData["Title"] = "Lịch dạy";
+    const int calendarStartHour = 7;
+    const int calendarEndHour = 17;
+    const int slotMinutes = 30;
+    var totalSlots = (calendarEndHour - calendarStartHour) * 60 / slotMinutes;
+    var isCalendarView = Model.SelectedView == "calendar";
+    var isListView = Model.SelectedView == "list";
 }
 
 <section class="teacher-page">
     <div class="teacher-page-header flex-wrap items-center justify-between gap-4">
         <div>
             <h1 class="teacher-page-title">Lịch giảng dạy</h1>
-            <p class="teacher-page-subtitle flex items-center gap-2 mt-1">
+            <p class="teacher-page-subtitle mt-1 flex items-center gap-2">
                 <span class="material-symbols-outlined text-[16px] text-[#73796b]">calendar_today</span>
-                Tuần hiện tại (@Model.WeekStart.ToString("dd/MM") - @Model.WeekEnd.ToString("dd/MM/yyyy"))
+                @(Model.IsCurrentWeek ? "Tuần hiện tại" : "Tuần đang xem") (@Model.WeekLabel)
             </p>
         </div>
 
         <div class="flex items-center gap-4">
-            <!-- Điều hướng tuần -->
-            <div class="flex items-center rounded-lg border border-[#c2c9b9] bg-white">
-                <a href="@Url.Action("Index", new { date = Model.WeekStart.AddDays(-7).ToString("yyyy-MM-dd") })" class="flex items-center justify-center border-r border-[#c2c9b9] px-3 py-2 text-[#42493f] hover:bg-[#f2f7f0]">
+            <div class="flex items-center rounded-lg border border-[#c2c9b9] bg-white shadow-sm">
+                <a href="@Url.Action("Index", new { filter = Model.SelectedFilter, q = Model.SearchTerm, date = Model.WeekStart.AddDays(-7).ToString("yyyy-MM-dd"), view = Model.SelectedView })"
+                   class="flex h-12 w-12 items-center justify-center border-r border-[#c2c9b9] text-[#42493f] transition-colors hover:bg-[#f2f7f0]"
+                   aria-label="Tuần trước">
                     <span class="material-symbols-outlined text-[18px]">chevron_left</span>
                 </a>
-                <a href="@Url.Action("Index", new { date = DateTime.Today.ToString("yyyy-MM-dd") })" class="px-4 py-2 text-sm font-medium text-[#1a1c19] hover:bg-[#f2f7f0]">Hôm nay</a>
-                <a href="@Url.Action("Index", new { date = Model.WeekStart.AddDays(7).ToString("yyyy-MM-dd") })" class="flex items-center justify-center border-l border-[#c2c9b9] px-3 py-2 text-[#42493f] hover:bg-[#f2f7f0]">
+                <div class="min-w-[150px] px-4 text-center text-sm font-semibold text-[#1a1c19]">
+                    @Model.WeekLabel
+                </div>
+                <a href="@Url.Action("Index", new { filter = Model.SelectedFilter, q = Model.SearchTerm, date = Model.WeekStart.AddDays(7).ToString("yyyy-MM-dd"), view = Model.SelectedView })"
+                   class="flex h-12 w-12 items-center justify-center border-l border-[#c2c9b9] text-[#42493f] transition-colors hover:bg-[#f2f7f0]"
+                   aria-label="Tuần sau">
                     <span class="material-symbols-outlined text-[18px]">chevron_right</span>
                 </a>
             </div>
 
-            <!-- Nút chuyển View (Dạng Lịch / Dạng Danh sách) -->
             <div class="flex items-center rounded-lg bg-[#e3e3de] p-1">
-                <button type="button" id="btn-view-calendar" class="flex items-center gap-2 rounded-md bg-white px-3 py-1.5 text-sm font-semibold text-[#1a1c19] shadow-sm transition-colors" onclick="toggleScheduleView('calendar')">
+                <button type="button" id="btn-view-calendar" class="flex items-center gap-2 rounded-md px-3 py-1.5 text-sm transition-colors @(isCalendarView ? "bg-white font-semibold text-[#1a1c19] shadow-sm" : "font-medium text-[#42493f] hover:text-[#1a1c19]")" onclick="toggleScheduleView('calendar')">
                     <span class="material-symbols-outlined text-[18px]">calendar_view_week</span> Lịch
                 </button>
-                <button type="button" id="btn-view-list" class="flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium text-[#42493f] transition-colors hover:text-[#1a1c19]" onclick="toggleScheduleView('list')">
+                <button type="button" id="btn-view-list" class="flex items-center gap-2 rounded-md px-3 py-1.5 text-sm transition-colors @(isListView ? "bg-white font-semibold text-[#1a1c19] shadow-sm" : "font-medium text-[#42493f] hover:text-[#1a1c19]")" onclick="toggleScheduleView('list')">
                     <span class="material-symbols-outlined text-[18px]">view_agenda</span> Danh sách
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- KHU VỰC DẠNG LỊCH (CALENDAR VIEW) -->
-    <div id="schedule-calendar-view" class="mt-6 block">
+    <div id="schedule-calendar-view" class="mt-6 @(isCalendarView ? "block" : "hidden")">
         <div class="overflow-x-auto rounded-xl border border-[#c2c9b9] bg-white shadow-sm">
-            <div class="min-w-[900px]">
-                <!-- Header Lịch (Các ngày trong tuần) -->
-                <div class="grid grid-cols-[60px_repeat(7,_1fr)] border-b border-[#c2c9b9] bg-[#f8faf7] text-center text-sm">
+            <div class="min-w-[980px]">
+                <div class="grid grid-cols-[74px_repeat(7,_minmax(0,_1fr))] border-b border-[#c2c9b9] bg-[#f8faf7] text-center text-sm">
                     <div class="border-r border-[#c2c9b9] py-3 text-[#73796b]">Giờ</div>
-                    
+
                     @for (int i = 0; i < 7; i++)
                     {
                         var currentDate = Model.WeekStart.AddDays(i);
                         var isToday = currentDate.Date == DateTime.Today;
-                        var dayName = i switch {
-                            6 => "Chủ Nhật",
-                            _ => $"Thứ {i + 2}"
-                        };
-
-                        var bgClass = isToday ? "bg-[#e8f0e5] relative" : "";
+                        var dayName = i == 6 ? "Chủ nhật" : $"Thứ {i + 2}";
+                        var borderClass = i == 6 ? string.Empty : "border-r border-[#e3e3de]";
                         var textClass = isToday ? "text-[#3b6722]" : i == 6 ? "text-[#ba1a1a]" : "text-[#42493f]";
                         var dateClass = isToday ? "text-[#3b6722]" : i == 6 ? "text-[#ba1a1a]" : "text-[#1a1c19]";
-                        var borderClass = i == 6 ? "" : "border-r border-[#e3e3de]";
+                        var bgClass = isToday ? "bg-[#edf7e8]" : string.Empty;
 
-                        <div class="@borderClass py-3 @bgClass">
-                            @if (isToday)
-                            {
-                                <div class="absolute top-0 left-0 right-0 h-1 bg-[#3b6722]"></div>
-                            }
-                            <div class="font-bold @textClass uppercase text-[11px] tracking-wider">@dayName</div>
+                        <div class="@borderClass @bgClass py-3">
+                            <div class="text-[11px] font-bold uppercase tracking-wider @textClass">@dayName</div>
                             <div class="mt-1 text-lg font-bold @dateClass">@currentDate.Day</div>
-                            @if (isToday)
-                            {
-                                <div class="mt-1 text-[10px] font-medium text-[#3b6722]">• Hôm nay</div>
-                            }
+                            <div class="mt-1 text-[10px] font-medium @(isToday ? "text-[#3b6722]" : "text-transparent")">@(isToday ? "• Hôm nay" : "•")</div>
                         </div>
                     }
                 </div>
 
-                <!-- Lưới Lịch (Grid) -->
-                <div class="relative grid grid-cols-[60px_repeat(7,_1fr)] grid-rows-[repeat(11,_minmax(60px,_auto))]">
-                    <!-- Các dòng kẻ ngang và giờ -->
-                    @for (int hour = 7; hour <= 17; hour++)
-                    {
-                        <div class="row-span-1 border-r border-b border-[#e3e3de] bg-[#f8faf7] text-center pt-2 text-xs font-medium text-[#73796b]">
-                            @hour:00
-                        </div>
-                        for (int day = 1; day <= 7; day++)
+                <div class="relative">
+                    <div class="grid grid-cols-[74px_repeat(7,_minmax(0,_1fr))]" style="grid-template-rows: repeat(@totalSlots, 30px);">
+                        @for (int slot = 0; slot < totalSlots; slot++)
                         {
-                            var isTodayCol = Model.WeekStart.AddDays(day - 1).Date == DateTime.Today;
-                            <div class="row-span-1 border-r border-b border-[#f2f2f2] bg-white @(isTodayCol ? "bg-[#fcfdfb]" : "")"></div>
+                            var totalMinutes = calendarStartHour * 60 + (slot * slotMinutes);
+                            var hour = totalMinutes / 60;
+                            var minute = totalMinutes % 60;
+                            var isHourLine = minute == 0;
+                            <div class="border-r border-b @(isHourLine ? "border-[#d7ddd0]" : "border-[#eef2ea]") bg-[#f8faf7] px-3 pt-1 text-sm @(isHourLine ? "font-medium text-[#5f6759]" : "text-transparent")">
+                                @(isHourLine ? $"{hour:00}:00" : string.Empty)
+                            </div>
+
+                            for (int day = 0; day < 7; day++)
+                            {
+                                var isTodayColumn = Model.WeekStart.AddDays(day).Date == DateTime.Today;
+                                var borderClass = day == 6 ? string.Empty : "border-r";
+                                <div class="@borderClass border-b @(isHourLine ? "border-[#d7ddd0]" : "border-[#eef2ea]") @(isTodayColumn ? "bg-[#fcfdfb]" : "bg-white")"></div>
+                            }
                         }
-                    }
+                    </div>
 
-                    <!-- Khối Lớp Học (Events) từ Database -->
-                    @foreach (var session in Model.CalendarSessions)
-                    {
-                        int col = session.Date.DayOfWeek == DayOfWeek.Sunday ? 8 : (int)session.Date.DayOfWeek + 1;
-                        int startRow = session.StartTime.Hour - 6;
-                        if (startRow < 1) startRow = 1; // Limit bounds
-                        
-                        int rowSpan = (int)Math.Ceiling((session.EndTime - session.StartTime).TotalHours);
-                        if (rowSpan < 1) rowSpan = 1;
+                    <div class="pointer-events-none absolute inset-0 grid grid-cols-[74px_repeat(7,_minmax(0,_1fr))]" style="grid-template-rows: repeat(@totalSlots, 30px);">
+                        @foreach (var session in Model.CalendarSessions)
+                        {
+                            var sessionDate = session.Date.Date;
+                            var dayOffset = (sessionDate - Model.WeekStart.Date).Days;
+                            if (dayOffset < 0 || dayOffset > 6)
+                            {
+                                continue;
+                            }
 
-                        // Tính margin-top linh hoạt theo phút (1 phút = 1px trong grid 60px)
-                        int marginTop = 4 + session.StartTime.Minute;
-                        
-                        // Màu sắc
-                        string bgBlock = session.Date < DateTime.Today ? "bg-[#8a9985] hover:bg-[#7a8975]" : "bg-[#6a994e] hover:bg-[#5b8742]";
+                            var startOffsetMinutes = ((session.StartTime.Hour * 60) + session.StartTime.Minute) - (calendarStartHour * 60);
+                            var endOffsetMinutes = ((session.EndTime.Hour * 60) + session.EndTime.Minute) - (calendarStartHour * 60);
+                            var safeStartOffsetMinutes = Math.Max(0, startOffsetMinutes);
+                            var safeEndOffsetMinutes = Math.Min(totalSlots * slotMinutes, Math.Max(safeStartOffsetMinutes + slotMinutes, endOffsetMinutes));
+                            var gridRowStart = Math.Floor(safeStartOffsetMinutes / (double)slotMinutes) + 1;
+                            var gridRowEnd = Math.Ceiling(safeEndOffsetMinutes / (double)slotMinutes) + 1;
+                            var colStart = dayOffset + 2;
+                            var bgBlock = sessionDate < DateTime.Today ? "bg-[#8a9985] hover:bg-[#7a8975]" : "bg-[#6a994e] hover:bg-[#5b8742]";
 
-                        <div class="absolute inset-x-1 rounded-md @bgBlock p-2 text-white shadow transition-colors flex flex-col justify-between" 
-                             style="grid-column: @col; grid-row: @startRow / span @rowSpan; margin-top: @(marginTop)px; margin-bottom: 4px;">
-                            <div class="overflow-hidden">
-                                <h3 class="text-sm font-bold leading-tight truncate" title="@session.ClassCode · @session.CourseName">@session.ClassCode · @session.CourseName</h3>
-                                <p class="mt-1 flex items-center gap-1 text-[11px] text-[#e0f0d9]">
-                                    <span class="material-symbols-outlined text-[14px] shrink-0">schedule</span> @session.ScheduleText
-                                </p>
-                                <p class="mt-0.5 flex items-center gap-1 text-[11px] text-[#e0f0d9]">
-                                    <span class="material-symbols-outlined text-[14px] shrink-0">topic</span> 
-                                    <span class="truncate" title="@session.Topic">@session.Topic</span>
-                                </p>
-                            </div>
-                            <div class="flex items-center justify-between border-t border-white/30 pt-1.5 mt-2 shrink-0">
-                                <span class="text-[10px] font-medium">@session.StudentCount Học sinh</span>
-                                <a asp-area="Teacher" asp-controller="Schedule" asp-action="Details" asp-route-id="@session.SessionId" class="text-white hover:text-white/80" title="Xem chi tiết">
-                                    <span class="material-symbols-outlined text-[14px]">open_in_new</span>
-                                </a>
-                            </div>
-                        </div>
-                    }
+                            <article class="pointer-events-auto z-10 mx-1 my-[3px] flex min-h-0 flex-col overflow-hidden rounded-lg @bgBlock p-3 text-white shadow transition-colors"
+                                     style="grid-column: @colStart; grid-row: @(gridRowStart) / @(gridRowEnd);">
+                                <div class="min-h-0 flex-1 overflow-hidden">
+                                    <h3 class="truncate text-sm font-bold leading-tight" title="@session.ClassCode · @session.CourseName">@session.ClassCode · @session.CourseName</h3>
+                                    <p class="mt-1 flex items-center gap-1 text-[11px] text-[#e0f0d9]">
+                                        <span class="material-symbols-outlined shrink-0 text-[14px]">schedule</span>
+                                        <span>@session.ScheduleText</span>
+                                    </p>
+                                    <p class="mt-0.5 flex items-center gap-1 text-[11px] text-[#e0f0d9]">
+                                        <span class="material-symbols-outlined shrink-0 text-[14px]">topic</span>
+                                        <span class="truncate" title="@session.Topic">@session.Topic</span>
+                                    </p>
+                                </div>
+                                <div class="mt-2 flex items-center justify-between border-t border-white/30 pt-2 text-[10px] font-medium">
+                                    <span>@session.StudentCount học sinh</span>
+                                    <a asp-area="Teacher" asp-controller="Schedule" asp-action="Details" asp-route-id="@session.SessionId" class="text-white hover:text-white/80" title="Xem chi tiết">
+                                        <span class="material-symbols-outlined text-[14px]">open_in_new</span>
+                                    </a>
+                                </div>
+                            </article>
+                        }
+                    </div>
                 </div>
             </div>
         </div>
 
         <div class="mt-4 flex items-center justify-between text-sm text-[#42493f]">
             <div class="flex items-center gap-4">
-                <div class="flex items-center gap-1.5"><div class="h-3 w-3 rounded bg-[#6a994e]"></div> Lịch sắp dạy / Hôm nay</div>
-                <div class="flex items-center gap-1.5"><div class="h-3 w-3 rounded bg-[#8a9985]"></div> Lịch đã dạy</div>
+                <div class="flex items-center gap-1.5"><div class="h-3 w-3 rounded bg-[#6a994e]"></div> Buổi sắp dạy hoặc trong tuần hiện tại</div>
+                <div class="flex items-center gap-1.5"><div class="h-3 w-3 rounded bg-[#8a9985]"></div> Buổi đã dạy</div>
             </div>
             <div class="flex items-center gap-2 rounded-lg bg-[#e8f0e5] px-4 py-2 font-medium text-[#2d4f19]">
                 <span class="material-symbols-outlined text-[18px]">info</span>
                 Tổng số ca dạy tuần này: @Model.CalendarSessions.Count ca
             </div>
         </div>
-        
-        <!-- Nút thêm lịch nổi (Floating Action Button) -->
-        <button class="fixed bottom-8 right-8 flex h-14 w-14 items-center justify-center rounded-full bg-[#3b6722] text-white shadow-lg transition-transform hover:scale-105 hover:bg-[#2d4f19] active:scale-95">
-            <span class="material-symbols-outlined text-[28px]">add</span>
-        </button>
     </div>
 
-    <!-- KHU VỰC DẠNG DANH SÁCH (LIST VIEW) -->
-    <div id="schedule-list-view" class="mt-6 hidden">
+    <div id="schedule-list-view" class="mt-6 @(isListView ? "block" : "hidden")">
         <div class="teacher-card">
             <div class="teacher-card-section">
                 <div class="teacher-toolbar">
@@ -160,6 +162,8 @@
                                asp-action="Index"
                                asp-route-filter="@filter.Key"
                                asp-route-q="@Model.SearchTerm"
+                               asp-route-date="@Model.TargetDate.ToString("yyyy-MM-dd")"
+                               asp-route-view="@Model.SelectedView"
                                class="@(Model.SelectedFilter == filter.Key ? "teacher-filter is-active" : "teacher-filter")">
                                 @filter.Label
                             </a>
@@ -168,6 +172,8 @@
 
                     <form method="get" class="teacher-search-form">
                         <input type="hidden" name="filter" value="@Model.SelectedFilter" />
+                        <input type="hidden" name="date" value="@Model.TargetDate.ToString("yyyy-MM-dd")" />
+                        <input type="hidden" name="view" value="@Model.SelectedView" />
                         <label class="sr-only" for="teacher-schedule-search">Tìm buổi học</label>
                         <div class="teacher-search-box">
                             <span class="material-symbols-outlined text-[20px] text-[#73796b]">search</span>
@@ -239,6 +245,12 @@
 @section Scripts {
     <script>
         function toggleScheduleView(viewType) {
+            const url = new URL(window.location.href);
+            url.searchParams.set('view', viewType);
+            window.location.href = url.toString();
+        }
+
+        function applyScheduleViewState(viewType) {
             const calendarView = document.getElementById('schedule-calendar-view');
             const listView = document.getElementById('schedule-list-view');
             const btnCalendar = document.getElementById('btn-view-calendar');
@@ -249,24 +261,26 @@
                 calendarView.classList.add('block');
                 listView.classList.remove('block');
                 listView.classList.add('hidden');
-
-                // Style button
                 btnCalendar.classList.add('bg-white', 'shadow-sm', 'text-[#1a1c19]');
+                btnCalendar.classList.add('font-semibold');
                 btnCalendar.classList.remove('text-[#42493f]');
                 btnList.classList.remove('bg-white', 'shadow-sm', 'text-[#1a1c19]');
+                btnList.classList.remove('font-semibold');
                 btnList.classList.add('text-[#42493f]');
             } else {
                 listView.classList.remove('hidden');
                 listView.classList.add('block');
                 calendarView.classList.remove('block');
                 calendarView.classList.add('hidden');
-
-                // Style button
                 btnList.classList.add('bg-white', 'shadow-sm', 'text-[#1a1c19]');
+                btnList.classList.add('font-semibold');
                 btnList.classList.remove('text-[#42493f]');
                 btnCalendar.classList.remove('bg-white', 'shadow-sm', 'text-[#1a1c19]');
+                btnCalendar.classList.remove('font-semibold');
                 btnCalendar.classList.add('text-[#42493f]');
             }
         }
+
+        applyScheduleViewState('@Model.SelectedView');
     </script>
 }

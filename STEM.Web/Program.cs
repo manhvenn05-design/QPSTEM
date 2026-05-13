@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
 using STEM.Web.Data;
+using STEM.Web.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -24,6 +25,8 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 builder.Services.AddHttpClient();
+builder.Services.AddScoped<IAdminShellService, AdminShellService>();
+builder.Services.AddScoped<ITeacherShellService, TeacherShellService>();
 
 var app = builder.Build();
 

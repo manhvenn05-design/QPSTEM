@@ -1,4 +1,4 @@
-@model STEM.Web.Areas.Teacher.Models.TeacherEvidenceIndexViewModel
+﻿@model STEM.Web.Areas.Teacher.Models.TeacherEvidenceIndexViewModel
 
 @{
     ViewData["Title"] = "Minh chứng";
@@ -8,7 +8,6 @@
     <div class="teacher-page-header">
         <div>
             <h1 class="teacher-page-title">Minh chứng</h1>
-            <p class="teacher-page-subtitle">Rà soát các bản ghi còn thiếu ảnh, video hoặc ghi chú để hoàn tất buổi học.</p>
         </div>
     </div>
 
@@ -16,17 +15,17 @@
         <article class="teacher-stat-card">
             <span class="teacher-stat-label">Tổng bản ghi</span>
             <div class="teacher-stat-value">@Model.TotalRows</div>
-            <p class="teacher-kicker">Các bản ghi điểm danh thuộc lớp bạn phụ trách.</p>
+            <p class="teacher-kicker">Thuộc lớp bạn phụ trách.</p>
         </article>
         <article class="teacher-stat-card">
             <span class="teacher-stat-label">Thiếu media</span>
             <div class="teacher-stat-value">@Model.MissingMediaCount</div>
-            <p class="teacher-kicker">Cần bổ sung ảnh hoặc video sản phẩm.</p>
+            <p class="teacher-kicker">Cần ảnh hoặc video.</p>
         </article>
         <article class="teacher-stat-card">
             <span class="teacher-stat-label">Thiếu ghi chú</span>
             <div class="teacher-stat-value">@Model.MissingNoteCount</div>
-            <p class="teacher-kicker">Nên cập nhật nhận xét ngắn của buổi học.</p>
+            <p class="teacher-kicker">Cần nhận xét ngắn.</p>
         </article>
         <article class="teacher-stat-card">
             <span class="teacher-stat-label">Đã đủ</span>
@@ -73,7 +72,7 @@
         {
             <div class="teacher-card">
                 <div class="teacher-card-section">
-                    <p class="teacher-empty">Chưa có bản ghi nào phù hợp với bộ lọc này.</p>
+                    <p class="teacher-empty">Chưa có bản ghi nào phù hợp.</p>
                 </div>
             </div>
         }

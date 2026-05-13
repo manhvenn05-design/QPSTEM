@@ -133,7 +133,7 @@ public class StudentPortalController : Controller
         // 3. Học phí và Công nợ (Invoices)
         var invoices = await _context.Invoices
             .Include(x => x.Class)
-            .ThenInclude(c => c.Course)
+            .ThenInclude(c => c!.Course)
             .Include(x => x.Payments)
             .Where(x => x.StudentId == studentId)
             .OrderByDescending(x => x.Id)

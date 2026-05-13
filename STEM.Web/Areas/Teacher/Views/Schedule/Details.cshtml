@@ -1,4 +1,4 @@
-@model STEM.Web.Areas.Teacher.Models.TeacherScheduleDetailsViewModel
+﻿@model STEM.Web.Areas.Teacher.Models.TeacherScheduleDetailsViewModel
 
 @{
     ViewData["Title"] = "Lịch dạy";
@@ -37,11 +37,11 @@
                             <dd>@Model.Topic</dd>
                         </dl>
                         <dl class="teacher-key-value">
-                            <dt>Giáo viên phụ trách</dt>
+                            <dt>Giáo viên</dt>
                             <dd>@Model.TeacherName</dd>
                         </dl>
                         <dl class="teacher-key-value">
-                            <dt>Sĩ số lớp</dt>
+                            <dt>Sĩ số</dt>
                             <dd>@Model.StudentCount học viên</dd>
                         </dl>
                         <dl class="teacher-key-value">
@@ -63,7 +63,6 @@
             <div class="teacher-card">
                 <div class="teacher-card-section">
                     <h2 class="teacher-section-title">Danh sách học viên</h2>
-                    <p class="teacher-section-subtitle">Kiểm tra nhanh sĩ số trước khi điểm danh.</p>
 
                     <div class="teacher-list mt-6">
                         @foreach (var student in Model.Students)
@@ -83,13 +82,12 @@
         <div class="teacher-stack">
             <div class="teacher-card">
                 <div class="teacher-card-section">
-                    <h2 class="teacher-section-title">Thiết bị gắn với buổi học</h2>
-                    <p class="teacher-section-subtitle">Theo dõi để chuẩn bị hoặc xác nhận trả thiết bị.</p>
+                    <h2 class="teacher-section-title">Thiết bị</h2>
 
                     <div class="teacher-list mt-6">
                         @if (Model.Equipments.Count == 0)
                         {
-                            <p class="teacher-empty">Buổi học này chưa có phiếu mượn thiết bị.</p>
+                            <p class="teacher-empty">Buổi này chưa có phiếu mượn thiết bị.</p>
                         }
                         else
                         {
@@ -100,8 +98,8 @@
                                         <p class="text-sm font-semibold text-[#1a1c19]">@item.SerialNumber</p>
                                         <p class="teacher-section-subtitle mt-1">@item.BorrowerName</p>
                                         <div class="teacher-meta-row mt-3">
-                                            <span>Mượn: @item.BorrowTimeText</span>
-                                            <span>Trả: @item.ReturnTimeText</span>
+                                            <span>@item.BorrowTimeText</span>
+                                            <span>@item.ReturnTimeText</span>
                                         </div>
                                     </div>
                                 </article>
@@ -113,10 +111,10 @@
 
             <div class="teacher-card">
                 <div class="teacher-card-section">
-                    <h2 class="teacher-section-title">Thao tác nhanh</h2>
+                    <h2 class="teacher-section-title">Thao tác</h2>
                     <div class="teacher-stack mt-6">
                         <a asp-area="Teacher" asp-controller="Attendances" asp-action="Board" asp-route-sessionId="@Model.SessionId" class="teacher-btn-primary w-full">Mở sổ điểm danh</a>
-                        <a asp-area="Teacher" asp-controller="Equipment" asp-action="Borrow" asp-route-sessionId="@Model.SessionId" class="teacher-btn-secondary w-full">Mượn thiết bị cho buổi này</a>
+                        <a asp-area="Teacher" asp-controller="Equipment" asp-action="Borrow" asp-route-sessionId="@Model.SessionId" class="teacher-btn-secondary w-full">Mượn thiết bị</a>
                         <a asp-area="Teacher" asp-controller="Schedule" asp-action="Index" class="teacher-btn-secondary w-full">Quay lại lịch dạy</a>
                     </div>
                 </div>

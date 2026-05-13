@@ -1,110 +1,107 @@
-@model IEnumerable<STEM.Web.Models.Lead>
+﻿@model IEnumerable<STEM.Web.Models.Lead>
+
 @{
-    ViewData["Title"] = "Khách hàng tư vấn";
+    ViewData["Title"] = "Khách tư vấn";
 }
 
-<div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-    <div>
-        <h1 class="admin-section-title">Khách hàng tư vấn</h1>
-        <p class="admin-section-subtitle">Danh sách học sinh/phụ huynh đăng ký nhận tư vấn từ website</p>
-    </div>
-</div>
-
-@if (TempData["SuccessMessage"] != null)
-{
-    <div class="admin-alert admin-alert--success mb-6">
-        @TempData["SuccessMessage"]
-    </div>
-}
-
-@if (TempData["ErrorMessage"] != null)
-{
-    <div class="mb-6 rounded-lg bg-[#ba1a1a]/10 p-4 text-sm font-medium text-[#ba1a1a]">
-        @TempData["ErrorMessage"]
-    </div>
-}
-
-<div class="admin-card overflow-hidden">
-    @if (!Model.Any())
-    {
-        <div class="admin-empty">
-            <span class="material-symbols-outlined mx-auto mb-4 block text-[48px] text-[#c2c9b9]">support_agent</span>
-            <p>Chưa có khách hàng đăng ký tư vấn nào.</p>
+<section class="admin-page">
+    <div class="admin-page-header">
+        <div>
+            <h1 class="admin-page-title">Khách tư vấn</h1>
+            <p class="admin-page-subtitle">Danh sách đăng ký từ website.</p>
         </div>
-    }
-    else
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
     {
-        <div class="overflow-x-auto">
-            <table class="w-full text-left text-sm">
-                <thead class="border-b border-[#e3e3de] bg-[#f2f7f0] text-[#73796b]">
-                    <tr>
-                        <th class="px-6 py-4 font-medium">Họ và tên</th>
-                        <th class="px-6 py-4 font-medium">Liên hệ</th>
-                        <th class="px-6 py-4 font-medium">Khóa học quan tâm</th>
-                        <th class="px-6 py-4 font-medium">Trạng thái</th>
-                        <th class="px-6 py-4 text-right font-medium">Thao tác</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-[#e3e3de]">
-                    @foreach (var item in Model)
-                    {
-                        <tr class="hover:bg-[#f2f7f0]/50 transition-colors">
-                            <td class="px-6 py-4">
-                                <div class="font-medium text-[#1a1c19]">@item.ParentName</div>
-                            </td>
-                            <td class="px-6 py-4">
-                                <div class="text-[#3b6722] font-medium">@item.Phone</div>
-                                @if (!string.IsNullOrEmpty(item.Email))
-                                {
-                                    <div class="text-xs text-[#73796b] mt-1">@item.Email</div>
-                                }
-                            </td>
-                            <td class="px-6 py-4">
-                                @if (item.Interested != null)
-                                {
-                                    <span class="inline-flex items-center gap-1 rounded-md bg-[#e3e3de] px-2 py-1 text-xs font-medium text-[#42493f]">
-                                        @item.Interested.Name
-                                    </span>
-                                }
-                                else
-                                {
-                                    <span class="text-[#73796b]">-</span>
-                                }
-                            </td>
-                            <td class="px-6 py-4">
-                                <form asp-action="UpdateStatus" method="post" class="inline-block">
-                                    <input type="hidden" name="id" value="@item.Id" />
-                                    <select name="status" onchange="this.form.submit()" class="rounded-md border border-[#c2c9b9] bg-white px-2 py-1 text-xs font-medium outline-none focus:border-[#3b6722] focus:ring-1 focus:ring-[#3b6722] cursor-pointer
-                                        @(item.Status == 0 ? "text-[#b26a00] bg-[#ffdb9e]" : 
-                                          item.Status == 1 ? "text-[#005cbb] bg-[#d7e3ff]" : 
-                                          item.Status == 2 ? "text-[#006e1c] bg-[#93f89e]" : "text-[#ba1a1a] bg-[#ffdad6]")">
-                                        <option value="0" selected="@(item.Status == 0)">Mới</option>
-                                        <option value="1" selected="@(item.Status == 1)">Đang tư vấn</option>
-                                        <option value="2" selected="@(item.Status == 2)">Đã chốt</option>
-                                        <option value="3" selected="@(item.Status == 3)">Không thành công</option>
-                                    </select>
-                                </form>
-                            </td>
-                            <td class="px-6 py-4 text-right">
-                                @if (item.Status == 0 || item.Status == 1)
-                                {
-                                    <a asp-action="Convert" asp-route-id="@item.Id" class="inline-flex items-center gap-1 rounded-md bg-[#3b6722] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#2d4f19] transition-colors">
-                                        <span class="material-symbols-outlined text-[14px]">school</span>
-                                        Chốt Đăng Ký
-                                    </a>
-                                }
-                                else if (item.Status == 2)
-                                {
-                                    <span class="inline-flex items-center gap-1 text-xs font-semibold text-[#3b6722]">
-                                        <span class="material-symbols-outlined text-[14px]">check_circle</span>
-                                        Đã tạo tài khoản
-                                    </span>
-                                }
-                            </td>
+        <div class="admin-alert admin-alert--success">@TempData["SuccessMessage"]</div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="admin-alert admin-alert--error">@TempData["ErrorMessage"]</div>
+    }
+
+    <div class="admin-card overflow-hidden">
+        @if (!Model.Any())
+        {
+            <div class="admin-empty">
+                <span class="material-symbols-outlined mx-auto mb-4 block text-[48px] text-[#c2c9b9]">support_agent</span>
+                <p>Chưa có đăng ký tư vấn nào.</p>
+            </div>
+        }
+        else
+        {
+            <div class="overflow-x-auto">
+                <table class="admin-table min-w-full">
+                    <thead>
+                        <tr>
+                            <th>Phụ huynh</th>
+                            <th>Liên hệ</th>
+                            <th>Khóa học</th>
+                            <th>Trạng thái</th>
+                            <th class="text-right">Chuyển đổi</th>
                         </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
-    }
-</div>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="font-semibold text-[#1a1c19]">@item.ParentName</div>
+                                </td>
+                                <td>
+                                    <div class="font-medium text-[#3b6722]">@item.Phone</div>
+                                    @if (!string.IsNullOrEmpty(item.Email))
+                                    {
+                                        <div class="mt-1 text-xs text-[#73796b]">@item.Email</div>
+                                    }
+                                </td>
+                                <td>
+                                    @if (item.Interested != null)
+                                    {
+                                        <span class="admin-tag admin-tag--neutral">@item.Interested.Name</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-[#73796b]">-</span>
+                                    }
+                                </td>
+                                <td>
+                                    <form asp-action="UpdateStatus" method="post" class="inline-block">
+                                        <input type="hidden" name="id" value="@item.Id" />
+                                        <select name="status" onchange="this.form.submit()" class="admin-select !h-10 !w-auto !min-w-[148px] !px-3 !text-xs
+                                            @(item.Status == 0 ? "!border-[#ffd8a8] !bg-[#fff4e8] !text-[#9b682f]" :
+                                              item.Status == 1 ? "!border-[#bfd4ff] !bg-[#eef4ff] !text-[#355ca8]" :
+                                              item.Status == 2 ? "!border-[#cfe2c1] !bg-[#edf7e8] !text-[#456c3f]" : "!border-[#f0c9c7] !bg-[#fff4f3] !text-[#ba1a1a]")">
+                                            <option value="0" selected="@(item.Status == 0)">Mới</option>
+                                            <option value="1" selected="@(item.Status == 1)">Đang tư vấn</option>
+                                            <option value="2" selected="@(item.Status == 2)">Đã chốt</option>
+                                            <option value="3" selected="@(item.Status == 3)">Không thành công</option>
+                                        </select>
+                                    </form>
+                                </td>
+                                <td class="text-right">
+                                    @if (item.Status == 0 || item.Status == 1)
+                                    {
+                                        <a asp-action="Convert" asp-route-id="@item.Id" class="admin-btn-primary !h-10">
+                                            <span class="material-symbols-outlined text-[16px]">school</span>
+                                            <span>Chốt đăng ký</span>
+                                        </a>
+                                    }
+                                    else if (item.Status == 2)
+                                    {
+                                        <span class="inline-flex items-center gap-1 text-xs font-semibold text-[#3b6722]">
+                                            <span class="material-symbols-outlined text-[14px]">check_circle</span>
+                                            Đã tạo tài khoản
+                                        </span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</section>

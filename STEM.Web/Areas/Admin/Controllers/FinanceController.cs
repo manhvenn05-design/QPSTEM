@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.Data.SqlClient;
@@ -190,6 +190,11 @@ public class FinanceController : Controller
             ModelState.AddModelError(nameof(model.ClassId), "Lớp học không hợp lệ.");
         }
 
+        if (model.StudentId.HasValue && model.ClassId.HasValue && !await IsStudentInClassAsync(model.StudentId.Value, model.ClassId.Value))
+        {
+            ModelState.AddModelError(nameof(model.ClassId), "Học viên không thuộc lớp đã chọn.");
+        }
+
         if (!ModelState.IsValid)
         {
             return View(model);
@@ -269,6 +274,11 @@ public class FinanceController : Controller
         if (model.ClassId.HasValue && !await IsValidClassAsync(model.ClassId))
         {
             ModelState.AddModelError(nameof(model.ClassId), "Lớp học không hợp lệ.");
+        }
+
+        if (model.StudentId.HasValue && model.ClassId.HasValue && !await IsStudentInClassAsync(model.StudentId.Value, model.ClassId.Value))
+        {
+            ModelState.AddModelError(nameof(model.ClassId), "Học viên không thuộc lớp đã chọn.");
         }
 
         var paidAmount = entity.Payments.Sum(x => x.Amount);
@@ -649,6 +659,11 @@ public class FinanceController : Controller
         return classId.HasValue && await _context.Classes.AnyAsync(x => x.Id == classId.Value);
     }
 
+    private async Task<bool> IsStudentInClassAsync(int studentId, int classId)
+    {
+        return await _context.Enrollments.AnyAsync(x => x.StudentId == studentId && x.ClassId == classId);
+    }
+
     private async Task<bool> IsValidInvoiceAsync(int? invoiceId)
     {
         return invoiceId.HasValue && await _context.Invoices.AnyAsync(x => x.Id == invoiceId.Value);
@@ -688,3 +703,5 @@ public class FinanceController : Controller
         public decimal PaidAmount { get; init; }
     }
 }
+
+

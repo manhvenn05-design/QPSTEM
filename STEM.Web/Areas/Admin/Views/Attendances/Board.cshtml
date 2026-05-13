@@ -1,4 +1,4 @@
-@model STEM.Web.Areas.Admin.Models.AttendanceBoardViewModel
+﻿@model STEM.Web.Areas.Admin.Models.AttendanceBoardViewModel
 
 @{
     ViewData["Title"] = "Sổ điểm danh";
@@ -136,7 +136,6 @@
                                     <option value="pending" selected="@(row.AttendanceStatus == "pending" ? "selected" : null)">Chưa ghi</option>
                                     <option value="present" selected="@(row.AttendanceStatus == "present" ? "selected" : null)">Có mặt</option>
                                     <option value="absent" selected="@(row.AttendanceStatus == "absent" ? "selected" : null)">Vắng</option>
-                                    <option value="excused" selected="@(row.AttendanceStatus == "excused" ? "selected" : null)">Vắng có lý do</option>
                                 </select>
                                 <span class="inline-flex rounded-full px-3 py-2 text-xs font-semibold @row.PresenceBadgeClass">
                                     @row.PresenceLabel
@@ -163,3 +162,4 @@
         </div>
     }
 </section>
+

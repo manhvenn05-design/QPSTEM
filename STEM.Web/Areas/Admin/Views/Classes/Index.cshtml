@@ -1,4 +1,4 @@
-@model STEM.Web.Areas.Admin.Models.ClassManagementViewModel
+﻿@model STEM.Web.Areas.Admin.Models.ClassManagementViewModel
 
 @{
     ViewData["Title"] = "Lớp học";
@@ -7,13 +7,14 @@
 <section class="admin-page">
     <div class="admin-page-header">
         <div>
-            <h1 class="admin-page-title">Quản lý lớp học</h1>
+            <h1 class="admin-page-title">Lớp học</h1>
+            <p class="admin-page-subtitle">Theo dõi lớp, giáo viên và lịch học.</p>
         </div>
 
         <div class="admin-actions">
             <a asp-area="Admin" asp-controller="Classes" asp-action="Create" class="admin-btn-primary">
                 <span class="material-symbols-outlined text-[18px]">add</span>
-                <span>Thêm lớp học</span>
+                <span>Thêm lớp</span>
             </a>
         </div>
     </div>
@@ -50,7 +51,7 @@
                     <input type="hidden" name="filter" value="@Model.SelectedFilter" />
                     <label class="relative block">
                         <span class="material-symbols-outlined pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[20px] text-[#73796b]">search</span>
-                        <input type="text" name="q" value="@Model.SearchTerm" placeholder="Tìm theo mã lớp, khóa học, giáo viên..." class="admin-input pl-12" />
+                        <input type="text" name="q" value="@Model.SearchTerm" placeholder="Tìm mã lớp, khóa học, giáo viên..." class="admin-input pl-12" />
                     </label>
                 </div>
             </div>
@@ -62,20 +63,20 @@
             <table class="admin-table min-w-full">
                 <thead>
                     <tr>
-                        <th>Lớp học</th>
+                        <th>Lớp</th>
                         <th>Khóa học</th>
                         <th>Giáo viên</th>
                         <th>Thời gian</th>
                         <th>Học viên / Buổi</th>
                         <th>Trạng thái</th>
-                        <th class="text-right">Thao tác</th>
+                        <th class="text-right">Mở</th>
                     </tr>
                 </thead>
                 <tbody>
                     @if (Model.Classes.Count == 0)
                     {
                         <tr>
-                            <td colspan="7" class="admin-empty">Không có lớp học nào phù hợp với bộ lọc hiện tại.</td>
+                            <td colspan="7" class="admin-empty">Không có lớp học phù hợp.</td>
                         </tr>
                     }
                     else
@@ -84,10 +85,7 @@
                         {
                             <tr>
                                 <td>
-                                    <div>
-                                        <p class="font-semibold text-[#1a1c19]">@item.ClassCode</p>
-                                        <p class="mt-1 text-sm text-[#73796b]">Lớp học quản lý theo mã duy nhất trong hệ thống</p>
-                                    </div>
+                                    <p class="font-semibold text-[#1a1c19]">@item.ClassCode</p>
                                 </td>
                                 <td>
                                     <div>
@@ -95,9 +93,7 @@
                                         <p class="mt-1 text-sm text-[#73796b]">@item.CourseCode</p>
                                     </div>
                                 </td>
-                                <td>
-                                    <strong>@item.TeacherName</strong>
-                                </td>
+                                <td><strong>@item.TeacherName</strong></td>
                                 <td>@item.ScheduleText</td>
                                 <td>@item.EnrollmentText</td>
                                 <td>
@@ -140,7 +136,7 @@
         </div>
 
         <div class="admin-divider flex flex-col gap-4 px-6 py-5 text-sm text-[#73796b] lg:flex-row lg:items-center lg:justify-between">
-            <p>Hiển thị @((Model.TotalClasses == 0 ? 0 : ((Model.CurrentPage - 1) * 10) + 1))-@Math.Min(Model.CurrentPage * 10, Model.TotalClasses) trong số @Model.TotalClasses lớp học</p>
+            <p>Hiển thị @((Model.TotalClasses == 0 ? 0 : ((Model.CurrentPage - 1) * 10) + 1))-@Math.Min(Model.CurrentPage * 10, Model.TotalClasses) / @Model.TotalClasses lớp học</p>
 
             <div class="admin-pagination">
                 <a asp-area="Admin"
