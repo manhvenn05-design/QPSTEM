@@ -11,12 +11,7 @@
             <h1 class="student-page-title">Nhận xét &amp; Minh chứng</h1>
             <p class="student-page-subtitle">Nhận xét của giáo viên và hình ảnh/video sản phẩm học tập của bé sau mỗi buổi học.</p>
         </div>
-        <div class="shrink-0">
-            <span class="inline-flex items-center gap-2 rounded-lg border border-[#c2c9b9] bg-white px-4 h-10 text-sm font-medium text-[#42493d]">
-                <span class="material-symbols-outlined text-[18px] text-[#6a994e]">library_books</span>
-                @Model.TotalCount buổi học có ghi chú
-            </span>
-        </div>
+
     </div>
 
     @* Filter theo lớp *@
@@ -94,27 +89,45 @@
                     </div>
 
                     <div class="student-card-section space-y-5">
-                        @* AI Evaluation (ưu tiên hiển thị trước nếu có) *@
-                        @if (!string.IsNullOrWhiteSpace(item.AiEvaluation))
+                        @* Text Evidence: AI & Teacher Notes *@
+                        @if (!string.IsNullOrWhiteSpace(item.AiEvaluation) || !string.IsNullOrWhiteSpace(item.TeacherRawNote))
                         {
-                            <div class="rounded-lg border border-[#c8e0b8] bg-[#f2f7f0] p-4">
-                                <div class="mb-2 flex items-center gap-1.5">
-                                    <span class="material-symbols-outlined text-[18px] text-[#3b6722]">auto_awesome</span>
-                                    <span class="text-xs font-bold uppercase tracking-wide text-[#3b6722]">Nhận xét tổng hợp từ AI</span>
-                                </div>
-                                <p class="text-sm leading-6 text-[#1a1c19]">@item.AiEvaluation</p>
-                            </div>
-                        }
-
-                        @* Teacher Note *@
-                        @if (!string.IsNullOrWhiteSpace(item.TeacherRawNote))
-                        {
-                            <div>
-                                <div class="mb-2 flex items-center gap-1.5">
-                                    <span class="material-symbols-outlined text-[16px] text-[#73796b]">edit_note</span>
-                                    <span class="text-xs font-semibold uppercase tracking-wide text-[#73796b]">Ghi chú của giáo viên</span>
-                                </div>
-                                <p class="rounded-lg bg-[#fafaf4] border border-[#e3e3de] px-4 py-3 text-sm leading-6 text-[#42493d] whitespace-pre-line">@item.TeacherRawNote</p>
+                            <div class="grid gap-4 sm:grid-cols-2">
+                                @if (!string.IsNullOrWhiteSpace(item.AiEvaluation))
+                                {
+                                    <div class="flex flex-col overflow-hidden rounded-xl border border-[#c8e0b8] bg-[#f5fbf3]">
+                                        <div class="flex items-center justify-between border-b border-[#c8e0b8]/50 bg-[#edf7e8] px-4 py-2.5">
+                                            <div class="flex items-center gap-1.5">
+                                                <span class="material-symbols-outlined text-[18px] text-[#3b6722]">auto_awesome</span>
+                                                <span class="text-xs font-bold uppercase tracking-wide text-[#3b6722]">Nhận xét tổng hợp từ AI</span>
+                                            </div>
+                                            <button type="button" class="inline-flex h-7 w-7 items-center justify-center rounded-md text-[#3b6722] hover:bg-[#c8e0b8] transition-colors js-zoom-text" data-title="Nhận xét tổng hợp từ AI" data-content="@item.AiEvaluation" title="Phóng to">
+                                                <span class="material-symbols-outlined text-[16px]">zoom_out_map</span>
+                                            </button>
+                                        </div>
+                                        <div class="p-4 flex-1">
+                                            <p class="text-[15px] leading-relaxed text-[#2c3625] line-clamp-5">@item.AiEvaluation</p>
+                                        </div>
+                                    </div>
+                                }
+                                
+                                @if (!string.IsNullOrWhiteSpace(item.TeacherRawNote))
+                                {
+                                    <div class="flex flex-col overflow-hidden rounded-xl border border-[#e3e3de] bg-[#fafaf4]">
+                                        <div class="flex items-center justify-between border-b border-[#e3e3de] bg-[#f4f4ee] px-4 py-2.5">
+                                            <div class="flex items-center gap-1.5">
+                                                <span class="material-symbols-outlined text-[18px] text-[#5d6557]">edit_note</span>
+                                                <span class="text-xs font-bold uppercase tracking-wide text-[#5d6557]">Ghi chú của giáo viên</span>
+                                            </div>
+                                            <button type="button" class="inline-flex h-7 w-7 items-center justify-center rounded-md text-[#5d6557] hover:bg-[#e3e3de] transition-colors js-zoom-text" data-title="Ghi chú của giáo viên" data-content="@item.TeacherRawNote" title="Phóng to">
+                                                <span class="material-symbols-outlined text-[16px]">zoom_out_map</span>
+                                            </button>
+                                        </div>
+                                        <div class="p-4 flex-1">
+                                            <p class="text-[15px] leading-relaxed text-[#42493d] whitespace-pre-line line-clamp-5">@item.TeacherRawNote</p>
+                                        </div>
+                                    </div>
+                                }
                             </div>
                         }
 
@@ -135,27 +148,41 @@
                                     @foreach (var videoUrl in item.VideoUrls)
                                     {
                                         string embedUrl = videoUrl;
-                                            if (videoUrl.Contains("youtu.be/"))
+                                        bool isYoutube = false;
+                                        if (videoUrl.Contains("youtu.be/"))
+                                        {
+                                            var videoId = videoUrl.Split("youtu.be/").Last().Split('?').First();
+                                            embedUrl = $"https://www.youtube.com/embed/{videoId}";
+                                            isYoutube = true;
+                                        }
+                                        else if (videoUrl.Contains("youtube.com/watch"))
+                                        {
+                                            var uri = new Uri(videoUrl);
+                                            var qs = System.Web.HttpUtility.ParseQueryString(uri.Query);
+                                            var videoId = qs["v"];
+                                            if (!string.IsNullOrEmpty(videoId))
                                             {
-                                                var videoId = videoUrl.Split("youtu.be/").Last().Split('?').First();
                                                 embedUrl = $"https://www.youtube.com/embed/{videoId}";
+                                                isYoutube = true;
                                             }
-                                            else if (videoUrl.Contains("youtube.com/watch"))
-                                            {
-                                                var uri = new Uri(videoUrl);
-                                                var qs = System.Web.HttpUtility.ParseQueryString(uri.Query);
-                                                var videoId = qs["v"];
-                                                if (!string.IsNullOrEmpty(videoId))
-                                                    embedUrl = $"https://www.youtube.com/embed/{videoId}";
-                                            }
+                                        }
+
                                         <div class="aspect-video overflow-hidden rounded-lg border border-[#e3e3de] bg-[#1a1c19]">
-                                            <iframe src="@embedUrl"
-                                                    title="Video buổi học"
-                                                    frameborder="0"
-                                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                                    allowfullscreen
-                                                    class="h-full w-full">
-                                            </iframe>
+                                            @if (isYoutube)
+                                            {
+                                                <iframe class="h-full w-full border-0"
+                                                        src="@embedUrl"
+                                                        title="YouTube video player"
+                                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                                        allowfullscreen></iframe>
+                                            }
+                                            else
+                                            {
+                                                <video class="h-full w-full object-contain" controls>
+                                                    <source src="@videoUrl" />
+                                                    Trình duyệt của bạn không hỗ trợ thẻ video.
+                                                </video>
+                                            }
                                         </div>
                                     }
                                 </div>
@@ -249,19 +276,97 @@
     }
 </section>
 
-@* Auto-scroll đến card được highlight nếu deep-link từ Schedule *@
-@if (Model.HighlightSession.HasValue)
-{
-    @section Scripts {
-        <script>
-            (function () {
+@* Modal phóng to nội dung *@
+<div id="text-zoom-modal" class="fixed inset-0 z-[100] hidden items-center justify-center bg-[#141713]/60 p-4 backdrop-blur-sm transition-opacity opacity-0" aria-modal="true" role="dialog">
+    <div class="relative w-full max-w-2xl transform overflow-hidden rounded-2xl bg-white shadow-2xl transition-all scale-95">
+        <div class="flex items-center justify-between border-b border-[#e3e3de] bg-[#fafaf4] px-6 py-4">
+            <h3 class="text-lg font-bold text-[#1a1c19]" id="text-zoom-title">Nhận xét</h3>
+            <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-full text-[#73796b] hover:bg-[#e3e3de] hover:text-[#1a1c19] transition-colors js-close-zoom">
+                <span class="material-symbols-outlined text-[20px]">close</span>
+            </button>
+        </div>
+        <div class="max-h-[70vh] overflow-y-auto px-6 py-5">
+            <p class="text-[16px] leading-8 text-[#2c3625] whitespace-pre-line" id="text-zoom-content"></p>
+        </div>
+        <div class="border-t border-[#e3e3de] bg-[#fafaf4] px-6 py-4 text-right">
+            <button type="button" class="inline-flex h-10 items-center justify-center rounded-lg bg-[#3b6722] px-6 text-sm font-semibold text-white hover:bg-[#2d5019] transition-colors js-close-zoom">
+                Đóng
+            </button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        (function () {
+            // Auto-scroll logic cho deep-link
+            @if (Model.HighlightSession.HasValue)
+            {
+                <text>
                 var el = document.getElementById('evidence-session-@Model.HighlightSession.Value');
                 if (el) {
                     setTimeout(function () {
                         el.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     }, 200);
                 }
-            })();
-        </script>
-    }
+                </text>
+            }
+
+            // Logic phóng to văn bản (Zoom Modal)
+            const zoomModal = document.getElementById('text-zoom-modal');
+            const zoomModalContainer = zoomModal.querySelector('.transform');
+            const zoomTitle = document.getElementById('text-zoom-title');
+            const zoomContent = document.getElementById('text-zoom-content');
+            
+            function openZoomModal(title, content) {
+                zoomTitle.textContent = title;
+                zoomContent.textContent = content;
+                
+                zoomModal.classList.remove('hidden');
+                // Allow browser to render display:block before applying opacity transition
+                requestAnimationFrame(() => {
+                    zoomModal.classList.remove('opacity-0');
+                    zoomModalContainer.classList.remove('scale-95');
+                    zoomModalContainer.classList.add('scale-100');
+                });
+                document.body.style.overflow = 'hidden';
+            }
+            
+            function closeZoomModal() {
+                zoomModal.classList.add('opacity-0');
+                zoomModalContainer.classList.remove('scale-100');
+                zoomModalContainer.classList.add('scale-95');
+                
+                setTimeout(() => {
+                    zoomModal.classList.add('hidden');
+                    document.body.style.overflow = '';
+                }, 200); // Matches transition duration
+            }
+
+            document.querySelectorAll('.js-zoom-text').forEach(btn => {
+                btn.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const title = this.getAttribute('data-title');
+                    const content = this.getAttribute('data-content');
+                    openZoomModal(title, content);
+                });
+            });
+
+            document.querySelectorAll('.js-close-zoom').forEach(btn => {
+                btn.addEventListener('click', closeZoomModal);
+            });
+
+            zoomModal.addEventListener('click', function(e) {
+                if (e.target === zoomModal) {
+                    closeZoomModal();
+                }
+            });
+
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && !zoomModal.classList.contains('hidden')) {
+                    closeZoomModal();
+                }
+            });
+        })();
+    </script>
 }

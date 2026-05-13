@@ -16,6 +16,11 @@ public class StudentPortalController : Controller
         ".jpg", ".jpeg", ".png", ".webp", ".gif", ".bmp"
     };
 
+    private static readonly HashSet<string> VideoExtensions = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ".mp4", ".webm", ".ogg", ".mov"
+    };
+
     private readonly ApplicationDbContext _context;
 
     public StudentPortalController(ApplicationDbContext context)
@@ -123,7 +128,7 @@ public class StudentPortalController : Controller
             var mediaItems = mediaUrls.Select(url => new MediaItem
             {
                 Url  = url,
-                Type = IsYouTubeUrl(url) ? "Video" : "Image"
+                Type = IsVideoUrl(url) ? "Video" : "Image"
             }).ToList();
 
             viewModel.RecentFeedbacks.Add(new StudentFeedbackViewModel
@@ -132,7 +137,7 @@ public class StudentPortalController : Controller
                 CourseName   = att.CourseName,
                 SessionLabel = att.SessionLabel,
                 Date         = att.Date.ToDateTime(TimeOnly.MinValue),
-                AiEvaluation = att.AiEvaluation ?? string.Empty,
+                AiEvaluation = FormatAiEvaluation(att.AiEvaluation),
                 TeacherNote  = att.TeacherRawNote ?? string.Empty,
                 MediaItems   = mediaItems
             });
@@ -301,7 +306,7 @@ public class StudentPortalController : Controller
                 isPast = x.IsPast,
                 isToday = x.IsToday,
                 evidenceUrl = x.IsPast && x.HasAttendance && x.WasPresent == true
-                    ? Url.Action("Evidence", "StudentPortal", new { sessionId = x.SessionId })
+                    ? $"/StudentPortal/Evidence?sessionId={x.SessionId}#evidence-session-{x.SessionId}"
                     : null
             })
         });
@@ -384,7 +389,7 @@ public class StudentPortalController : Controller
                 SessionNo       = x.SessionNo,
                 SessionDate     = x.Date,
                 TeacherRawNote  = x.TeacherRawNote,
-                AiEvaluation    = x.AiEvaluation,
+                AiEvaluation    = FormatAiEvaluation(x.AiEvaluation),
                 VideoUrls       = videoUrls,
                 ImageUrls       = imageUrls,
                 ExternalUrls    = extUrls,
@@ -650,32 +655,45 @@ public class StudentPortalController : Controller
             _ => query
         };
 
-        return await query
+        var sessionsData = await query
             .OrderBy(x => x.Date)
             .ThenBy(x => x.StartTime)
             .ThenBy(x => x.Class.ClassCode)
             .ThenBy(x => x.SessionNo)
-            .Select(x => new StudentScheduleSessionViewModel
+            .Select(x => new
             {
-                SessionId = x.Id,
+                x.Id,
                 CourseName = x.Class.Course.Name,
-                ClassCode = x.Class.ClassCode,
-                SessionNo = x.SessionNo,
-                Date = x.Date,
-                StartTime = x.StartTime,
-                EndTime = x.EndTime,
-                Topic = x.Topic,
+                x.Class.ClassCode,
+                x.SessionNo,
+                x.Date,
+                x.StartTime,
+                x.EndTime,
+                x.Topic,
                 TeacherName = x.Class.Teacher.FullName,
-                TeachingMaterialUrl = x.TeachingMaterialUrl,
-                IsToday = x.Date == today,
-                IsPast = x.Date < today,
-                HasAttendance = x.Attendances.Any(a => a.StudentId == studentId),
-                WasPresent = x.Attendances
-                    .Where(a => a.StudentId == studentId)
-                    .Select(a => (bool?)a.IsPresent)
-                    .FirstOrDefault()
+                x.TeachingMaterialUrl,
+                Attendance = x.Attendances.FirstOrDefault(a => a.StudentId == studentId)
             })
             .ToListAsync();
+
+        return sessionsData.Select(x => new StudentScheduleSessionViewModel
+        {
+            SessionId = x.Id,
+            CourseName = x.CourseName,
+            ClassCode = x.ClassCode,
+            SessionNo = x.SessionNo,
+            Date = x.Date,
+            StartTime = x.StartTime,
+            EndTime = x.EndTime,
+            Topic = x.Topic,
+            TeacherName = x.TeacherName,
+            TeachingMaterialUrl = x.TeachingMaterialUrl,
+            IsToday = x.Date == today,
+            IsPast = x.Date < today,
+            HasAttendance = x.Attendance != null,
+            WasPresent = x.Attendance?.IsPresent,
+            WasExcused = x.Attendance?.IsExcused
+        }).ToList();
     }
 
     private int? GetCurrentStudentId()
@@ -724,10 +742,22 @@ public class StudentPortalController : Controller
         url.Contains("youtube.com", StringComparison.OrdinalIgnoreCase) ||
         url.Contains("youtu.be", StringComparison.OrdinalIgnoreCase);
 
+    private static bool IsVideoUrl(string url)
+    {
+        if (IsYouTubeUrl(url)) return true;
+        try
+        {
+            var ext = Path.GetExtension(new Uri(url).LocalPath);
+            return VideoExtensions.Contains(ext);
+        }
+        catch
+        {
+            return VideoExtensions.Contains(Path.GetExtension(url));
+        }
+    }
+
     private static bool IsImageUrl(string url)
     {
-        if (url.StartsWith("/uploads/", StringComparison.OrdinalIgnoreCase))
-            return true;
         try
         {
             var ext = Path.GetExtension(new Uri(url).LocalPath);
@@ -757,4 +787,44 @@ public class StudentPortalController : Controller
         "Other"   => "Khác",
         _         => method
     };
+
+    private static string FormatAiEvaluation(string? rawJson)
+    {
+        if (string.IsNullOrWhiteSpace(rawJson)) return string.Empty;
+        try
+        {
+            using var doc = JsonDocument.Parse(rawJson);
+            var root = doc.RootElement;
+            
+            var score = root.TryGetProperty("score", out var s) ? s.GetString() : "";
+            var strengths = root.TryGetProperty("strengths", out var str) ? str.EnumerateArray().Select(x => x.GetString()).Where(x => !string.IsNullOrEmpty(x)).Cast<string>().ToList() : new List<string>();
+            var weaknesses = root.TryGetProperty("weaknesses", out var w) ? w.EnumerateArray().Select(x => x.GetString()).Where(x => !string.IsNullOrEmpty(x)).Cast<string>().ToList() : new List<string>();
+
+            var sb = new System.Text.StringBuilder();
+            if (!string.IsNullOrEmpty(score))
+                sb.AppendLine($"Điểm đánh giá: {score}\n");
+            
+            if (strengths.Any())
+            {
+                sb.AppendLine("Điểm tốt:");
+                foreach (var item in strengths)
+                    sb.AppendLine($"- {item}");
+                sb.AppendLine();
+            }
+            
+            if (weaknesses.Any())
+            {
+                sb.AppendLine("Cần cải thiện:");
+                foreach (var item in weaknesses)
+                    sb.AppendLine($"- {item}");
+            }
+            
+            return sb.ToString().Trim();
+        }
+        catch
+        {
+            // If not JSON, return as is
+            return rawJson;
+        }
+    }
 }

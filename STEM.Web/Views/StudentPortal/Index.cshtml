@@ -24,52 +24,7 @@
         </div>
     </div>
 
-    <!-- KHU VỰC THỐNG KÊ (STATS GRID) -->
-    <div class="student-stat-grid">
-        <article class="student-stat-card">
-            <div class="flex items-start justify-between gap-4">
-                <span class="student-stat-label">Buổi học tuần này</span>
-                <span class="material-symbols-outlined text-[20px] text-[#6a994e]">calendar_month</span>
-            </div>
-            <div>
-                <div class="student-stat-value">@Model.SessionsThisWeekCount</div>
-                <p class="student-kicker">Số ca học diễn ra trong tuần hiện tại.</p>
-            </div>
-        </article>
 
-        <article class="student-stat-card">
-            <div class="flex items-start justify-between gap-4">
-                <span class="student-stat-label">Minh chứng mới</span>
-                <span class="material-symbols-outlined text-[20px] text-[#6a994e]">photo_library</span>
-            </div>
-            <div>
-                <div class="student-stat-value">@Model.NewMediaCount</div>
-                <p class="student-kicker">Ảnh và video được cập nhật trong 7 ngày qua.</p>
-            </div>
-        </article>
-
-        <article class="student-stat-card">
-            <div class="flex items-start justify-between gap-4">
-                <span class="student-stat-label">Đánh giá mới từ giáo viên</span>
-                <span class="material-symbols-outlined text-[20px] text-[#6a994e]">rate_review</span>
-            </div>
-            <div>
-                <div class="student-stat-value">@Model.NewFeedbackCount</div>
-                <p class="student-kicker">Nhận xét từ giáo viên và AI trong 7 ngày qua.</p>
-            </div>
-        </article>
-
-        <article class="student-stat-card">
-            <div class="flex items-start justify-between gap-4">
-                <span class="student-stat-label">Tình trạng học phí</span>
-                <span class="material-symbols-outlined text-[20px] text-[#6a994e]">receipt_long</span>
-            </div>
-            <div>
-                <div class="student-stat-value">@Model.PendingInvoiceCount</div>
-                <p class="student-kicker">Hóa đơn đang chờ hoàn tất thanh toán.</p>
-            </div>
-        </article>
-    </div>
 
     <div class="student-grid-two">
         <!-- CỘT TRÁI: LỊCH HỌC VÀ THƯ VIỆN -->
@@ -189,10 +144,13 @@
                                     }
                                     else
                                     {
-                                        <div class="student-media-thumb">
-                                            <span class="material-symbols-outlined text-[36px]">
-                                                @(videoCount > 0 ? "smart_display" : "photo_camera")
-                                            </span>
+                                        <div class="student-media-thumb flex items-center justify-center bg-gradient-to-br from-[#f5fbf3] to-[#e3e3de]/30 relative overflow-hidden">
+                                            <div class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMSIgY3k9IjEiIHI9IjEiIGZpbGw9IiNjOGUwYjgiIGZpbGwtb3BhY2l0eT0iMC4yNSIvPjwvc3ZnPg==')] opacity-50"></div>
+                                            <div class="relative z-10 flex h-14 w-14 items-center justify-center rounded-full bg-white shadow-sm border border-[#e3e3de]/50">
+                                                <span class="material-symbols-outlined text-[28px] text-[#73796b]">
+                                                    @(videoCount > 0 ? "smart_display" : "photo_camera")
+                                                </span>
+                                            </div>
                                         </div>
                                     }
                                     <div class="student-media-body">
@@ -205,57 +163,6 @@
                                         </p>
                                     </div>
                                 </a>
-                            }
-                        }
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- CỘT PHẢI: ĐÁNH GIÁ VÀ HỌC PHÍ -->
-        <aside class="space-y-6">
-            
-            <!-- ĐÁNH GIÁ TỪ GIÁO VIÊN / AI -->
-            <div class="student-card">
-                <div class="student-card-section">
-                    <h2 class="student-section-title">Đánh giá buổi học</h2>
-                    <p class="student-section-subtitle">Nhận xét chi tiết từ giáo viên và trợ lý AI sau mỗi buổi học.</p>
-
-                    <div class="student-list mt-4">
-                        @if (!Model.RecentFeedbacks.Any())
-                        {
-                            <div class="py-8 text-center text-sm text-[#73796b]">
-                                Hiện chưa có đánh giá nào từ giáo viên.
-                            </div>
-                        }
-                        else
-                        {
-                            @foreach (var feedback in Model.RecentFeedbacks)
-                            {
-                                <article class="student-list-item">
-                                    <p class="text-sm font-semibold text-[#1a1c19]">@feedback.CourseName · @feedback.SessionLabel</p>
-                                    <p class="text-xs text-[#73796b] mt-1">Ngày học: @feedback.Date.ToString("dd/MM/yyyy")</p>
-                                    
-                                    @if (!string.IsNullOrWhiteSpace(feedback.AiEvaluation))
-                                    {
-                                        <div class="mt-3 rounded-md bg-[#f8faf7] p-3 text-sm leading-6 text-[#42493d] border border-[#e3e3de]">
-                                            <div class="flex items-center gap-1.5 mb-1 text-[#3b6722] font-semibold text-xs">
-                                                <span class="material-symbols-outlined text-[16px]">auto_awesome</span> Nhận xét tổng hợp từ AI
-                                            </div>
-                                            @feedback.AiEvaluation
-                                        </div>
-                                    }
-                                    else if (!string.IsNullOrWhiteSpace(feedback.TeacherNote))
-                                    {
-                                        <div class="mt-3 text-sm leading-6 text-[#42493d]">
-                                            @feedback.TeacherNote
-                                        </div>
-                                    }
-                                    else
-                                    {
-                                        <p class="mt-3 text-sm italic text-[#73796b]">Giáo viên chưa nhập nhận xét cho buổi học này.</p>
-                                    }
-                                </article>
                             }
                         }
                     </div>
@@ -319,6 +226,63 @@
                     </div>
                 </div>
             </div>
+        </div>
+
+        <!-- CỘT PHẢI: ĐÁNH GIÁ VÀ HỌC PHÍ -->
+        <aside class="space-y-6">
+            
+            <!-- ĐÁNH GIÁ TỪ GIÁO VIÊN / AI -->
+            <div class="student-card">
+                <div class="student-card-section">
+                    <h2 class="student-section-title">Đánh giá buổi học</h2>
+                    <p class="student-section-subtitle">Nhận xét chi tiết từ giáo viên và trợ lý AI sau mỗi buổi học.</p>
+
+                    <div class="student-list mt-4 max-h-[700px] overflow-y-auto pr-2" style="scrollbar-width: thin; scrollbar-color: #c8e0b8 transparent;">
+                        @if (!Model.RecentFeedbacks.Any())
+                        {
+                            <div class="py-8 text-center text-sm text-[#73796b]">
+                                Hiện chưa có đánh giá nào từ giáo viên.
+                            </div>
+                        }
+                        else
+                        {
+                            @foreach (var feedback in Model.RecentFeedbacks)
+                            {
+                                <a asp-action="Evidence" asp-route-sessionId="@feedback.SessionId" class="student-list-item block hover:bg-[#f5fbf3]/30 transition-colors cursor-pointer group">
+                                    <p class="text-sm font-semibold text-[#1a1c19] group-hover:text-[#3b6722] transition-colors">@feedback.CourseName · @feedback.SessionLabel</p>
+                                    <p class="text-xs text-[#73796b] mt-1">Ngày học: @feedback.Date.ToString("dd/MM/yyyy")</p>
+                                    
+                                    @if (!string.IsNullOrWhiteSpace(feedback.AiEvaluation))
+                                    {
+                                        <div class="mt-3 rounded-xl bg-[#f5fbf3] p-4 border border-[#c8e0b8] transition-colors hover:border-[#3b6722]/40">
+                                            <div class="flex items-center gap-1.5 mb-2 text-[#3b6722] font-bold text-xs uppercase tracking-wide">
+                                                <span class="material-symbols-outlined text-[16px]">auto_awesome</span> Nhận xét tổng hợp từ AI
+                                            </div>
+                                            <p class="text-[14px] leading-relaxed text-[#2c3625] whitespace-pre-line">@feedback.AiEvaluation</p>
+                                        </div>
+                                    }
+                                    else if (!string.IsNullOrWhiteSpace(feedback.TeacherNote))
+                                    {
+                                        <div class="mt-3 rounded-xl bg-[#fafaf4] p-4 border border-[#e3e3de] transition-colors hover:border-[#a1a89a]/40">
+                                            <div class="flex items-center gap-1.5 mb-2 text-[#5d6557] font-bold text-xs uppercase tracking-wide">
+                                                <span class="material-symbols-outlined text-[16px]">edit_note</span> Ghi chú của giáo viên
+                                            </div>
+                                            <div class="text-[14px] leading-relaxed text-[#42493d] whitespace-pre-line">
+                                                @feedback.TeacherNote
+                                            </div>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <p class="mt-3 text-sm italic text-[#73796b]">Giáo viên chưa nhập nhận xét cho buổi học này.</p>
+                                    }
+                                </a>
+                            }
+                        }
+                    </div>
+                </div>
+            </div>
+
         </aside>
     </div>
 </section>

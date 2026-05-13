@@ -29,7 +29,7 @@
         </div>
     }
 
-    <div class="grid gap-6 lg:grid-cols-3">
+    <div class="grid gap-6 lg:grid-cols-3 lg:items-start">
         @* CỘT TRÁI: Avatar + thông tin cơ bản *@
         <div class="space-y-6">
             @* Avatar & tên *@
@@ -148,7 +148,7 @@
                     }
                     else
                     {
-                        <div class="space-y-4">
+                        <div class="space-y-4 max-h-[600px] overflow-y-auto pr-1" style="scrollbar-width: thin; scrollbar-color: #c2c9b9 transparent;">
                             @foreach (var cls in Model.EnrolledClasses)
                             {
                                 <div class="rounded-lg border border-[#e3e3de] overflow-hidden">

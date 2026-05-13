@@ -57,6 +57,7 @@
             attendanceLabel = x.HasAttendance ? x.AttendanceLabel : "Chưa điểm danh",
             hasAttendance = x.HasAttendance,
             wasPresent = x.WasPresent,
+            wasExcused = x.WasExcused,
             isPast = x.IsPast,
             isToday = x.IsToday,
             evidenceUrl = x.IsPast && x.HasAttendance && x.WasPresent == true
@@ -222,7 +223,7 @@
                             @foreach (var session in group)
                             {
                                 var evidenceUrl = session.IsPast && session.HasAttendance && session.WasPresent == true
-                                    ? Url.Action("Evidence", "StudentPortal", new { sessionId = session.SessionId })
+                                    ? $"/StudentPortal/Evidence?sessionId={session.SessionId}#evidence-session-{session.SessionId}"
                                     : null;
                                 <article class="schedule-list-card">
                                     <div class="flex items-start justify-between gap-4">
@@ -341,13 +342,18 @@
 
             function getAttendanceClass(session) {
                 if (!session.hasAttendance) return 'schedule-pill schedule-pill--past';
-                return session.wasPresent ? 'schedule-pill schedule-pill--present' : 'schedule-pill schedule-pill--absent';
+                if (session.wasPresent) return 'schedule-pill schedule-pill--present';
+                if (session.wasExcused) return 'schedule-pill schedule-pill--upcoming'; // Warning color (yellow/orange)
+                return 'schedule-pill schedule-pill--absent';
             }
 
             function getEventClass(session) {
                 if (session.isToday) return 'schedule-event schedule-event--today';
-                if (session.isPast && session.hasAttendance && session.wasPresent === true) return 'schedule-event schedule-event--present';
-                if (session.isPast && session.hasAttendance && session.wasPresent === false) return 'schedule-event schedule-event--absent';
+                if (session.isPast && session.hasAttendance) {
+                    if (session.wasPresent === true) return 'schedule-event schedule-event--present';
+                    if (session.wasExcused === true) return 'schedule-event schedule-event--upcoming'; // Use the yellow warning style
+                    if (session.wasPresent === false) return 'schedule-event schedule-event--absent';
+                }
                 if (session.isPast) return 'schedule-event schedule-event--past';
                 return 'schedule-event schedule-event--upcoming';
             }

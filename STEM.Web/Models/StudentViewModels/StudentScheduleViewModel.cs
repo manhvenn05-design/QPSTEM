@@ -30,6 +30,7 @@ public class StudentScheduleSessionViewModel
     public bool IsPast { get; set; }
     public bool HasAttendance { get; set; }
     public bool? WasPresent { get; set; }
+    public bool? WasExcused { get; set; } // NEW
 
     public string StatusLabel => IsToday ? "Hôm nay" : IsPast ? "Đã qua" : "Sắp tới";
     public string StatusBadgeClass => IsToday
@@ -39,10 +40,10 @@ public class StudentScheduleSessionViewModel
             : "bg-[#fff4e8] text-[#9b682f]";
 
     public string AttendanceLabel => HasAttendance
-        ? (WasPresent == true ? "Có mặt" : "Vắng")
+        ? (WasPresent == true ? "Có mặt" : (WasExcused == true ? "Vắng phép" : "Vắng"))
         : string.Empty;
 
     public string AttendanceBadgeClass => HasAttendance
-        ? (WasPresent == true ? "bg-[#edf7e8] text-[#456c3f]" : "bg-[#ffdad6] text-[#ba1a1a]")
+        ? (WasPresent == true ? "bg-[#edf7e8] text-[#456c3f]" : (WasExcused == true ? "bg-[#fff4e8] text-[#9b682f]" : "bg-[#ffdad6] text-[#ba1a1a]"))
         : string.Empty;
 }
