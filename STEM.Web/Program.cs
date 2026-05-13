@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
 using STEM.Web.Data;
 using STEM.Web.Services;
+using STEM.Web.Services.AI;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -23,8 +24,18 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
     });
 
 // Add services to the container.
+builder.Services.AddMemoryCache();
 builder.Services.AddControllersWithViews();
 builder.Services.AddHttpClient();
+builder.Services.AddAntiforgery(options =>
+{
+    options.HeaderName = "RequestVerificationToken";
+});
+
+// Cấu hình AI Service
+builder.Services.Configure<GoogleAiOptions>(builder.Configuration.GetSection(GoogleAiOptions.Position));
+builder.Services.AddHttpClient<IAIService, GeminiAiService>();
+
 builder.Services.AddScoped<IAdminShellService, AdminShellService>();
 builder.Services.AddScoped<ITeacherShellService, TeacherShellService>();
 

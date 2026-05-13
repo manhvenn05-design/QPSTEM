@@ -1,4 +1,4 @@
-﻿using System.Security.Claims;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -222,15 +222,19 @@ public class AttendancesController : Controller
                     SessionId = model.SessionId,
                     StudentId = row.StudentId,
                     IsPresent = row.IsPresent,
+                    IsExcused = row.IsExcused,
                     TeacherRawNote = NormalizeText(row.TeacherRawNote),
-                    ProductMediaUrls = NormalizeText(row.ProductMediaUrls)
+                    ProductMediaUrls = NormalizeText(row.ProductMediaUrls),
+                    AiEvaluation = NormalizeText(row.AiEvaluation)
                 });
             }
             else
             {
                 attendance.IsPresent = row.IsPresent;
+                attendance.IsExcused = row.IsExcused;
                 attendance.TeacherRawNote = NormalizeText(row.TeacherRawNote);
                 attendance.ProductMediaUrls = NormalizeText(row.ProductMediaUrls);
+                attendance.AiEvaluation = NormalizeText(row.AiEvaluation);
             }
         }
 
@@ -366,6 +370,10 @@ public class AttendancesController : Controller
                     .Where(a => a.SessionId == session.Id)
                     .Select(a => (bool?)a.IsPresent)
                     .FirstOrDefault() ?? false,
+                IsExcused = x.Student.Attendances
+                    .Where(a => a.SessionId == session.Id)
+                    .Select(a => (bool?)a.IsExcused)
+                    .FirstOrDefault() ?? false,
                 TeacherRawNote = x.Student.Attendances
                     .Where(a => a.SessionId == session.Id)
                     .Select(a => a.TeacherRawNote)
@@ -373,6 +381,10 @@ public class AttendancesController : Controller
                 ProductMediaUrls = x.Student.Attendances
                     .Where(a => a.SessionId == session.Id)
                     .Select(a => a.ProductMediaUrls)
+                    .FirstOrDefault(),
+                AiEvaluation = x.Student.Attendances
+                    .Where(a => a.SessionId == session.Id)
+                    .Select(a => a.AiEvaluation)
                     .FirstOrDefault()
             })
             .ToListAsync();
@@ -390,8 +402,10 @@ public class AttendancesController : Controller
                 row.AttendanceId = overrideRow.AttendanceId;
                 row.HasAttendance = overrideRow.HasAttendance || row.HasAttendance;
                 row.IsPresent = overrideRow.IsPresent;
+                row.IsExcused = overrideRow.IsExcused;
                 row.TeacherRawNote = overrideRow.TeacherRawNote;
                 row.ProductMediaUrls = overrideRow.ProductMediaUrls;
+                row.AiEvaluation = overrideRow.AiEvaluation;
             }
         }
 
@@ -405,19 +419,19 @@ public class AttendancesController : Controller
                 ? "Chưa ghi nhận"
                 : row.IsPresent
                     ? "Có mặt"
-                    : "Vắng";
+                    : row.IsExcused ? "Vắng phép" : "Vắng";
 
             row.StatusBadgeClass = !row.HasAttendance
                 ? "teacher-tag teacher-tag--neutral"
                 : row.IsPresent
                     ? "teacher-tag teacher-tag--success"
-                    : "teacher-tag teacher-tag--warning";
+                    : row.IsExcused ? "teacher-tag teacher-tag--info" : "teacher-tag teacher-tag--warning";
 
             row.StatusHelpText = !row.HasAttendance
                 ? "Học viên này chưa có bản ghi điểm danh cho buổi học."
                 : row.IsPresent
                     ? "Đã được ghi nhận có mặt trong buổi học."
-                    : "Đã được ghi nhận vắng trong buổi học.";
+                    : row.IsExcused ? "Đã được ghi nhận vắng có phép trong buổi học." : "Đã được ghi nhận vắng trong buổi học.";
         }
 
         return new TeacherAttendanceBoardViewModel
@@ -570,4 +584,3 @@ public class AttendancesController : Controller
         public int AttendanceCount { get; set; }
     }
 }
-

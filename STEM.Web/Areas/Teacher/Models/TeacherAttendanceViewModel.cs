@@ -76,12 +76,15 @@ public class TeacherAttendanceBoardRowViewModel
     public string StudentUsername { get; set; } = string.Empty;
     public string? StudentAvatarUrl { get; set; }
     public bool IsPresent { get; set; }
+    public bool IsExcused { get; set; }
 
     [StringLength(1000)]
     public string? TeacherRawNote { get; set; }
 
     [StringLength(2000)]
     public string? ProductMediaUrls { get; set; }
+    
+    public string? AiEvaluation { get; set; }
 
     public string MediaHint { get; set; } = string.Empty;
     public string StatusLabel { get; set; } = string.Empty;

@@ -8,7 +8,7 @@ class Program
 {
     static async Task Main()
     {
-        var apiKey = "AIzaSyAa36IhNGbxjvU9BbMoZs8FMorYHrh3X2Y";
+        var apiKey = "YOUR_API_KEY_HERE";
         var filePath = "test_video.mp4"; // Create a dummy file
 
         // Create a small dummy file

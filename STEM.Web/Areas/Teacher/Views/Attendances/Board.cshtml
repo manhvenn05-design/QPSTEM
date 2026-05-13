@@ -1,4 +1,4 @@
-﻿@model STEM.Web.Areas.Teacher.Models.TeacherAttendanceBoardViewModel
+@model STEM.Web.Areas.Teacher.Models.TeacherAttendanceBoardViewModel
 
 @{
     ViewData["Title"] = "Điểm danh";
@@ -137,27 +137,43 @@
                             </div>
 
                             <div class="teacher-board-fields">
-                                <div class="teacher-toggle">
-                                    <label class="teacher-checkbox">
-                                        <input asp-for="Rows[@i].IsPresent" />
-                                        <span>Có mặt</span>
+                                <div class="teacher-toggle flex flex-wrap gap-4">
+                                    <label class="teacher-radio flex items-center gap-2 cursor-pointer">
+                                        <input type="radio" name="Rows[@i].AttendanceStatus" value="Present" class="accent-[#3b6722]" onchange="updateAttendanceStatus(@i, 'Present'); autoSaveBoard()" @(Model.Rows[i].IsPresent ? "checked" : "") />
+                                        <span class="text-sm font-medium">Có mặt</span>
                                     </label>
+                                    <label class="teacher-radio flex items-center gap-2 cursor-pointer">
+                                        <input type="radio" name="Rows[@i].AttendanceStatus" value="Absent" class="accent-[#ba1a1a]" onchange="updateAttendanceStatus(@i, 'Absent'); autoSaveBoard()" @(!Model.Rows[i].IsPresent && !Model.Rows[i].IsExcused && Model.Rows[i].HasAttendance ? "checked" : "") />
+                                        <span class="text-sm font-medium">Vắng</span>
+                                    </label>
+                                    <label class="teacher-radio flex items-center gap-2 cursor-pointer">
+                                        <input type="radio" name="Rows[@i].AttendanceStatus" value="Excused" class="accent-[#006e1c]" onchange="updateAttendanceStatus(@i, 'Excused'); autoSaveBoard()" @(!Model.Rows[i].IsPresent && Model.Rows[i].IsExcused ? "checked" : "") />
+                                        <span class="text-sm font-medium">Vắng phép</span>
+                                    </label>
+                                    <input type="hidden" asp-for="Rows[@i].IsPresent" id="Rows_@(i)__IsPresent" />
+                                    <input type="hidden" asp-for="Rows[@i].IsExcused" id="Rows_@(i)__IsExcused" />
                                 </div>
 
                                 <div class="teacher-field relative">
                                     <div class="flex items-center justify-between">
                                         <label asp-for="Rows[@i].TeacherRawNote">Ghi chú giáo viên</label>
-                                        <button type="button" class="text-xs font-semibold text-[#6a994e] flex items-center gap-1 hover:text-[#3b6722] transition-colors" onclick="openAITextModal('Rows_@(i)__TeacherRawNote')">
-                                            <span class="material-symbols-outlined text-[16px]">auto_awesome</span> Nhờ AI viết lại
-                                        </button>
+                                        <div class="flex items-center gap-3">
+                                            <button type="button" class="text-xs font-semibold text-[#1a73e8] flex items-center gap-1 hover:text-[#1557b0] transition-colors" onclick="toggleExpandTextarea('Rows_@(i)__TeacherRawNote', this)">
+                                                <span class="material-symbols-outlined text-[16px]">open_in_full</span> Phóng to
+                                            </button>
+                                            <button type="button" class="text-xs font-semibold text-[#6a994e] flex items-center gap-1 hover:text-[#3b6722] transition-colors" onclick="openAITextModal('Rows_@(i)__TeacherRawNote')">
+                                                <span class="material-symbols-outlined text-[16px]">auto_awesome</span> Nhờ AI viết lại
+                                            </button>
+                                        </div>
                                     </div>
-                                    <textarea asp-for="Rows[@i].TeacherRawNote" rows="3" placeholder="Ghi chú ngắn về tiến độ, thái độ hoặc điều cần lưu ý."></textarea>
+                                    <textarea asp-for="Rows[@i].TeacherRawNote" rows="3" placeholder="Ghi chú ngắn về tiến độ, thái độ hoặc điều cần lưu ý." class="transition-all duration-300 w-full" style="min-height: 80px; max-height: 300px; resize: vertical; overflow-y: auto;" oninput="this.style.height = ''; this.style.height = this.scrollHeight + 'px'" onchange="autoSaveBoard()"></textarea>
                                     <span asp-validation-for="Rows[@i].TeacherRawNote" class="teacher-field-error"></span>
                                 </div>
 
                                 <div class="teacher-field relative mt-4">
                                     <label class="font-medium text-[#1a1c19]">Tải lên video sản phẩm</label>
                                     <input type="hidden" asp-for="Rows[@i].ProductMediaUrls" id="Rows_@(i)__ProductMediaUrls" />
+                                     <input type="hidden" asp-for="Rows[@i].AiEvaluation" id="Rows_@(i)__AiEvaluation" />
 
                                     <div class="mt-2 flex cursor-pointer justify-center rounded-xl border-2 border-dashed border-[#c2c9b9] bg-[#f8faf7] px-6 py-6 transition-colors hover:border-[#3b6722] hover:bg-[#f2f7f0]" id="upload-area-@(i)" onclick="document.getElementById('file-upload-@(i)').click()" ondragover="handleUploadDragOver(event)" ondragleave="handleUploadDragLeave(event)" ondrop="handleUploadDrop(event, @(i))">
                                         <div class="text-center">
@@ -196,17 +212,18 @@
 
                                     <span asp-validation-for="Rows[@i].ProductMediaUrls" class="teacher-field-error"></span>
 
-                                    <button type="button" class="mt-3 flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-[#b26a00] to-[#e79211] px-4 py-2.5 text-sm font-bold text-white shadow-md transition-all hover:from-[#9f5d00] hover:to-[#cf810c] hover:shadow-lg active:scale-[0.98]" onclick="analyzeVideoInline(this, 'Rows_@(i)__ProductMediaUrls', 'ai-result-@(i)')">
+                                    <button type="button" id="btn-ai-@(i)" class="mt-3 flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-[#b26a00] to-[#e79211] px-4 py-2.5 text-sm font-bold text-white shadow-md transition-all hover:from-[#9f5d00] hover:to-[#cf810c] hover:shadow-lg active:scale-[0.98]" onclick="analyzeVideoInline(this, 'Rows_@(i)__ProductMediaUrls', 'ai-result-@(i)')">
                                         <span class="material-symbols-outlined text-[20px] ai-action-icon">auto_awesome</span>
                                         <span class="ai-action-label">Phân tích video bằng AI</span>
                                     </button>
 
                                     <div id="ai-result-@(i)" class="mt-4 hidden overflow-hidden rounded-xl border border-[#e3e3de] bg-white shadow-sm">
-                                        <div class="border-b border-[#e3e3de] bg-[#fffaf3] px-4 py-3">
+                                        <div class="border-b border-[#e3e3de] bg-[#fffaf3] px-4 py-3 flex justify-between items-center cursor-pointer select-none" onclick="toggleAiContent(@(i))">
                                             <h4 class="flex items-center gap-2 text-sm font-bold text-[#b26a00]">
                                                 <span class="material-symbols-outlined text-[18px]">analytics</span>
                                                 Báo cáo phân tích AI
                                             </h4>
+                                            <span class="material-symbols-outlined text-[#b26a00] transition-transform duration-300" id="ai-toggle-icon-@(i)">expand_less</span>
                                         </div>
 
                                         <div class="ai-loading-state flex flex-col items-center justify-center py-8">
@@ -214,7 +231,7 @@
                                             <p class="mt-4 animate-pulse text-sm font-medium text-[#b26a00]">AI đang phân tích khung hình và giọng nói...</p>
                                         </div>
 
-                                        <div class="ai-analysis-content hidden p-4">
+                                        <div class="ai-analysis-content hidden p-4" id="ai-analysis-content-@(i)">
                                             <div class="mb-5 flex items-center justify-between rounded-lg bg-[#f2f7f0] p-3">
                                                 <span class="text-xs font-bold uppercase text-[#42493f]">Điểm đánh giá chung</span>
                                                 <div class="flex items-center gap-3">
@@ -349,6 +366,69 @@
             document.getElementById(`upload-area-${index}`)?.classList.remove('hidden');
         }
 
+        function renderAiResult(idx, res) {
+            if (!res) return;
+            const rawScore = String(res.score || '0').replace(/\/100/g, '').trim();
+            setTextContent(`ai-score-${idx}`, `${rawScore}/100`);
+            const scoreBar = document.getElementById(`ai-score-bar-${idx}`);
+            if (scoreBar) {
+                const numericScore = parseInt(rawScore) || 0;
+                scoreBar.style.width = `${numericScore}%`;
+                if (numericScore >= 80) scoreBar.style.backgroundColor = '#3b6722';
+                else if (numericScore >= 60) scoreBar.style.backgroundColor = '#b26a00';
+                else scoreBar.style.backgroundColor = '#ba1a1a';
+            }
+            replaceListItems(document.getElementById(`ai-strengths-${idx}`), res.strengths);
+            replaceListItems(document.getElementById(`ai-weaknesses-${idx}`), res.weaknesses);
+            setTextContent(`ai-suggestion-${idx}`, res.suggestion);
+        }
+
+        function updateAttendanceStatus(index, status) {
+            const isPresent = document.getElementById(`Rows_${index}__IsPresent`);
+            const isExcused = document.getElementById(`Rows_${index}__IsExcused`);
+            if(status === 'Present') {
+                isPresent.value = "true";
+                isExcused.value = "false";
+            } else if (status === 'Absent') {
+                isPresent.value = "false";
+                isExcused.value = "false";
+            } else if (status === 'Excused') {
+                isPresent.value = "false";
+                isExcused.value = "true";
+            }
+        }
+
+        function toggleExpandTextarea(id, btn) {
+            const textarea = document.getElementById(id);
+            if (!textarea) return;
+            const isExpanded = textarea.classList.contains('expanded-textarea');
+            if (isExpanded) {
+                textarea.classList.remove('expanded-textarea');
+                textarea.style.height = '80px';
+                textarea.style.maxHeight = '300px';
+                btn.innerHTML = '<span class="material-symbols-outlined text-[16px]">open_in_full</span> Phóng to';
+            } else {
+                textarea.classList.add('expanded-textarea');
+                textarea.style.height = '400px';
+                textarea.style.maxHeight = '600px';
+                btn.innerHTML = '<span class="material-symbols-outlined text-[16px]">close_fullscreen</span> Thu nhỏ';
+            }
+        }
+
+        function toggleAiContent(index) {
+            const content = document.getElementById(`ai-analysis-content-${index}`);
+            const icon = document.getElementById(`ai-toggle-icon-${index}`);
+            if (content && !content.classList.contains('hidden')) {
+                if(content.style.display === 'none') {
+                    content.style.display = 'block';
+                    icon.textContent = 'expand_less';
+                } else {
+                    content.style.display = 'none';
+                    icon.textContent = 'expand_more';
+                }
+            }
+        }
+
         function initializeExistingVideos() {
             document.querySelectorAll('input[id$="__ProductMediaUrls"]').forEach((input, index) => {
                 if (!input.value) {
@@ -357,6 +437,16 @@
 
                 const fileName = input.value.split('/').pop() || 'video đã lưu';
                 showVideoPreview(index, fileName, 'Đã lưu trên hệ thống', 100);
+                
+                // Cập nhật text nút nếu đã có nhận xét AI
+                const aiEvalInput = document.getElementById(`Rows_${index}__AiEvaluation`);
+                if (aiEvalInput && aiEvalInput.value) {
+                    const btn = document.getElementById(`btn-ai-${index}`);
+                    if (btn) {
+                        const label = btn.querySelector('.ai-action-label');
+                        if (label) label.textContent = 'Mở nhận xét AI';
+                    }
+                }
             });
         }
 
@@ -399,13 +489,26 @@
             currentSuggestion = '';
 
             try {
+                const token = getRequestVerificationToken();
                 const response = await fetch('/Teacher/AICopilot/RefineNote', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': token
+                    },
                     body: JSON.stringify({ rawNote: originalText })
                 });
 
-                const data = await response.json();
+                let data;
+                try {
+                    const textData = await response.text();
+                    try {
+                        data = JSON.parse(textData);
+                    } catch (e) {
+                        console.error("Non-JSON response from server:", textData);
+                        throw new Error("Server returned non-JSON response: " + response.status);
+                    }
+                } catch(e) { throw e; }
 
                 if (response.ok && data.success) {
                     currentSuggestion = data.suggestion || '';
@@ -423,9 +526,22 @@
             }
         }
 
+        function autoSaveBoard() {
+            const form = document.getElementById('attendance-board-form');
+            if (form) {
+                const formData = new FormData(form);
+                fetch(form.action, {
+                    method: 'POST',
+                    body: formData,
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                }).catch(e => console.error('Auto-save failed', e));
+            }
+        }
+
         function applyAIText() {
             if (currentTextTarget && currentSuggestion) {
                 document.getElementById(currentTextTarget).value = currentSuggestion;
+                autoSaveBoard();
             }
             closeAIModals();
         }
@@ -467,6 +583,7 @@
                     if (xhr.status >= 200 && xhr.status < 300 && result.success) {
                         document.getElementById(`Rows_${index}__ProductMediaUrls`).value = result.url;
                         showVideoPreview(index, file.name, 'Đã tải lên xong', 100);
+                        autoSaveBoard();
                         Swal.fire({ icon: 'success', title: 'Đã tải lên', text: 'Tải video thành công.', timer: 1500, showConfirmButton: false });
                         return;
                     }
@@ -494,6 +611,11 @@
             }
 
             document.getElementById(`Rows_${index}__ProductMediaUrls`).value = '';
+            const aiEvalInput = document.getElementById(`Rows_${index}__AiEvaluation`);
+            if (aiEvalInput) aiEvalInput.value = '';
+            const btn = document.getElementById(`btn-ai-${index}`);
+            if (btn) btn.querySelector('.ai-action-label').textContent = 'Phân tích video bằng AI';
+
             hideVideoPreview(index);
             document.getElementById(`ai-result-${index}`)?.classList.add('hidden');
         }
@@ -505,11 +627,33 @@
                 return;
             }
 
-            const resultContainer = document.getElementById(resultContainerId);
-            const loadingState = resultContainer?.querySelector('.ai-loading-state');
-            const contentState = resultContainer?.querySelector('.ai-analysis-content');
             const indexMatch = resultContainerId.match(/\d+$/);
             const idx = indexMatch ? indexMatch[0] : '0';
+            const aiEvalInput = document.getElementById(`Rows_${idx}__AiEvaluation`);
+            const resultContainer = document.getElementById(resultContainerId);
+            const contentState = resultContainer?.querySelector('.ai-analysis-content');
+            
+            if (aiEvalInput && aiEvalInput.value) {
+                if (resultContainer.classList.contains('hidden')) {
+                    try {
+                        const res = JSON.parse(aiEvalInput.value);
+                        renderAiResult(idx, res);
+                        resultContainer.classList.remove('hidden');
+                        contentState.classList.remove('hidden');
+                        
+                        const loadingState = resultContainer?.querySelector('.ai-loading-state');
+                        if (loadingState) loadingState.classList.add('hidden');
+                        
+                        btnElement.querySelector('.ai-action-label').textContent = 'Đóng nhận xét AI';
+                    } catch(e) { console.error(e); }
+                } else {
+                    resultContainer.classList.add('hidden');
+                    btnElement.querySelector('.ai-action-label').textContent = 'Mở nhận xét AI';
+                }
+                return;
+            }
+
+            const loadingState = resultContainer?.querySelector('.ai-loading-state');
             const icon = btnElement.querySelector('.ai-action-icon');
             const label = btnElement.querySelector('.ai-action-label');
             const originalIcon = icon?.textContent;
@@ -529,29 +673,36 @@
             }
 
             try {
+                const token = getRequestVerificationToken();
                 const response = await fetch('/Teacher/AICopilot/AnalyzeVideo', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': token
+                    },
                     body: JSON.stringify({ videoUrl: mediaLinks })
                 });
-                const data = await response.json();
+                let data;
+                try {
+                    const textData = await response.text();
+                    try {
+                        data = JSON.parse(textData);
+                    } catch (e) {
+                        console.error("Non-JSON response from server:", textData);
+                        throw new Error("Server returned non-JSON response: " + response.status);
+                    }
+                } catch(e) { throw e; }
 
                 if (response.ok && data.success) {
                     const res = data.result || {};
-                    const scoreText = res.score || '--/100';
-                    setTextContent(`ai-score-${idx}`, scoreText);
-                    const scoreNum = parseInt(scoreText, 10) || 0;
-                    const scoreBar = document.getElementById(`ai-score-bar-${idx}`);
-                    if (scoreBar) {
-                        scoreBar.style.width = `${scoreNum}%`;
-                    }
-
-                    replaceListItems(document.getElementById(`ai-strengths-${idx}`), res.strengths);
-                    replaceListItems(document.getElementById(`ai-weaknesses-${idx}`), res.weaknesses);
-                    setTextContent(`ai-suggestion-${idx}`, res.suggestion || '');
-
+                    const aiEvalInput = document.getElementById(`Rows_${idx}__AiEvaluation`);
+                    if (aiEvalInput) aiEvalInput.value = JSON.stringify(res);
+                    
+                    renderAiResult(idx, res);
+                    autoSaveBoard();
                     loadingState?.classList.add('hidden');
                     contentState?.classList.remove('hidden');
+                    if (label) label.textContent = 'Đóng nhận xét AI';
                 } else {
                     Swal.fire({ icon: 'error', title: 'Lỗi phân tích', text: data.message || 'Có lỗi xảy ra khi phân tích video.', confirmButtonColor: '#b26a00' });
                     resultContainer?.classList.add('hidden');
