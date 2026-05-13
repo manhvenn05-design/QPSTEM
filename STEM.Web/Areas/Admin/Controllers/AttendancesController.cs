@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
@@ -17,8 +17,7 @@ public class AttendancesController : Controller
     {
         "pending",
         "present",
-        "absent",
-        "excused"
+        "absent"
     };
 
     private readonly ApplicationDbContext _context;
@@ -223,12 +222,6 @@ public class AttendancesController : Controller
         if (!AllowedAttendanceStatuses.Contains(model.AttendanceStatus) || model.AttendanceStatus == "pending")
         {
             TempData["ErrorMessage"] = "Vui lòng chọn trạng thái điểm danh trước khi lưu.";
-            return RedirectToAction(nameof(Board), new { sessionId = model.SessionId });
-        }
-
-        if (model.AttendanceStatus == "excused" && string.IsNullOrWhiteSpace(model.TeacherRawNote))
-        {
-            TempData["ErrorMessage"] = "Vui lòng nhập lý do khi chọn vắng có lý do.";
             return RedirectToAction(nameof(Board), new { sessionId = model.SessionId });
         }
 
@@ -651,7 +644,7 @@ public class AttendancesController : Controller
             return "present";
         }
 
-        return string.IsNullOrWhiteSpace(teacherRawNote) ? "absent" : "excused";
+        return "absent";
     }
 
     private sealed class SessionAttendanceProjection
@@ -670,3 +663,4 @@ public class AttendancesController : Controller
         public int AbsentCount { get; set; }
     }
 }
+

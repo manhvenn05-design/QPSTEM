@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace STEM.Web.Models;
@@ -12,6 +12,8 @@ public partial class Attendance
     public int StudentId { get; set; }
 
     public bool IsPresent { get; set; }
+
+    public bool IsExcused { get; set; }
 
     public string? ProductMediaUrls { get; set; }
 

@@ -1,4 +1,4 @@
-using System.Security.Claims;
+﻿using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -19,7 +19,7 @@ public class ScheduleController : Controller
     }
 
     [HttpGet]
-    public async Task<IActionResult> Index(string filter = "today", string? q = null, DateTime? date = null)
+    public async Task<IActionResult> Index(string filter = "today", string? q = null, DateTime? date = null, string view = "calendar")
     {
         var teacherId = GetCurrentTeacherId();
         if (!teacherId.HasValue)
@@ -41,14 +41,16 @@ public class ScheduleController : Controller
             normalizedFilter = "today";
         }
 
+        var normalizedView = string.Equals(view, "list", StringComparison.OrdinalIgnoreCase)
+            ? "list"
+            : "calendar";
+
         var today = DateOnly.FromDateTime(DateTime.Today);
         var searchTerm = q?.Trim() ?? string.Empty;
-
-        // Tính toán khoảng thời gian cho Lịch tuần
-        var targetDateTime = date ?? DateTime.Today;
-        var diff = (7 + (targetDateTime.DayOfWeek - DayOfWeek.Monday)) % 7;
-        var weekStart = targetDateTime.AddDays(-1 * diff).Date;
-        var weekEnd = weekStart.AddDays(6).Date;
+        var targetDateTime = date?.Date ?? DateTime.Today;
+        var weekStart = GetWeekStart(targetDateTime);
+        var weekEnd = weekStart.AddDays(6);
+        var currentWeekStart = GetWeekStart(DateTime.Today);
         var weekStartDateOnly = DateOnly.FromDateTime(weekStart);
         var weekEndDateOnly = DateOnly.FromDateTime(weekEnd);
 
@@ -93,8 +95,7 @@ public class ScheduleController : Controller
             .ThenBy(x => x.SessionNo)
             .ToListAsync();
 
-        // Truy vấn riêng dữ liệu cho Lịch tuần (từ Thứ 2 đến Chủ nhật của tuần TargetDate)
-        var calendarQuery = _context.Sessions
+        var calendarRawSessions = await _context.Sessions
             .AsNoTracking()
             .Where(x => x.Class.TeacherId == teacherId.Value && x.Date >= weekStartDateOnly && x.Date <= weekEndDateOnly)
             .Select(x => new
@@ -110,9 +111,7 @@ public class ScheduleController : Controller
                 CourseName = x.Class.Course.Name,
                 StudentCount = x.Class.Enrollments.Count,
                 AttendanceCount = x.Attendances.Count
-            });
-
-        var calendarRawSessions = await calendarQuery
+            })
             .OrderBy(x => x.Date)
             .ThenBy(x => x.StartTime)
             .ToListAsync();
@@ -121,10 +120,13 @@ public class ScheduleController : Controller
         {
             SelectedFilter = normalizedFilter,
             SearchTerm = searchTerm,
+            SelectedView = normalizedView,
             TotalSessions = sessions.Count,
             TargetDate = targetDateTime,
             WeekStart = weekStart,
             WeekEnd = weekEnd,
+            WeekLabel = $"{weekStart:dd/MM} - {weekEnd:dd/MM/yyyy}",
+            IsCurrentWeek = weekStart == currentWeekStart,
             Filters = filters,
             Sessions = sessions.Select(x => new TeacherScheduleItemViewModel
             {
@@ -230,5 +232,11 @@ public class ScheduleController : Controller
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         return int.TryParse(userId, out var teacherId) ? teacherId : null;
+    }
+
+    private static DateTime GetWeekStart(DateTime date)
+    {
+        var diff = (7 + (date.DayOfWeek - DayOfWeek.Monday)) % 7;
+        return date.AddDays(-1 * diff).Date;
     }
 }

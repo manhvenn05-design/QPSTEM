@@ -1,7 +1,5 @@
-@using System.Security.Claims
-@using Microsoft.EntityFrameworkCore
-@using STEM.Web.Data
-@inject ApplicationDbContext DbContext
+﻿@using System.Security.Claims
+@inject STEM.Web.Services.ITeacherShellService TeacherShellService
 
 <!DOCTYPE html>
 <html lang="vi">
@@ -45,6 +43,23 @@
             background: rgba(255, 255, 255, 0.92);
             border-right: 1px solid var(--teacher-border);
             backdrop-filter: blur(12px);
+            transition: transform 0.22s ease, width 0.22s ease;
+            width: 18rem;
+        }
+
+        .teacher-sidebar-backdrop {
+            background: rgba(26, 28, 25, 0.28);
+            inset: 0;
+            opacity: 0;
+            pointer-events: none;
+            position: fixed;
+            transition: opacity 0.2s ease;
+            z-index: 55;
+        }
+
+        .teacher-shell.sidebar-open .teacher-sidebar-backdrop {
+            opacity: 1;
+            pointer-events: auto;
         }
 
         .teacher-logo {
@@ -117,16 +132,30 @@
         .teacher-body {
             margin-left: 18rem;
             min-height: 100vh;
+            transition: margin-left 0.22s ease;
+        }
+
+        .teacher-shell.sidebar-collapsed .teacher-sidebar {
+            width: 5.5rem;
+        }
+
+        .teacher-shell.sidebar-collapsed .teacher-body {
+            margin-left: 5.5rem;
+        }
+
+        .teacher-shell.sidebar-collapsed .teacher-header {
+            width: calc(100% - 5.5rem) !important;
         }
 
         .teacher-header {
             background: rgba(255, 255, 255, 0.92);
             border-bottom: 1px solid var(--teacher-border);
             backdrop-filter: blur(12px);
+            transition: width 0.22s ease;
         }
 
         .teacher-container {
-            padding: 96px 32px 48px;
+            padding: 88px 24px 40px;
         }
 
         @@media (min-width: 1440px) {
@@ -134,6 +163,116 @@
                 padding-left: 40px;
                 padding-right: 40px;
             }
+        }
+
+        @@media (max-width: 1023px) {
+            .teacher-sidebar {
+                transform: translateX(-100%);
+                width: 18rem;
+                z-index: 60;
+            }
+
+            .teacher-shell.sidebar-open .teacher-sidebar {
+                transform: translateX(0);
+            }
+
+            .teacher-body {
+                margin-left: 0;
+            }
+
+            .teacher-shell.sidebar-collapsed .teacher-body {
+                margin-left: 0;
+            }
+
+            .teacher-header {
+                width: 100% !important;
+                padding-left: 16px;
+                padding-right: 16px;
+            }
+
+            .teacher-container {
+                padding: 88px 16px 32px;
+            }
+        }
+
+
+        @@media (max-width: 767px) {
+            .teacher-header {
+                gap: 12px;
+            }
+
+            .teacher-header > div:last-child {
+                gap: 8px;
+            }
+
+            .teacher-header > div:last-child .teacher-btn-secondary,
+            .teacher-header > div:last-child .teacher-btn-primary {
+                min-width: 40px;
+                padding-left: 10px !important;
+                padding-right: 10px !important;
+            }
+
+            .teacher-header > div:last-child .teacher-btn-secondary span:last-child,
+            .teacher-header > div:last-child .teacher-btn-primary span:last-child {
+                display: none;
+            }
+
+            .teacher-page-title {
+                font-size: 28px;
+                line-height: 36px;
+            }
+        }
+
+        .teacher-shell.sidebar-collapsed .teacher-nav-link span:last-child,
+        .teacher-shell.sidebar-collapsed .teacher-profile-meta,
+        .teacher-shell.sidebar-collapsed .teacher-logo-copy,
+        .teacher-shell.sidebar-collapsed .teacher-nav-caption {
+            display: none;
+        }
+
+        .teacher-shell.sidebar-collapsed .teacher-nav-link {
+            justify-content: center;
+            padding-left: 0;
+            padding-right: 0;
+        }
+
+        .teacher-shell.sidebar-collapsed .teacher-sidebar .px-6,
+        .teacher-shell.sidebar-collapsed .teacher-sidebar .px-4 {
+            padding-left: 12px;
+            padding-right: 12px;
+        }
+
+        .teacher-shell.sidebar-collapsed .teacher-logo {
+            justify-content: center;
+            width: 100%;
+        }
+
+        .teacher-shell.sidebar-collapsed .teacher-sidebar-summary {
+            justify-content: center;
+        }
+
+        .teacher-shell.sidebar-collapsed .teacher-avatar,
+        .teacher-shell.sidebar-collapsed .teacher-avatar-fallback {
+            margin: 0 auto;
+        }
+
+        .teacher-sidebar-toggle {
+            align-items: center;
+            background: #fff;
+            border: 1px solid var(--teacher-border-strong);
+            border-radius: 8px;
+            color: var(--teacher-text-muted);
+            display: inline-flex;
+            height: 40px;
+            justify-content: center;
+            width: 40px;
+        }
+
+        .teacher-header-title {
+            color: var(--teacher-text);
+            font-size: 15px;
+            font-weight: 600;
+            line-height: 20px;
         }
 
         .teacher-page {
@@ -252,6 +391,10 @@
         }
 
         @@media (min-width: 1280px) {
+            .teacher-stat-grid.teacher-stat-grid--5 {
+                grid-template-columns: repeat(5, minmax(0, 1fr));
+            }
+
             .teacher-stat-grid.teacher-stat-grid--4 {
                 grid-template-columns: repeat(4, minmax(0, 1fr));
             }
@@ -329,6 +472,29 @@
         @@media (min-width: 1180px) {
             .teacher-search-form {
                 max-width: 360px;
+            }
+        }
+
+        @@media (max-width: 767px) {
+            .teacher-card-section,
+            .teacher-stat-card {
+                padding: 16px;
+            }
+
+            .teacher-stat-card {
+                min-height: 128px;
+            }
+
+            .teacher-stat-value {
+                font-size: 28px;
+                line-height: 36px;
+                margin-top: 16px;
+            }
+
+            .teacher-toolbar,
+            .teacher-actions,
+            .teacher-filter-list {
+                gap: 12px;
             }
         }
 
@@ -650,23 +816,18 @@
         }
     </style>
 </head>
-<body class="teacher-shell">
+<body class="teacher-shell" data-teacher-shell>
     @{
         var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
-        var currentUserIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        var currentUserId = int.TryParse(currentUserIdClaim, out var parsedUserId) ? parsedUserId : (int?)null;
-        var currentTeacherProfile = currentUserId.HasValue
-            ? await DbContext.Users.AsNoTracking()
-                .Where(x => x.Id == currentUserId.Value)
-                .Select(x => new { x.FullName, x.AvatarUrl })
-                .FirstOrDefaultAsync()
-            : null;
-        var currentTeacherName = currentTeacherProfile?.FullName ?? User.FindFirstValue(ClaimTypes.GivenName) ?? User.Identity?.Name ?? "Giáo viên";
-        var currentTeacherAvatarUrl = currentTeacherProfile?.AvatarUrl;
+        var shellState = await TeacherShellService.BuildAsync(User);
+        var currentTeacherName = shellState.DisplayName;
+        var currentTeacherAvatarUrl = shellState.AvatarUrl;
         string NavClass(string controller) => currentController == controller ? "teacher-nav-link is-active" : "teacher-nav-link";
     }
 
-    <aside class="teacher-sidebar fixed left-0 top-0 flex h-screen w-72 flex-col py-6">
+    <div class="teacher-sidebar-backdrop" data-teacher-sidebar-backdrop></div>
+
+    <aside class="teacher-sidebar fixed left-0 top-0 flex h-screen flex-col py-6">
         <div class="mb-8 px-6">
             <div class="teacher-logo">
                 <div class="teacher-logo-mark">
@@ -705,7 +866,7 @@
         </nav>
 
         <div class="mt-auto border-t border-[#e3e3de] px-4 pt-6">
-            <div class="flex items-center gap-3 px-2">
+            <div class="teacher-sidebar-summary flex items-center gap-3 px-2">
                 @if (!string.IsNullOrWhiteSpace(currentTeacherAvatarUrl))
                 {
                     <img alt="@currentTeacherName" class="teacher-avatar" src="@currentTeacherAvatarUrl" />
@@ -716,7 +877,7 @@
                         @currentTeacherName.Trim()[0].ToString().ToUpperInvariant()
                     </div>
                 }
-                <div class="min-w-0">
+                <div class="teacher-profile-meta min-w-0">
                     <p class="truncate text-sm font-semibold text-[#1a1c19]">@currentTeacherName</p>
                     <p class="text-xs text-[#73796b]">Giáo viên</p>
                 </div>
@@ -726,10 +887,11 @@
 
     <main class="teacher-body">
         <header class="teacher-header fixed right-0 top-0 z-40 flex h-16 w-[calc(100%-18rem)] items-center justify-between px-8 text-sm">
-            <div class="flex items-center gap-2 text-[#73796b]">
-                <span>Teacher</span>
-                <span class="material-symbols-outlined text-[16px]">chevron_right</span>
-                <span class="font-semibold text-[#3b6722]">@ViewData["Title"]</span>
+            <div class="flex items-center gap-3">
+                <button type="button" class="teacher-sidebar-toggle" data-teacher-sidebar-toggle aria-label="Thu gọn menu">
+                    <span class="material-symbols-outlined text-[18px]">menu</span>
+                </button>
+                <span class="teacher-header-title">@ViewData["Title"]</span>
             </div>
 
             <div class="flex items-center gap-3">
@@ -770,9 +932,73 @@
 
     <script>
         (() => {
+            const shell = document.querySelector('[data-teacher-shell]');
+            const toggleButton = document.querySelector('[data-teacher-sidebar-toggle]');
+            const sidebarBackdrop = document.querySelector('[data-teacher-sidebar-backdrop]');
             const modal = document.querySelector('[data-teacher-logout-modal]');
             const openButton = document.querySelector('[data-teacher-logout-open]');
             const closeButtons = document.querySelectorAll('[data-teacher-logout-close]');
+            const headerTitle = document.querySelector('.teacher-header-title');
+            const storageKey = 'teacher-sidebar-collapsed';
+            const mobileQuery = window.matchMedia('(max-width: 1023px)');
+
+            if (!shell) {
+                return;
+            }
+
+            const syncShellState = () => {
+                if (mobileQuery.matches) {
+                    shell.classList.remove('sidebar-collapsed');
+                    return;
+                }
+
+                const collapsed = window.localStorage.getItem(storageKey) === 'true';
+                shell.classList.toggle('sidebar-collapsed', collapsed);
+            };
+
+            syncShellState();
+
+            if (toggleButton) {
+                toggleButton.addEventListener('click', () => {
+                    if (mobileQuery.matches) {
+                        shell.classList.toggle('sidebar-open');
+                        return;
+                    }
+
+                    const nextCollapsed = !shell.classList.contains('sidebar-collapsed');
+                    shell.classList.toggle('sidebar-collapsed', nextCollapsed);
+                    window.localStorage.setItem(storageKey, String(nextCollapsed));
+                });
+            }
+
+            sidebarBackdrop?.addEventListener('click', () => shell.classList.remove('sidebar-open'));
+            mobileQuery.addEventListener('change', () => {
+                shell.classList.remove('sidebar-open');
+                syncShellState();
+            });
+
+            document.querySelectorAll('.teacher-page-header').forEach((header) => {
+                const titleBlock = header.firstElementChild;
+                if (!(titleBlock instanceof HTMLElement)) {
+                    return;
+                }
+
+                const pageTitle = titleBlock.querySelector('.teacher-page-title');
+                const pageSubtitle = titleBlock.querySelector('.teacher-page-subtitle');
+                if (!pageTitle && !pageSubtitle) {
+                    return;
+                }
+
+                if (headerTitle && pageTitle) {
+                    headerTitle.textContent = pageTitle.textContent?.trim() || headerTitle.textContent;
+                }
+
+                titleBlock.remove();
+
+                if (!header.children.length) {
+                    header.remove();
+                }
+            });
 
             if (!modal || !openButton) {
                 return;

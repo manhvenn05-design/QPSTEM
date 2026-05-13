@@ -1,7 +1,5 @@
-@using System.Security.Claims
-@using Microsoft.EntityFrameworkCore
-@using STEM.Web.Data
-@inject ApplicationDbContext DbContext
+﻿@using System.Security.Claims
+@inject STEM.Web.Services.IAdminShellService AdminShellService
 
 <!DOCTYPE html>
 <html lang="vi">
@@ -50,8 +48,22 @@
         }
 
         .admin-sidebar {
+            backdrop-filter: blur(12px);
+            background: rgba(255, 255, 255, 0.92);
             border-right: 1px solid var(--admin-border);
-            background: var(--admin-surface);
+            transition: transform 0.22s ease, width 0.22s ease;
+            width: 17rem;
+            z-index: 60;
+        }
+
+        .admin-sidebar-backdrop {
+            background: rgba(26, 28, 25, 0.28);
+            inset: 0;
+            opacity: 0;
+            pointer-events: none;
+            position: fixed;
+            transition: opacity 0.2s ease;
+            z-index: 55;
         }
 
         .admin-logo {
@@ -96,13 +108,15 @@
 
         .admin-header {
             background: rgba(255, 255, 255, 0.92);
-            border-bottom: 1px solid var(--admin-border);
             backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--admin-border);
+            transition: width 0.22s ease;
         }
 
         .admin-body {
-            margin-left: 16rem;
+            margin-left: 17rem;
             min-height: 100vh;
+            transition: margin-left 0.22s ease;
         }
 
         .admin-container {
@@ -119,17 +133,34 @@
         }
 
         .admin-page-header {
-            align-items: flex-start;
+            align-items: center;
             display: flex;
             flex-direction: column;
-            gap: 16px;
-            justify-content: space-between;
+            gap: 12px;
+            justify-content: flex-end;
         }
 
         @@media (min-width: 1024px) {
             .admin-page-header {
                 flex-direction: row;
             }
+        }
+
+        .admin-shell.sidebar-open .admin-sidebar-backdrop {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .admin-shell.sidebar-collapsed .admin-sidebar {
+            width: 5.5rem;
+        }
+
+        .admin-shell.sidebar-collapsed .admin-body {
+            margin-left: 5.5rem;
+        }
+
+        .admin-shell.sidebar-collapsed .admin-header {
+            width: calc(100% - 5.5rem) !important;
         }
 
         .admin-page-title {
@@ -146,7 +177,7 @@
             font-size: 16px;
             line-height: 24px;
             margin-top: 8px;
-            max-width: 720px;
+            max-width: 640px;
         }
 
         .admin-actions {
@@ -243,29 +274,32 @@
         .admin-chip-group {
             display: flex;
             flex-wrap: wrap;
-            gap: 12px;
+            gap: 8px;
         }
 
         .admin-chip {
             align-items: center;
             background: transparent;
             border-radius: 9999px;
+            border: 1px solid var(--admin-border);
             color: var(--admin-text-soft);
             display: inline-flex;
             font-size: 14px;
             font-weight: 500;
             height: 40px;
-            padding: 0 16px;
+            padding: 0 14px;
             transition: background-color 0.2s ease, color 0.2s ease;
         }
 
         .admin-chip:hover {
             background: var(--admin-surface-soft);
+            border-color: var(--admin-primary);
             color: var(--admin-primary-strong);
         }
 
         .admin-chip.is-active {
             background: var(--admin-primary-soft);
+            border-color: var(--admin-primary);
             color: var(--admin-primary-strong);
             font-weight: 600;
         }
@@ -500,8 +534,8 @@
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            min-height: 152px;
-            padding: 24px;
+            min-height: 128px;
+            padding: 20px;
         }
 
         .admin-stat-label {
@@ -528,7 +562,7 @@
             font-weight: 600;
             letter-spacing: -0.01em;
             line-height: 40px;
-            margin-top: 24px;
+            margin-top: 16px;
         }
 
         .admin-kicker {
@@ -843,35 +877,155 @@
             opacity: 0.5;
             pointer-events: none;
         }
+
+        .admin-sidebar-toggle {
+            align-items: center;
+            background: #fff;
+            border: 1px solid var(--admin-border-strong);
+            border-radius: 8px;
+            color: var(--admin-text-muted);
+            display: inline-flex;
+            height: 40px;
+            justify-content: center;
+            width: 40px;
+        }
+
+        .admin-sidebar-toggle:hover {
+            border-color: var(--admin-primary);
+            color: var(--admin-primary-strong);
+        }
+
+        .admin-header-title {
+            color: var(--admin-text);
+            font-size: 15px;
+            font-weight: 600;
+            line-height: 20px;
+        }
+
+        .admin-shell.sidebar-collapsed .admin-nav-link span:last-child,
+        .admin-shell.sidebar-collapsed .admin-profile-meta,
+        .admin-shell.sidebar-collapsed .admin-nav-badge,
+        .admin-shell.sidebar-collapsed .admin-logo-copy {
+            display: none;
+        }
+
+        .admin-shell.sidebar-collapsed .admin-nav-link {
+            justify-content: center;
+            padding-left: 0;
+            padding-right: 0;
+        }
+
+        .admin-shell.sidebar-collapsed .admin-sidebar .px-6,
+        .admin-shell.sidebar-collapsed .admin-sidebar .px-4 {
+            padding-left: 12px;
+            padding-right: 12px;
+        }
+
+        .admin-shell.sidebar-collapsed .admin-logo {
+            justify-content: center;
+            width: 100%;
+        }
+
+        .admin-shell.sidebar-collapsed .admin-profile-trigger {
+            justify-content: center;
+        }
+
+        @@media (max-width: 1023px) {
+            .admin-sidebar {
+                transform: translateX(-100%);
+                width: 17rem;
+            }
+
+            .admin-shell.sidebar-open .admin-sidebar {
+                transform: translateX(0);
+            }
+
+            .admin-body,
+            .admin-shell.sidebar-collapsed .admin-body {
+                margin-left: 0;
+            }
+
+            .admin-header {
+                width: 100% !important;
+                padding-left: 16px;
+                padding-right: 16px;
+            }
+
+            .admin-container {
+                padding: 88px 16px 32px;
+            }
+        }
+
+        @@media (max-width: 767px) {
+            .admin-card-section,
+            .admin-stat-card {
+                padding: 16px;
+            }
+
+            .admin-stat-card {
+                min-height: 120px;
+            }
+
+            .admin-stat-value {
+                font-size: 28px;
+                line-height: 36px;
+                margin-top: 16px;
+            }
+
+            .admin-page-title {
+                font-size: 28px;
+                line-height: 36px;
+            }
+
+            .admin-page-subtitle {
+                font-size: 15px;
+                line-height: 22px;
+            }
+
+            .admin-header > div:last-child {
+                gap: 8px;
+            }
+
+            .admin-header > div:last-child .admin-btn-secondary,
+            .admin-header > div:last-child .admin-btn-primary {
+                min-width: 40px;
+                padding-left: 10px !important;
+                padding-right: 10px !important;
+            }
+
+            .admin-header > div:last-child .admin-btn-secondary span:last-child,
+            .admin-header > div:last-child .admin-btn-primary span:last-child {
+                display: none;
+            }
+        }
     </style>
 </head>
-<body class="admin-shell">
+<body class="admin-shell" data-admin-shell>
     @{
         var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
-        var currentUserIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        var currentUserId = int.TryParse(currentUserIdClaim, out var parsedUserId) ? parsedUserId : (int?)null;
-        var today = DateOnly.FromDateTime(DateTime.Today);
-        var currentAdminProfile = currentUserId.HasValue
-            ? await DbContext.Users.AsNoTracking()
-                .Where(x => x.Id == currentUserId.Value)
-                .Select(x => new { x.FullName, x.AvatarUrl })
-                .FirstOrDefaultAsync()
-            : null;
-        var currentAdminName = currentAdminProfile?.FullName ?? User.FindFirstValue(ClaimTypes.GivenName) ?? User.Identity?.Name ?? "Quản trị viên";
-        var currentAdminAvatarUrl = currentAdminProfile?.AvatarUrl;
-        var todaySessionCount = await DbContext.Sessions.AsNoTracking().CountAsync(x => x.Date == today);
-        var openMaintenanceCount = await DbContext.MaintenanceLogs.AsNoTracking().CountAsync(x => x.Status == 1 || x.Status == 2);
-        var unpaidInvoiceCount = await DbContext.Invoices.AsNoTracking().CountAsync(x => !x.Payments.Any() || x.Payments.Sum(p => (decimal?)p.Amount) < x.FinalAmount);
-        var pendingLeadsCount = await DbContext.Leads.AsNoTracking().CountAsync(x => x.Status == 0);
-        var notificationCount = todaySessionCount + openMaintenanceCount + unpaidInvoiceCount + pendingLeadsCount;
+        var shellState = await AdminShellService.BuildAsync(User);
+        var currentUserId = shellState.UserId;
+        var currentAdminName = shellState.DisplayName;
+        var currentAdminAvatarUrl = shellState.AvatarUrl;
+        var todaySessionCount = shellState.TodaySessionCount;
+        var openMaintenanceCount = shellState.OpenMaintenanceCount;
+        var unpaidInvoiceCount = shellState.UnpaidInvoiceCount;
+        var pendingLeadsCount = shellState.PendingLeadsCount;
+        var notificationCount = shellState.NotificationCount;
         string NavClass(string controller) => currentController == controller ? "admin-nav-link is-active" : "admin-nav-link";
     }
 
-    <aside class="admin-sidebar fixed left-0 top-0 flex h-screen w-64 flex-col py-6">
+    <div class="admin-sidebar-backdrop" data-admin-sidebar-backdrop></div>
+
+    <aside class="admin-sidebar fixed left-0 top-0 flex h-screen flex-col py-6">
         <div class="mb-8 px-6">
             <div class="admin-logo">
                 <div class="admin-logo-mark">
                     <span class="material-symbols-outlined text-[24px]">school</span>
+                </div>
+                <div class="admin-logo-copy">
+                    <div class="text-[24px] font-semibold tracking-[-0.03em] text-[#3b6722]">QPSTEM</div>
+                    <div class="mt-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#8b8f85]">Admin</div>
                 </div>
             </div>
         </div>
@@ -915,7 +1069,7 @@
                     <span class="flex-1">Khách tư vấn</span>
                     @if (pendingLeadsCount > 0)
                     {
-                        <span class="flex h-5 items-center justify-center rounded-full bg-[#ba1a1a] px-2 text-[11px] font-medium text-white">@pendingLeadsCount</span>
+                        <span class="admin-nav-badge flex h-5 items-center justify-center rounded-full bg-[#ba1a1a] px-2 text-[11px] font-medium text-white">@pendingLeadsCount</span>
                     }
                 </a>
                 <a class="@NavClass("Cms")" asp-area="Admin" asp-controller="Cms" asp-action="Index">
@@ -924,7 +1078,7 @@
                 </a>
                 <a class="@NavClass("Settings")" asp-area="Admin" asp-controller="Settings" asp-action="Index">
                     <span class="material-symbols-outlined text-[20px]">settings</span>
-                    <span>Cài đặt</span>
+                    <span>Điều hành</span>
                 </a>
             </div>
         </nav>
@@ -942,7 +1096,7 @@
                             @currentAdminName.Trim()[0].ToString().ToUpperInvariant()
                         </div>
                     }
-                    <div class="min-w-0 flex-1">
+                    <div class="admin-profile-meta min-w-0 flex-1">
                         <p class="truncate text-sm font-semibold text-[#1a1c19]">@currentAdminName</p>
                         <p class="admin-profile-summary">Quản trị viên</p>
                     </div>
@@ -979,11 +1133,12 @@
     </aside>
 
     <main class="admin-body">
-        <header class="admin-header fixed right-0 top-0 z-40 flex h-16 w-[calc(100%-16rem)] items-center justify-between px-8 text-sm">
-            <div class="flex items-center gap-2 text-[#73796b]">
-                <span>Admin</span>
-                <span class="material-symbols-outlined text-[16px]">chevron_right</span>
-                <span class="font-semibold text-[#3b6722]">@ViewData["Title"]</span>
+        <header class="admin-header fixed right-0 top-0 z-40 flex h-16 w-[calc(100%-17rem)] items-center justify-between px-8 text-sm">
+            <div class="flex items-center gap-3">
+                <button type="button" class="admin-sidebar-toggle" data-admin-sidebar-toggle aria-label="Thu gọn menu">
+                    <span class="material-symbols-outlined text-[18px]">menu</span>
+                </button>
+                <span class="admin-header-title">@ViewData["Title"]</span>
             </div>
 
             <div class="flex items-center gap-3">
@@ -1053,8 +1208,8 @@
                             <a asp-area="Admin" asp-controller="Settings" asp-action="Index" class="admin-popover-item">
                                 <span class="material-symbols-outlined text-[20px]">settings</span>
                                 <span>
-                                    <span class="block text-sm font-medium text-[#1a1c19]">Cài đặt</span>
-                                    <span class="mt-1 block text-xs text-[#73796b]">Đi đến trung tâm điều hướng quản trị</span>
+                                    <span class="block text-sm font-medium text-[#1a1c19]">Điều hành</span>
+                                    <span class="mt-1 block text-xs text-[#73796b]">Đi đến trung tâm điều hành quản trị</span>
                                 </span>
                             </a>
                         </div>
@@ -1096,6 +1251,68 @@
 
     <script>
         (() => {
+            const shell = document.querySelector("[data-admin-shell]");
+            const toggle = document.querySelector("[data-admin-sidebar-toggle]");
+            const backdrop = document.querySelector("[data-admin-sidebar-backdrop]");
+            const headerTitle = document.querySelector(".admin-header-title");
+            const mediaQuery = window.matchMedia("(max-width: 1023px)");
+
+            if (shell && toggle) {
+                const storageKey = "admin-sidebar-collapsed";
+
+                const syncLayout = () => {
+                    if (mediaQuery.matches) {
+                        shell.classList.remove("sidebar-collapsed");
+                    } else if (window.localStorage.getItem(storageKey) === "true") {
+                        shell.classList.add("sidebar-collapsed");
+                    }
+                };
+
+                syncLayout();
+
+                toggle.addEventListener("click", () => {
+                    if (mediaQuery.matches) {
+                        shell.classList.toggle("sidebar-open");
+                        return;
+                    }
+
+                    const nextCollapsed = !shell.classList.contains("sidebar-collapsed");
+                    shell.classList.toggle("sidebar-collapsed", nextCollapsed);
+                    window.localStorage.setItem(storageKey, String(nextCollapsed));
+                });
+
+                backdrop?.addEventListener("click", () => {
+                    shell.classList.remove("sidebar-open");
+                });
+
+                mediaQuery.addEventListener("change", () => {
+                    shell.classList.remove("sidebar-open");
+                    syncLayout();
+                });
+            }
+
+            document.querySelectorAll(".admin-page-header").forEach((header) => {
+                const titleBlock = header.firstElementChild;
+                if (!(titleBlock instanceof HTMLElement)) {
+                    return;
+                }
+
+                if (!titleBlock.querySelector(".admin-page-title") && !titleBlock.querySelector(".admin-page-subtitle")) {
+                    return;
+                }
+
+                const pageTitle = titleBlock.querySelector(".admin-page-title");
+                if (headerTitle && pageTitle) {
+                    headerTitle.textContent = pageTitle.textContent?.trim() || headerTitle.textContent;
+                }
+
+                titleBlock.remove();
+
+                if (!header.children.length) {
+                    header.remove();
+                }
+            });
+
             const modal = document.getElementById("admin-confirm-modal");
             const title = document.getElementById("admin-confirm-title");
             const message = document.getElementById("admin-confirm-message");

@@ -27,7 +27,13 @@
 
     <header class="site-header">
         <div class="container header-inner">
-            <a class="brand" asp-controller="Home" asp-action="Index">QPSTEM</a>
+            <a class="brand" asp-controller="Home" asp-action="Index" style="display: inline-flex; align-items: center;">
+                <svg width="44" height="44" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect width="36" height="36" rx="10" fill="#3b6722"/>
+                    <path d="M18 9L8 14.5L18 20L26 15.6V23C26 23.828 26.672 24.5 27.5 24.5C28.328 24.5 29 23.828 29 23V13.95L18 9Z" fill="white"/>
+                    <path d="M11.5 18.5V22.5C11.5 25.5 15 27.5 18 27.5C21 27.5 24.5 25.5 24.5 22.5V18.5L18 22L11.5 18.5Z" fill="white"/>
+                </svg>
+            </a>
 
             <nav class="main-nav" id="main-nav" aria-label="Điều hướng chính">
                 <a class="@(isHome ? "is-active" : null)" asp-controller="Home" asp-action="Index">Trang chủ</a>
@@ -52,7 +58,13 @@
 
     <nav class="mobile-nav" id="mobile-nav" aria-label="Menu di động">
         <div class="mobile-nav-header">
-            <span class="brand">QPSTEM</span>
+            <span class="brand" style="display: inline-flex; align-items: center;">
+                <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect width="36" height="36" rx="10" fill="#3b6722"/>
+                    <path d="M18 9L8 14.5L18 20L26 15.6V23C26 23.828 26.672 24.5 27.5 24.5C28.328 24.5 29 23.828 29 23V13.95L18 9Z" fill="white"/>
+                    <path d="M11.5 18.5V22.5C11.5 25.5 15 27.5 18 27.5C21 27.5 24.5 25.5 24.5 22.5V18.5L18 22L11.5 18.5Z" fill="white"/>
+                </svg>
+            </span>
             <button class="mobile-nav-close" id="mobile-nav-close" type="button" aria-label="Đóng menu">
                 <span class="material-symbols-outlined" aria-hidden="true">close</span>
             </button>
@@ -144,7 +156,13 @@
     <footer class="site-footer">
         <div class="container footer-main">
             <div class="footer-brand">
-                <a class="brand" href="/">QPSTEM</a>
+                <a class="brand" href="/" style="display: inline-flex; align-items: center;">
+                    <svg width="44" height="44" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="36" height="36" rx="10" fill="#3b6722"/>
+                        <path d="M18 9L8 14.5L18 20L26 15.6V23C26 23.828 26.672 24.5 27.5 24.5C28.328 24.5 29 23.828 29 23V13.95L18 9Z" fill="white"/>
+                        <path d="M11.5 18.5V22.5C11.5 25.5 15 27.5 18 27.5C21 27.5 24.5 25.5 24.5 22.5V18.5L18 22L11.5 18.5Z" fill="white"/>
+                    </svg>
+                </a>
                 <p>
                     © 2024 QPSTEM. Nền tảng giáo dục STEM hàng đầu Việt Nam. Tầm nhìn của chúng tôi là
                     trang bị cho thế hệ trẻ những kỹ năng thiết yếu để thành công trong tương lai.

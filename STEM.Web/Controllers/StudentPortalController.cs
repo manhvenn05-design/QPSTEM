@@ -140,8 +140,10 @@ public class StudentPortalController : Controller
 
         // 3. Hóa đơn học phí
         var invoices = await _context.Invoices
-            .AsNoTracking()
-            .Where(x => x.StudentId == studentId.Value)
+            .Include(x => x.Class)
+            .ThenInclude(c => c!.Course)
+            .Include(x => x.Payments)
+            .Where(x => x.StudentId == studentId)
             .OrderByDescending(x => x.Id)
             .Select(x => new
             {

@@ -4,6 +4,7 @@ description: Cung cấp toàn bộ ngữ cảnh hệ thống, kiến trúc và q
 ---
 
 # 🛠 TỔNG QUAN HỆ THỐNG (SYSTEM OVERVIEW)
+
 - **Tên dự án:** STEM (QPSTEM)
 - **Mục tiêu cốt lõi:** Nền tảng quản lý trung tâm STEM gồm: landing public, quản lý khóa/lớp/buổi học, điểm danh minh chứng (note + media), mượn/trả thiết bị, học phí & công nợ, và backoffice vận hành.
 - **Đối tượng người dùng:**
@@ -13,21 +14,23 @@ description: Cung cấp toàn bộ ngữ cảnh hệ thống, kiến trúc và q
   - **Admin (Quản trị):** dashboard KPI, quản lý người dùng, cấu hình nội dung/khóa/lớp/buổi, quản lý tài chính & kho
 
 ## Luật “AI nhúng vào form nghiệp vụ”
+
 - AI không nằm như một menu riêng.
 - AI được nhúng trực tiếp vào các form thao tác (đặc biệt màn teacher trong `Attendances/Board`): giáo viên có thể nhấn nút AI viết lại ghi chú hoặc phân tích video rồi “chép kết quả” vào textarea trước khi lưu.
 
-
 # 🏗 KIẾN TRÚC KỸ THUẬT (TECH STACK)
-| Thành phần | Công nghệ sử dụng | Ghi chú quan trọng |
-| :--- | :--- | :--- |
-| **Backend** | ASP.NET Core MVC | Cookie Authentication, EF Core DbContext chung |
-| **Frontend** | Razor Views + Tailwind (Tailwind CDN) + CSS tùy layout | Design theo palette xanh/Inter, spacing tối ưu UI |
-| **Database** | SQL Server + Entity Framework Core | DB access qua `STEM.Web/Data/ApplicationDbContext.cs` |
-| **AI/Module** | AI tích hợp UI (inline trong Razor view) | Hiện logic AI có thể là mock UI; khi tích hợp thật phải bảo đảm luồng “human-in-the-loop” |
 
+| Thành phần    | Công nghệ sử dụng                                      | Ghi chú quan trọng                                                                        |
+| :------------ | :----------------------------------------------------- | :---------------------------------------------------------------------------------------- |
+| **Backend**   | ASP.NET Core MVC                                       | Cookie Authentication, EF Core DbContext chung                                            |
+| **Frontend**  | Razor Views + Tailwind (Tailwind CDN) + CSS tùy layout | Design theo palette xanh/Inter, spacing tối ưu UI                                         |
+| **Database**  | SQL Server + Entity Framework Core                     | DB access qua `STEM.Web/Data/ApplicationDbContext.cs`                                     |
+| **AI/Module** | AI tích hợp UI (inline trong Razor view)               | Hiện logic AI có thể là mock UI; khi tích hợp thật phải bảo đảm luồng “human-in-the-loop” |
 
 # 📂 CẤU TRÚC THƯ MỤC CỐT LÕI (PROJECT STRUCTURE)
+
 ## Convention bắt buộc (bám theo CODING_GUIDE)
+
 - Public site đặt ở root project (không dùng Area)
 - Admin đặt ở `Areas/Admin`
 - Teacher đặt ở `Areas/Teacher`
@@ -35,6 +38,7 @@ description: Cung cấp toàn bộ ngữ cảnh hệ thống, kiến trúc và q
 - Dùng `ViewComponent` cho block lặp lại hoặc query riêng (nếu cần)
 
 ## Kiểu cấu trúc hiện có trong repo
+
 ```text
 /STEM
 |-- STEM.Web/
@@ -98,25 +102,29 @@ description: Cung cấp toàn bộ ngữ cảnh hệ thống, kiến trúc và q
 8. Upload/static path: dùng `wwwroot/uploads/...` và admin image storage là riêng (`Areas/Admin/Infrastructure/AdminImageStorage.cs`).
 
 ## Ngôn ngữ & UI
+
 - Code/comment: ưu tiên Tiếng Anh hoặc Tiếng Việt nhất quán.
 - UI: đồng nhất design system (Inter font, xanh primary, card/border radius 8px theo layout hiện có).
 - Không thêm text “do AI viết” dạng mẫu; thay bằng text hướng dẫn UX.
 
 ## AI logic
+
 - Luôn đảm bảo luồng:
-  1) AI tạo gợi ý → 2) giáo viên xem → 3) có thể chỉnh → 4) lưu (human-in-the-loop).
+  1. AI tạo gợi ý → 2) giáo viên xem → 3) có thể chỉnh → 4) lưu (human-in-the-loop).
 - Nếu AI tích hợp thật:
   - validate input/format trước khi gọi AI
   - validate output trước khi lưu DB
   - tuyệt đối không lưu kết quả AI nếu giáo viên chưa “chấp nhận” (bằng cách paste/apply vào field rồi submit).
 
-
 # 🔄 QUY TRÌNH NGHIỆP VỤ CHÍNH (KEY WORKFLOWS)
+
 ## Luồng Public
+
 - Landing (`HomeController.Index`): banners đang active + 3 bài news published.
 - Courses (`CoursesController.Index/Details`): danh sách khóa học có search/pagination; details theo `Code` đóng vai trò slug.
 
 ## Luồng Student
+
 - `StudentPortalController.Index` (Authorize Student):
   - Lấy studentId từ claim
   - Load `StudentProfile` (1-1)
@@ -127,7 +135,9 @@ description: Cung cấp toàn bộ ngữ cảnh hệ thống, kiến trúc và q
   - Stats: sessions tuần này, feedback tuần gần nhất, media count, pending invoice count
 
 ## Luồng Teacher (core)
+
 ### Điểm danh
+
 - `AttendancesController.Index`: filter theo today/open/upcoming/completed + search
 - `AttendancesController.Board(GET)`:
   - Build board từ Sessions → Class → Enrollments
@@ -139,25 +149,30 @@ description: Cung cấp toàn bộ ngữ cảnh hệ thống, kiến trúc và q
   - Redirect về board
 
 ### Evidence
+
 - `EvidenceController.Index/Details`:
   - Phân loại thiếu media / thiếu note / ready (cả note và media)
   - Tách media urls bằng split delimiter
 
 ### Equipment
+
 - `EquipmentController.Index`: available = status==1 và không có borrow chưa trả
 - `Borrow/Return`: tạo EquipmentBorrow + set Equipment.Status theo logic maintenance/active borrow
 
 ### Schedule
+
 - `ScheduleController.Index`: filter + calendar tuần (Monday..Sunday)
 - `Details`: load students + equipments borrow list + counts
 
 ## Luồng Admin
+
 - `Admin/DashboardController.Index`: KPI metrics/alerts/revenue series
 - `Admin/UsersController`: CRUD User + upsert StudentProfile nếu chọn role student
 
-
 # 🎯 CHỈ DẪN CHO AI (AGENT INSTRUCTIONS)
+
 Khi AI Agent được yêu cầu làm feature mới:
+
 1. **Xác định domain & actor**: Public / Student / Teacher / Admin.
 2. **Tìm điểm gốc dữ liệu**:
    - Entity trong `/Models` và DbSet trong `ApplicationDbContext`.
@@ -183,8 +198,8 @@ Khi AI Agent được yêu cầu làm feature mới:
    - Đảm bảo controller query đúng relationship schema
    - Đảm bảo role/area/Authorize không bị sai
 
-
 # 📚 DANH SÁCH FILE “THƯỜNG DÙNG” ĐỂ NHANH CHÓNG HIỂU HỆ THỐNG
+
 - `STEM.Web/Program.cs`
 - `STEM.Web/Data/ApplicationDbContext.cs`
 - `STEM.Web/Controllers/AccountController.cs`
@@ -200,8 +215,8 @@ Khi AI Agent được yêu cầu làm feature mới:
   - `Areas/Teacher/Views/Shared/_TeacherLayout.cshtml`
   - `Areas/Admin/Views/Shared/_AdminLayout.cshtml`
 
-
 # ✅ CHECKLIST KHI HOÀN THÀNH MỘT FEATURE
+
 - [ ] File đặt đúng area/public & đúng thư mục view
 - [ ] Controller có đúng `[Area]` và `[Authorize]` cho actor
 - [ ] Model bind & hidden inputs khớp với action POST
@@ -209,10 +224,14 @@ Khi AI Agent được yêu cầu làm feature mới:
 - [ ] UI consistent (spacing, button height ~48px, card/border radius)
 - [ ] Có feedback cho người dùng (TempData toast/alert)
 - [ ] Nếu dùng AI: luôn có bước apply/paste vào trường trước khi lưu
+
 ---
+
 ## AI Integration Strategy
+
 - **Nguyên tắc vị trí:** AI không nằm ở sidebar như một menu rời. Thay vào đó, AI được "nhúng" (embed) trực tiếp vào các form tác vụ cụ thể của giáo viên (ví dụ: Sổ điểm danh, Chấm bài, Xem minh chứng).
+- ** Loại AI: Gọi API từ Google AI studio cho 2 model AI Hỗ trợ nhận xét và phân tích minh chứng.**
 - **Nguyên tắc chức năng:**
   - `Hỗ trợ nhận xét (Text Refinement):` Tích hợp cạnh ô ghi chú thô của giáo viên. Mục tiêu là giúp biên tập, làm mềm mỏng hóa câu từ trước khi gửi cho phụ huynh.
   - `Phân tích minh chứng (Video/Media Analysis):` Tích hợp tại khu vực nhập link media (ví dụ: Video thuyết trình dự án của học viên). AI sẽ tự động phân tích Điểm mạnh, Điểm yếu và đưa ra Đề xuất cải thiện.
-- **Nguyên tắc giao diện:** Các nút bấm gọi AI nên được làm nổi bật tinh tế (ví dụ dùng icon ✨ và màu sắc phân biệt) nhưng không phá vỡ layout tổng thể. Kết quả AI trả về phải rõ ràng, dễ đọc (dùng markdown hoặc format đẹp) và luôn cho phép giáo viên chỉnh sửa lại (Human in the loop) trước khi lư
+- **Nguyên tắc giao diện:** Các nút bấm gọi AI nên được làm nổi bật tinh tế (ví dụ dùng icon ✨ và màu sắc phân biệt) nhưng không phá vỡ layout tổng thể. Kết quả AI trả về phải rõ ràng, dễ đọc (dùng markdown hoặc format đẹp) và luôn cho phép giáo viên chỉnh sửa lại (Human in the loop) trước khi lưu

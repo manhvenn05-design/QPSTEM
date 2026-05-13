@@ -91,32 +91,32 @@ public class LeadsController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Convert(ConvertLeadViewModel model)
     {
-        if (!ModelState.IsValid)
-        {
-            var lead = await _context.Leads.FindAsync(model.LeadId);
-            var classesQuery = _context.Classes.AsQueryable();
-            if (lead?.InterestedId != null)
-            {
-                classesQuery = classesQuery.Where(c => c.CourseId == lead.InterestedId.Value);
-            }
-            var classes = await classesQuery.Select(c => new { c.Id, Name = $"{c.ClassCode} ({(c.Course != null ? c.Course.Name : "")})" }).ToListAsync();
-            ViewBag.Classes = new SelectList(classes, "Id", "Name", model.SelectedClassId);
-            return View(model);
-        }
+        var leadEntity = await _context.Leads.FirstOrDefaultAsync(x => x.Id == model.LeadId);
 
-        var leadEntity = await _context.Leads.FindAsync(model.LeadId);
         if (leadEntity == null)
         {
             return NotFound();
         }
 
+        if (!ModelState.IsValid)
+        {
+            await PopulateClassOptionsAsync(leadEntity.InterestedId, model.SelectedClassId);
+            return View(model);
+        }
+
         // 1. Kiểm tra Username tồn tại
+        if (model.SelectedClassId.HasValue && !await IsValidTargetClassAsync(leadEntity, model.SelectedClassId.Value))
+        {
+            ModelState.AddModelError(nameof(model.SelectedClassId), "Lớp được chọn không còn phù hợp với lead này.");
+            await PopulateClassOptionsAsync(leadEntity.InterestedId, model.SelectedClassId);
+            return View(model);
+        }
+
         if (await _context.Users.AnyAsync(u => u.Username.ToLower() == model.Username.ToLower()))
         {
             ModelState.AddModelError(nameof(model.Username), "Tên đăng nhập đã tồn tại.");
             // Nạp lại danh sách lớp
-            var classes = await _context.Classes.Select(c => new { c.Id, Name = $"{c.ClassCode} ({(c.Course != null ? c.Course.Name : "")})" }).ToListAsync();
-            ViewBag.Classes = new SelectList(classes, "Id", "Name", model.SelectedClassId);
+            await PopulateClassOptionsAsync(leadEntity.InterestedId, model.SelectedClassId);
             return View(model);
         }
 
@@ -174,5 +174,37 @@ public class LeadsController : Controller
 
         TempData["SuccessMessage"] = $"Tạo tài khoản học viên {model.StudentName} thành công!";
         return RedirectToAction(nameof(Index));
+    }
+
+    private async Task PopulateClassOptionsAsync(int? interestedCourseId, int? selectedClassId = null)
+    {
+        var today = DateOnly.FromDateTime(DateTime.Today);
+        var classesQuery = _context.Classes
+            .AsNoTracking()
+            .Where(c => !c.EndDate.HasValue || c.EndDate.Value >= today);
+
+        if (interestedCourseId.HasValue)
+        {
+            classesQuery = classesQuery.Where(c => c.CourseId == interestedCourseId.Value);
+        }
+
+        var classes = await classesQuery
+            .Select(c => new
+            {
+                c.Id,
+                Name = $"{c.ClassCode} ({(c.Course != null ? c.Course.Name : "")})"
+            })
+            .ToListAsync();
+
+        ViewBag.Classes = new SelectList(classes, "Id", "Name", selectedClassId);
+    }
+
+    private async Task<bool> IsValidTargetClassAsync(Lead lead, int classId)
+    {
+        var today = DateOnly.FromDateTime(DateTime.Today);
+        return await _context.Classes.AnyAsync(c =>
+            c.Id == classId &&
+            (!lead.InterestedId.HasValue || c.CourseId == lead.InterestedId.Value) &&
+            (!c.EndDate.HasValue || c.EndDate.Value >= today));
     }
 }

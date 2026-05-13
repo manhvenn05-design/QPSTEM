@@ -1,4 +1,4 @@
-@model STEM.Web.Areas.Teacher.Models.TeacherBorrowEquipmentViewModel
+﻿@model STEM.Web.Areas.Teacher.Models.TeacherBorrowEquipmentViewModel
 
 @{
     ViewData["Title"] = "Mượn / Trả thiết bị";
@@ -8,13 +8,12 @@
     <div class="teacher-page-header">
         <div>
             <h1 class="teacher-page-title">Tạo phiếu mượn</h1>
-            <p class="teacher-page-subtitle">Chọn thiết bị và buổi học liên quan để hệ thống theo dõi mượn / trả chính xác.</p>
         </div>
 
         <div class="teacher-actions">
             <a asp-area="Teacher" asp-controller="Equipment" asp-action="Index" class="teacher-btn-secondary">
                 <span class="material-symbols-outlined text-[18px]">arrow_back</span>
-                <span>Quay lại thiết bị</span>
+                <span>Quay lại</span>
             </a>
         </div>
     </div>
@@ -33,7 +32,6 @@
                     <select asp-for="SelectedEquipmentId" asp-items="Model.EquipmentOptions">
                         <option value="">Chọn thiết bị</option>
                     </select>
-                    <p class="teacher-field-hint">Chỉ hiển thị thiết bị đang sẵn sàng.</p>
                     <span asp-validation-for="SelectedEquipmentId" class="teacher-field-error"></span>
                 </div>
 
@@ -42,7 +40,6 @@
                     <select asp-for="SessionId" asp-items="Model.SessionOptions">
                         <option value="">Chọn buổi học</option>
                     </select>
-                    <p class="teacher-field-hint">Chọn đúng buổi học cần dùng thiết bị.</p>
                     <span asp-validation-for="SessionId" class="teacher-field-error"></span>
                 </div>
 

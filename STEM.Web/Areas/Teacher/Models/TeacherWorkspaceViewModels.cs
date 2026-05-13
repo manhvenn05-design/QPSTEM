@@ -57,10 +57,13 @@ public class TeacherScheduleIndexViewModel
 {
     public string SelectedFilter { get; set; } = "today";
     public string SearchTerm { get; set; } = string.Empty;
+    public string SelectedView { get; set; } = "calendar";
     public int TotalSessions { get; set; }
     public DateTime TargetDate { get; set; }
     public DateTime WeekStart { get; set; }
     public DateTime WeekEnd { get; set; }
+    public string WeekLabel { get; set; } = string.Empty;
+    public bool IsCurrentWeek { get; set; }
     public IReadOnlyList<TeacherScheduleFilterViewModel> Filters { get; set; } = [];
     public IReadOnlyList<TeacherScheduleItemViewModel> Sessions { get; set; } = [];
     public IReadOnlyList<TeacherScheduleItemViewModel> CalendarSessions { get; set; } = [];

@@ -1,4 +1,4 @@
-@model STEM.Web.Areas.Teacher.Models.TeacherEvidenceDetailsViewModel
+﻿@model STEM.Web.Areas.Teacher.Models.TeacherEvidenceDetailsViewModel
 
 @{
     ViewData["Title"] = "Minh chứng";
@@ -14,7 +14,7 @@
         <div class="teacher-actions">
             <a asp-area="Teacher" asp-controller="Attendances" asp-action="Board" asp-route-sessionId="@Model.SessionId" class="teacher-btn-primary">
                 <span class="material-symbols-outlined text-[18px]">edit</span>
-                <span>Chỉnh sửa trong điểm danh</span>
+                <span>Mở trong điểm danh</span>
             </a>
         </div>
     </div>
@@ -23,20 +23,18 @@
         <div class="teacher-stack">
             <div class="teacher-card">
                 <div class="teacher-card-section">
-                    <h2 class="teacher-section-title">Ghi chú giáo viên</h2>
+                    <h2 class="teacher-section-title">Ghi chú</h2>
                     <p class="teacher-list-note mt-4">@(!string.IsNullOrWhiteSpace(Model.TeacherRawNote) ? Model.TeacherRawNote : "Chưa có ghi chú.")</p>
                 </div>
             </div>
 
             <div class="teacher-card">
                 <div class="teacher-card-section">
-                    <h2 class="teacher-section-title">Media đã lưu</h2>
-                    <p class="teacher-section-subtitle">Mỗi mục mở ở tab mới để kiểm tra nhanh.</p>
-
+                    <h2 class="teacher-section-title">Media</h2>
                     <div class="teacher-media-grid mt-6">
                         @if (Model.MediaUrls.Count == 0)
                         {
-                            <p class="teacher-empty">Bản ghi này chưa có media.</p>
+                            <p class="teacher-empty">Chưa có media.</p>
                         }
                         else
                         {
@@ -58,14 +56,14 @@
         <div class="teacher-stack">
             <div class="teacher-card">
                 <div class="teacher-card-section">
-                    <h2 class="teacher-section-title">Thông tin buổi học</h2>
+                    <h2 class="teacher-section-title">Buổi học</h2>
                     <div class="teacher-info-grid mt-6">
                         <dl class="teacher-key-value">
-                            <dt>Buổi học</dt>
+                            <dt>Buổi</dt>
                             <dd>@Model.SessionLabel</dd>
                         </dl>
                         <dl class="teacher-key-value">
-                            <dt>Lịch học</dt>
+                            <dt>Lịch</dt>
                             <dd>@Model.ScheduleText</dd>
                         </dl>
                     </div>
@@ -74,10 +72,10 @@
 
             <div class="teacher-card">
                 <div class="teacher-card-section">
-                    <h2 class="teacher-section-title">Thao tác nhanh</h2>
+                    <h2 class="teacher-section-title">Thao tác</h2>
                     <div class="teacher-stack mt-6">
                         <a asp-area="Teacher" asp-controller="Attendances" asp-action="Board" asp-route-sessionId="@Model.SessionId" class="teacher-btn-primary w-full">Mở buổi học</a>
-                        <a asp-area="Teacher" asp-controller="Evidence" asp-action="Index" class="teacher-btn-secondary w-full">Quay lại minh chứng</a>
+                        <a asp-area="Teacher" asp-controller="Evidence" asp-action="Index" class="teacher-btn-secondary w-full">Quay lại</a>
                     </div>
                 </div>
             </div>

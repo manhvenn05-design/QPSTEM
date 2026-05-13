@@ -41,7 +41,7 @@
         <div asp-validation-summary="ModelOnly" class="teacher-alert teacher-alert--error"></div>
     }
 
-    <div class="teacher-stat-grid teacher-stat-grid--4">
+    <div class="teacher-stat-grid teacher-stat-grid--5">
         <article class="teacher-stat-card">
             <span class="teacher-stat-label">Sĩ số lớp</span>
             <div class="teacher-stat-value">@Model.StudentCount</div>
@@ -51,6 +51,11 @@
             <span class="teacher-stat-label">Đã ghi nhận</span>
             <div class="teacher-stat-value">@Model.AttendanceCount</div>
             <p class="teacher-kicker">Số học viên đã có dữ liệu điểm danh.</p>
+        </article>
+        <article class="teacher-stat-card">
+            <span class="teacher-stat-label">Chưa ghi nhận</span>
+            <div class="teacher-stat-value">@Model.MissingCount</div>
+            <p class="teacher-kicker">Các học viên chưa có bản ghi cho buổi học.</p>
         </article>
         <article class="teacher-stat-card">
             <span class="teacher-stat-label">Có mặt</span>
@@ -79,7 +84,7 @@
                 <div class="teacher-toolbar">
                     <div>
                         <h2 class="teacher-section-title">Sổ điểm danh</h2>
-                        <p class="teacher-section-subtitle">Điền trạng thái, ghi chú và media cho từng học viên rồi bấm lưu cuối trang.</p>
+                        <p class="teacher-section-subtitle">Trạng thái mặc định của mỗi học viên là <strong>chưa ghi nhận</strong> cho đến khi bạn lưu điểm danh.</p>
                     </div>
                     <form asp-area="Teacher" asp-controller="Attendances" asp-action="MarkAllPresent" asp-route-sessionId="@Model.SessionId" method="post">
                         @Html.AntiForgeryToken()
@@ -92,7 +97,7 @@
             </div>
         </div>
 
-        <form asp-area="Teacher" asp-controller="Attendances" asp-action="Board" method="post" class="teacher-card">
+        <form asp-area="Teacher" asp-controller="Attendances" asp-action="Board" method="post" class="teacher-card" id="attendance-board-form">
             @Html.AntiForgeryToken()
             <input asp-for="SessionId" type="hidden" />
 
@@ -107,6 +112,7 @@
                             <input asp-for="Rows[@i].StudentUsername" type="hidden" />
                             <input asp-for="Rows[@i].StudentAvatarUrl" type="hidden" />
                             <input asp-for="Rows[@i].MediaHint" type="hidden" />
+                            <input asp-for="Rows[@i].HasAttendance" type="hidden" />
 
                             <div class="teacher-board-student">
                                 @if (!string.IsNullOrWhiteSpace(Model.Rows[i].StudentAvatarUrl))
@@ -123,101 +129,116 @@
                                 <div>
                                     <p class="text-sm font-semibold text-[#1a1c19]">@Model.Rows[i].StudentName</p>
                                     <p class="mt-1 text-sm text-[#73796b]">@Model.Rows[i].StudentUsername</p>
+                                    <div class="mt-3 flex flex-wrap items-center gap-3">
+                                        <span class="@Model.Rows[i].StatusBadgeClass">@Model.Rows[i].StatusLabel</span>
+
+                                    </div>
                                 </div>
                             </div>
 
                             <div class="teacher-board-fields">
-                                <div class="teacher-toggle">
-                                    <label class="teacher-checkbox">
-                                        <input asp-for="Rows[@i].IsPresent" />
-                                        <span>Có mặt</span>
+                                <div class="teacher-toggle flex flex-wrap gap-4">
+                                    <label class="teacher-radio flex items-center gap-2 cursor-pointer">
+                                        <input type="radio" name="Rows[@i].AttendanceStatus" value="Present" class="accent-[#3b6722]" onchange="updateAttendanceStatus(@i, 'Present'); autoSaveBoard()" @(Model.Rows[i].IsPresent ? "checked" : "") />
+                                        <span class="text-sm font-medium">Có mặt</span>
                                     </label>
+                                    <label class="teacher-radio flex items-center gap-2 cursor-pointer">
+                                        <input type="radio" name="Rows[@i].AttendanceStatus" value="Absent" class="accent-[#ba1a1a]" onchange="updateAttendanceStatus(@i, 'Absent'); autoSaveBoard()" @(!Model.Rows[i].IsPresent && !Model.Rows[i].IsExcused && Model.Rows[i].HasAttendance ? "checked" : "") />
+                                        <span class="text-sm font-medium">Vắng</span>
+                                    </label>
+                                    <label class="teacher-radio flex items-center gap-2 cursor-pointer">
+                                        <input type="radio" name="Rows[@i].AttendanceStatus" value="Excused" class="accent-[#006e1c]" onchange="updateAttendanceStatus(@i, 'Excused'); autoSaveBoard()" @(!Model.Rows[i].IsPresent && Model.Rows[i].IsExcused ? "checked" : "") />
+                                        <span class="text-sm font-medium">Vắng phép</span>
+                                    </label>
+                                    <input type="hidden" asp-for="Rows[@i].IsPresent" id="Rows_@(i)__IsPresent" />
+                                    <input type="hidden" asp-for="Rows[@i].IsExcused" id="Rows_@(i)__IsExcused" />
                                 </div>
 
                                 <div class="teacher-field relative">
                                     <div class="flex items-center justify-between">
                                         <label asp-for="Rows[@i].TeacherRawNote">Ghi chú giáo viên</label>
-                                        <button type="button" class="text-xs font-semibold text-[#6a994e] flex items-center gap-1 hover:text-[#3b6722] transition-colors" onclick="openAITextModal('Rows_@(i)__TeacherRawNote')">
-                                            <span class="material-symbols-outlined text-[16px]">auto_awesome</span> Nhờ AI viết lại
-                                        </button>
+                                        <div class="flex items-center gap-3">
+                                            <button type="button" class="text-xs font-semibold text-[#1a73e8] flex items-center gap-1 hover:text-[#1557b0] transition-colors" onclick="toggleExpandTextarea('Rows_@(i)__TeacherRawNote', this)">
+                                                <span class="material-symbols-outlined text-[16px]">open_in_full</span> Phóng to
+                                            </button>
+                                            <button type="button" class="text-xs font-semibold text-[#6a994e] flex items-center gap-1 hover:text-[#3b6722] transition-colors" onclick="openAITextModal('Rows_@(i)__TeacherRawNote')">
+                                                <span class="material-symbols-outlined text-[16px]">auto_awesome</span> Nhờ AI viết lại
+                                            </button>
+                                        </div>
                                     </div>
-                                    <textarea asp-for="Rows[@i].TeacherRawNote" rows="3" placeholder="Ghi chú ngắn về tiến độ, thái độ hoặc điều cần lưu ý."></textarea>
+                                    <textarea asp-for="Rows[@i].TeacherRawNote" rows="3" placeholder="Ghi chú ngắn về tiến độ, thái độ hoặc điều cần lưu ý." class="transition-all duration-300 w-full" style="min-height: 80px; max-height: 300px; resize: vertical; overflow-y: auto;" oninput="this.style.height = ''; this.style.height = this.scrollHeight + 'px'" onchange="autoSaveBoard()"></textarea>
                                     <span asp-validation-for="Rows[@i].TeacherRawNote" class="teacher-field-error"></span>
                                 </div>
 
                                 <div class="teacher-field relative mt-4">
-                                    <label class="font-medium text-[#1a1c19]">Tải lên Video Sản phẩm</label>
+                                    <label class="font-medium text-[#1a1c19]">Tải lên video sản phẩm</label>
                                     <input type="hidden" asp-for="Rows[@i].ProductMediaUrls" id="Rows_@(i)__ProductMediaUrls" />
-                                    
-                                    <!-- Khu vực kéo thả / Upload video -->
-                                    <div class="mt-2 flex cursor-pointer justify-center rounded-xl border-2 border-dashed border-[#c2c9b9] bg-[#f8faf7] px-6 py-6 transition-colors hover:border-[#3b6722] hover:bg-[#f2f7f0]" id="upload-area-@(i)" onclick="document.getElementById('file-upload-@(i)').click()">
+                                     <input type="hidden" asp-for="Rows[@i].AiEvaluation" id="Rows_@(i)__AiEvaluation" />
+
+                                    <div class="mt-2 flex cursor-pointer justify-center rounded-xl border-2 border-dashed border-[#c2c9b9] bg-[#f8faf7] px-6 py-6 transition-colors hover:border-[#3b6722] hover:bg-[#f2f7f0]" id="upload-area-@(i)" onclick="document.getElementById('file-upload-@(i)').click()" ondragover="handleUploadDragOver(event)" ondragleave="handleUploadDragLeave(event)" ondrop="handleUploadDrop(event, @(i))">
                                         <div class="text-center">
                                             <span class="material-symbols-outlined text-[36px] text-[#73796b]">cloud_upload</span>
                                             <div class="mt-2 flex justify-center text-sm leading-6 text-[#42493f]">
                                                 <label for="file-upload-@(i)" class="relative cursor-pointer rounded-md font-semibold text-[#3b6722] hover:text-[#2d4f19]" onclick="event.stopPropagation()">
                                                     <span>Tải video từ máy</span>
-                                                    <input id="file-upload-@(i)" name="file-upload-@(i)" type="file" class="sr-only" accept="video/*" onchange="mockUploadVideo(this, @(i))">
+                                                    <input id="file-upload-@(i)" name="file-upload-@(i)" type="file" class="sr-only" accept="video/*" onchange="uploadVideoAsync(this.files?.[0], @(i)); this.value='';">
                                                 </label>
                                                 <p class="pl-1">hoặc kéo thả vào đây</p>
                                             </div>
-                                            <p class="text-xs leading-5 text-[#73796b]">Hỗ trợ video MP4, MOV, AVI dưới 50MB</p>
+                                            <p class="text-xs leading-5 text-[#73796b]">Hỗ trợ video MP4, MOV, AVI, M4V, WEBM dưới 50MB</p>
                                         </div>
                                     </div>
 
-                                    <!-- Preview Video sau khi chọn -->
                                     <div id="video-preview-@(i)" class="mt-3 hidden items-center justify-between rounded-lg border border-[#c2c9b9] bg-white p-3 shadow-sm">
                                         <div class="flex items-center gap-3 overflow-hidden">
                                             <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded bg-[#e3e3de] text-[#42493f]">
                                                 <span class="material-symbols-outlined text-[24px]">movie</span>
                                             </div>
                                             <div class="min-w-0 flex-1">
-                                                <p class="truncate text-sm font-semibold text-[#1a1c19]" id="video-filename-@(i)">video_thuyet_trinh.mp4</p>
+                                                <p class="truncate text-sm font-semibold text-[#1a1c19]" id="video-filename-@(i)">video.mp4</p>
                                                 <div class="mt-1 flex items-center gap-2">
                                                     <div class="h-1.5 w-24 overflow-hidden rounded-full bg-[#e3e3de]">
-                                                        <div class="h-full rounded-full bg-[#3b6722]" style="width: 100%"></div>
+                                                        <div id="video-progress-@(i)" class="h-full rounded-full bg-[#3b6722]" style="width: 0%"></div>
                                                     </div>
-                                                    <span class="text-[10px] font-medium text-[#3b6722]">Đã tải lên xong</span>
+                                                    <span id="video-status-@(i)" class="text-[10px] font-medium text-[#3b6722]">Đang chờ tải lên</span>
                                                 </div>
                                             </div>
                                         </div>
-                                        <button type="button" class="ml-4 shrink-0 text-[#ba1a1a] transition-colors hover:text-[#93000a]" onclick="removeMockVideo(@(i))" title="Xóa video này">
+                                        <button type="button" class="ml-4 shrink-0 text-[#ba1a1a] transition-colors hover:text-[#93000a]" onclick="removeVideo(@(i))" title="Xóa video này">
                                             <span class="material-symbols-outlined">delete</span>
                                         </button>
                                     </div>
 
-                                    <p class="teacher-field-hint mt-2">@Model.Rows[i].MediaHint</p>
+
                                     <span asp-validation-for="Rows[@i].ProductMediaUrls" class="teacher-field-error"></span>
 
-                                    <!-- Nút AI nổi bật mới -->
-                                    <button type="button" class="mt-3 flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-[#b26a00] to-[#e79211] px-4 py-2.5 text-sm font-bold text-white shadow-md transition-all hover:from-[#9f5d00] hover:to-[#cf810c] hover:shadow-lg active:scale-[0.98]" onclick="analyzeVideoInline(this, 'Rows_@(i)__ProductMediaUrls', 'ai-result-@(i)')">
-                                        <span class="material-symbols-outlined text-[20px]">auto_awesome</span>
-                                        Phân tích Video bằng AI
+                                    <button type="button" id="btn-ai-@(i)" class="mt-3 flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-[#b26a00] to-[#e79211] px-4 py-2.5 text-sm font-bold text-white shadow-md transition-all hover:from-[#9f5d00] hover:to-[#cf810c] hover:shadow-lg active:scale-[0.98]" onclick="analyzeVideoInline(this, 'Rows_@(i)__ProductMediaUrls', 'ai-result-@(i)')">
+                                        <span class="material-symbols-outlined text-[20px] ai-action-icon">auto_awesome</span>
+                                        <span class="ai-action-label">Phân tích video bằng AI</span>
                                     </button>
 
-                                    <!-- Khu vực hiển thị kết quả phân tích AI ngay bên dưới -->
                                     <div id="ai-result-@(i)" class="mt-4 hidden overflow-hidden rounded-xl border border-[#e3e3de] bg-white shadow-sm">
-                                        <div class="border-b border-[#e3e3de] bg-[#fffaf3] px-4 py-3">
+                                        <div class="border-b border-[#e3e3de] bg-[#fffaf3] px-4 py-3 flex justify-between items-center cursor-pointer select-none" onclick="toggleAiContent(@(i))">
                                             <h4 class="flex items-center gap-2 text-sm font-bold text-[#b26a00]">
                                                 <span class="material-symbols-outlined text-[18px]">analytics</span>
-                                                Báo cáo Phân tích AI
+                                                Báo cáo phân tích AI
                                             </h4>
-                                        </div>
-                                        
-                                        <!-- Trạng thái Loading -->
-                                        <div class="ai-loading-state flex flex-col items-center justify-center py-8">
-                                            <div class="h-10 w-10 animate-spin rounded-full border-4 border-[#f2f7f0] border-t-[#e79211]"></div>
-                                            <p class="mt-4 animate-pulse text-sm font-medium text-[#b26a00]">AI đang phân tích khung hình & giọng nói...</p>
+                                            <span class="material-symbols-outlined text-[#b26a00] transition-transform duration-300" id="ai-toggle-icon-@(i)">expand_less</span>
                                         </div>
 
-                                        <!-- Nội dung kết quả -->
-                                        <div class="ai-analysis-content hidden p-4">
+                                        <div class="ai-loading-state flex flex-col items-center justify-center py-8">
+                                            <div class="h-10 w-10 animate-spin rounded-full border-4 border-[#f2f7f0] border-t-[#e79211]"></div>
+                                            <p class="mt-4 animate-pulse text-sm font-medium text-[#b26a00]">AI đang phân tích khung hình và giọng nói...</p>
+                                        </div>
+
+                                        <div class="ai-analysis-content hidden p-4" id="ai-analysis-content-@(i)">
                                             <div class="mb-5 flex items-center justify-between rounded-lg bg-[#f2f7f0] p-3">
-                                                <span class="text-xs font-bold text-[#42493f] uppercase">Điểm đánh giá chung</span>
+                                                <span class="text-xs font-bold uppercase text-[#42493f]">Điểm đánh giá chung</span>
                                                 <div class="flex items-center gap-3">
                                                     <div class="h-2 w-32 overflow-hidden rounded-full bg-[#e3e3de]">
-                                                        <div class="h-full w-[85%] rounded-full bg-[#3b6722]"></div>
+                                                        <div id="ai-score-bar-@(i)" class="h-full w-[0%] rounded-full bg-[#3b6722]"></div>
                                                     </div>
-                                                    <span class="text-base font-black text-[#1a1c19]">85/100</span>
+                                                    <span id="ai-score-@(i)" class="text-base font-black text-[#1a1c19]">--/100</span>
                                                 </div>
                                             </div>
 
@@ -226,19 +247,13 @@
                                                     <h5 class="mb-2 flex items-center gap-1 text-xs font-bold text-[#3b6722]">
                                                         <span class="material-symbols-outlined text-[16px]">thumb_up</span> Điểm sáng
                                                     </h5>
-                                                    <ul class="list-disc space-y-1 pl-5 text-sm text-[#42493f]">
-                                                        <li>Phát âm rõ ràng, có ngữ điệu.</li>
-                                                        <li>Giao tiếp bằng mắt tốt với camera.</li>
-                                                    </ul>
+                                                    <ul id="ai-strengths-@(i)" class="list-disc space-y-1 pl-5 text-sm text-[#42493f]"></ul>
                                                 </div>
                                                 <div class="rounded-lg border border-[#e3e3de] p-3 shadow-sm">
                                                     <h5 class="mb-2 flex items-center gap-1 text-xs font-bold text-[#ba1a1a]">
                                                         <span class="material-symbols-outlined text-[16px]">trending_up</span> Cần cải thiện
                                                     </h5>
-                                                    <ul class="list-disc space-y-1 pl-5 text-sm text-[#42493f]">
-                                                        <li>Phần đầu giới thiệu còn hơi vội.</li>
-                                                        <li>Dùng sai từ chuyên ngành ("trục xoay" thay vì "ròng rọc").</li>
-                                                    </ul>
+                                                    <ul id="ai-weaknesses-@(i)" class="list-disc space-y-1 pl-5 text-sm text-[#42493f]"></ul>
                                                 </div>
                                             </div>
 
@@ -246,10 +261,10 @@
                                                 <div class="mb-2 flex items-center justify-between">
                                                     <strong class="text-sm text-[#1a1c19]">Gợi ý phản hồi</strong>
                                                     <button type="button" class="flex items-center gap-1 rounded bg-[#1a73e8] px-2 py-1 text-xs font-medium text-white transition-colors hover:bg-[#1557b0]" onclick="applyAIComment('Rows_@(i)__TeacherRawNote', this)">
-                                                        <span class="material-symbols-outlined text-[14px]">edit_note</span> Chép vào Ghi chú
+                                                        <span class="material-symbols-outlined text-[14px]">edit_note</span> Chép vào ghi chú
                                                     </button>
                                                 </div>
-                                                <p class="ai-comment-text text-sm italic text-[#42493f]">"Bài thuyết trình dự án của con rất xuất sắc! Lần tới, con chú ý nói chậm lại một chút ở phần mở đầu nhé!"</p>
+                                                <p id="ai-suggestion-@(i)" class="ai-comment-text whitespace-pre-line text-sm italic text-[#42493f]"></p>
                                             </div>
                                         </div>
                                     </div>
@@ -273,29 +288,26 @@
     }
 </section>
 
-<!-- AI Text Modal -->
 <div class="teacher-modal-backdrop" id="aiTextModal">
-    <div class="teacher-modal shadow-xl">
+    <div class="teacher-modal shadow-xl" style="width: 100%; max-width: 650px;">
         <div class="teacher-modal-content relative">
-            <button type="button" class="absolute top-4 right-4 text-[#73796b] hover:text-[#1a1c19]" onclick="closeAIModals()">
+            <button type="button" class="absolute right-4 top-4 text-[#73796b] hover:text-[#1a1c19]" onclick="closeAIModals()">
                 <span class="material-symbols-outlined">close</span>
             </button>
-            <div class="flex items-center gap-2 mb-4 text-[#6a994e]">
+            <div class="mb-4 flex items-center gap-2 text-[#6a994e]">
                 <span class="material-symbols-outlined">auto_awesome</span>
-                <h2 class="text-lg font-semibold text-[#1a1c19]">AI Viết Lại Nhận Xét</h2>
+                <h2 class="text-lg font-semibold text-[#1a1c19]">AI viết lại nhận xét</h2>
             </div>
-            
-            <div id="aiTextLoading" class="py-8 text-center text-[#73796b] hidden">
-                <span class="material-symbols-outlined animate-spin text-[32px] text-[#6a994e] mb-2" style="animation: spin 1s linear infinite;">refresh</span>
+
+            <div id="aiTextLoading" class="hidden py-8 text-center text-[#73796b]">
+                <span class="material-symbols-outlined mb-2 animate-spin text-[32px] text-[#6a994e]" style="animation: spin 1s linear infinite;">refresh</span>
                 <p class="text-sm">AI đang suy nghĩ và biên tập câu từ...</p>
                 <style>@@keyframes spin { 100% { transform: rotate(360deg); } }</style>
             </div>
 
             <div id="aiTextResult" class="hidden">
-                <p class="text-sm font-medium text-[#42493d] mb-2">Gợi ý từ AI (Dành cho Phụ huynh):</p>
-                <div class="p-4 bg-[#f2f7f0] border border-[#c9ddbf] rounded-lg text-sm text-[#1a1c19] mb-4" id="aiTextSuggestion">
-                    <!-- fake text -->
-                </div>
+                <p class="mb-3 text-sm font-medium text-[#42493d]">Phiên bản nhận xét đã được tinh chỉnh:</p>
+                <div class="mb-5 min-h-[160px] whitespace-pre-line rounded-xl border border-[#c9ddbf] bg-gradient-to-br from-[#f2f7f0] to-[#e6f0e3] p-5 text-base leading-relaxed text-[#1a1c19] shadow-inner" id="aiTextSuggestion"></div>
                 <div class="flex justify-end gap-3">
                     <button type="button" class="teacher-btn-secondary !h-10" onclick="closeAIModals()">Huỷ</button>
                     <button type="button" class="teacher-btn-primary !h-10" onclick="applyAIText()">Thay thế nhận xét</button>
@@ -305,115 +317,425 @@
     </div>
 </div>
 
-
-
 @section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         let currentTextTarget = null;
+        let currentSuggestion = "";
 
-        function openAITextModal(targetId) {
-            currentTextTarget = targetId;
-            const originalText = document.getElementById(targetId)?.value;
-            if(!originalText || originalText.trim() === '') {
-                alert("Hãy gõ vài dòng ghi chú thô của bạn trước để AI có thể viết lại nhé!");
+        function getRequestVerificationToken() {
+            return document.querySelector('#attendance-board-form input[name="__RequestVerificationToken"]')?.value || '';
+        }
+
+        function setTextContent(id, value) {
+            const element = document.getElementById(id);
+            if (element) {
+                element.textContent = value ?? '';
+            }
+        }
+
+        function replaceListItems(listElement, items) {
+            if (!listElement) {
                 return;
             }
 
-            document.getElementById('aiTextModal').classList.add('is-open');
-            document.getElementById('aiTextLoading').classList.remove('hidden');
-            document.getElementById('aiTextResult').classList.add('hidden');
+            const values = Array.isArray(items) ? items : [];
+            listElement.replaceChildren(...values.map(item => {
+                const li = document.createElement('li');
+                li.textContent = item ?? '';
+                return li;
+            }));
+        }
 
-            setTimeout(() => {
-                document.getElementById('aiTextLoading').classList.add('hidden');
-                document.getElementById('aiTextResult').classList.remove('hidden');
-                document.getElementById('aiTextSuggestion').innerHTML = 
-                    "<strong>[Bản nháp từ AI]</strong><br/>" + 
-                    "Hôm nay con đã nỗ lực hoàn thành tốt các nhiệm vụ trong lớp. Tuy đôi lúc con còn mất tập trung nhẹ, nhưng sau khi thầy/cô nhắc nhở, con đã nhanh chóng bắt nhịp lại. Kính mong gia đình cùng động viên để con phát huy sự chủ động tốt hơn trong buổi tới.";
-            }, 1200);
+        function showVideoPreview(index, fileName, progressText, progressPercent) {
+            document.getElementById(`upload-area-${index}`)?.classList.add('hidden');
+            const preview = document.getElementById(`video-preview-${index}`);
+            preview?.classList.remove('hidden');
+            preview?.classList.add('flex');
+            setTextContent(`video-filename-${index}`, fileName);
+            setTextContent(`video-status-${index}`, progressText);
+            const progressBar = document.getElementById(`video-progress-${index}`);
+            if (progressBar) {
+                progressBar.style.width = `${progressPercent}%`;
+            }
+        }
+
+        function hideVideoPreview(index) {
+            document.getElementById(`video-preview-${index}`)?.classList.add('hidden');
+            document.getElementById(`video-preview-${index}`)?.classList.remove('flex');
+            document.getElementById(`upload-area-${index}`)?.classList.remove('hidden');
+        }
+
+        function renderAiResult(idx, res) {
+            if (!res) return;
+            const rawScore = String(res.score || '0').replace(/\/100/g, '').trim();
+            setTextContent(`ai-score-${idx}`, `${rawScore}/100`);
+            const scoreBar = document.getElementById(`ai-score-bar-${idx}`);
+            if (scoreBar) {
+                const numericScore = parseInt(rawScore) || 0;
+                scoreBar.style.width = `${numericScore}%`;
+                if (numericScore >= 80) scoreBar.style.backgroundColor = '#3b6722';
+                else if (numericScore >= 60) scoreBar.style.backgroundColor = '#b26a00';
+                else scoreBar.style.backgroundColor = '#ba1a1a';
+            }
+            replaceListItems(document.getElementById(`ai-strengths-${idx}`), res.strengths);
+            replaceListItems(document.getElementById(`ai-weaknesses-${idx}`), res.weaknesses);
+            setTextContent(`ai-suggestion-${idx}`, res.suggestion);
+        }
+
+        function updateAttendanceStatus(index, status) {
+            const isPresent = document.getElementById(`Rows_${index}__IsPresent`);
+            const isExcused = document.getElementById(`Rows_${index}__IsExcused`);
+            if(status === 'Present') {
+                isPresent.value = "true";
+                isExcused.value = "false";
+            } else if (status === 'Absent') {
+                isPresent.value = "false";
+                isExcused.value = "false";
+            } else if (status === 'Excused') {
+                isPresent.value = "false";
+                isExcused.value = "true";
+            }
+        }
+
+        function toggleExpandTextarea(id, btn) {
+            const textarea = document.getElementById(id);
+            if (!textarea) return;
+            const isExpanded = textarea.classList.contains('expanded-textarea');
+            if (isExpanded) {
+                textarea.classList.remove('expanded-textarea');
+                textarea.style.height = '80px';
+                textarea.style.maxHeight = '300px';
+                btn.innerHTML = '<span class="material-symbols-outlined text-[16px]">open_in_full</span> Phóng to';
+            } else {
+                textarea.classList.add('expanded-textarea');
+                textarea.style.height = '400px';
+                textarea.style.maxHeight = '600px';
+                btn.innerHTML = '<span class="material-symbols-outlined text-[16px]">close_fullscreen</span> Thu nhỏ';
+            }
+        }
+
+        function toggleAiContent(index) {
+            const content = document.getElementById(`ai-analysis-content-${index}`);
+            const icon = document.getElementById(`ai-toggle-icon-${index}`);
+            if (content && !content.classList.contains('hidden')) {
+                if(content.style.display === 'none') {
+                    content.style.display = 'block';
+                    icon.textContent = 'expand_less';
+                } else {
+                    content.style.display = 'none';
+                    icon.textContent = 'expand_more';
+                }
+            }
+        }
+
+        function initializeExistingVideos() {
+            document.querySelectorAll('input[id$="__ProductMediaUrls"]').forEach((input, index) => {
+                if (!input.value) {
+                    return;
+                }
+
+                const fileName = input.value.split('/').pop() || 'video đã lưu';
+                showVideoPreview(index, fileName, 'Đã lưu trên hệ thống', 100);
+                
+                // Cập nhật text nút nếu đã có nhận xét AI
+                const aiEvalInput = document.getElementById(`Rows_${index}__AiEvaluation`);
+                if (aiEvalInput && aiEvalInput.value) {
+                    const btn = document.getElementById(`btn-ai-${index}`);
+                    if (btn) {
+                        const label = btn.querySelector('.ai-action-label');
+                        if (label) label.textContent = 'Mở nhận xét AI';
+                    }
+                }
+            });
+        }
+
+        function handleUploadDragOver(event) {
+            event.preventDefault();
+            event.currentTarget.classList.add('border-[#3b6722]', 'bg-[#f2f7f0]');
+        }
+
+        function handleUploadDragLeave(event) {
+            event.preventDefault();
+            event.currentTarget.classList.remove('border-[#3b6722]', 'bg-[#f2f7f0]');
+        }
+
+        function handleUploadDrop(event, index) {
+            event.preventDefault();
+            event.currentTarget.classList.remove('border-[#3b6722]', 'bg-[#f2f7f0]');
+            const file = event.dataTransfer?.files?.[0];
+            if (file) {
+                uploadVideoAsync(file, index);
+            }
+        }
+
+        async function openAITextModal(targetId) {
+            currentTextTarget = targetId;
+            const originalText = document.getElementById(targetId)?.value;
+
+            if (!originalText || originalText.trim() === '') {
+                Swal.fire({ icon: 'warning', title: 'Thiếu thông tin', text: 'Hãy gõ vài dòng ghi chú thô của bạn trước để AI có thể viết lại.', confirmButtonColor: '#6a994e' });
+                return;
+            }
+
+            if (originalText.trim().length < 10) {
+                Swal.fire({ icon: 'warning', title: 'Ghi chú quá ngắn', text: 'Vui lòng nhập chi tiết hơn để AI có cơ sở viết lại.', confirmButtonColor: '#6a994e' });
+                return;
+            }
+
+            document.getElementById('aiTextModal')?.classList.add('is-open');
+            document.getElementById('aiTextLoading')?.classList.remove('hidden');
+            document.getElementById('aiTextResult')?.classList.add('hidden');
+            currentSuggestion = '';
+
+            try {
+                const token = getRequestVerificationToken();
+                const response = await fetch('/Teacher/AICopilot/RefineNote', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': token
+                    },
+                    body: JSON.stringify({ rawNote: originalText })
+                });
+
+                let data;
+                try {
+                    const textData = await response.text();
+                    try {
+                        data = JSON.parse(textData);
+                    } catch (e) {
+                        console.error("Non-JSON response from server:", textData);
+                        throw new Error("Server returned non-JSON response: " + response.status);
+                    }
+                } catch(e) { throw e; }
+
+                if (response.ok && data.success) {
+                    currentSuggestion = data.suggestion || '';
+                    document.getElementById('aiTextLoading')?.classList.add('hidden');
+                    document.getElementById('aiTextResult')?.classList.remove('hidden');
+                    setTextContent('aiTextSuggestion', currentSuggestion);
+                } else {
+                    Swal.fire({ icon: 'error', title: 'Có lỗi xảy ra', text: data.message || 'Lỗi khi gọi AI. Vui lòng thử lại.', confirmButtonColor: '#6a994e' });
+                    closeAIModals();
+                }
+            } catch (error) {
+                console.error('Error calling AI API:', error);
+                Swal.fire({ icon: 'error', title: 'Mất kết nối', text: 'Không thể kết nối đến máy chủ AI. Vui lòng thử lại sau.', confirmButtonColor: '#6a994e' });
+                closeAIModals();
+            }
+        }
+
+        function autoSaveBoard() {
+            const form = document.getElementById('attendance-board-form');
+            if (form) {
+                const formData = new FormData(form);
+                fetch(form.action, {
+                    method: 'POST',
+                    body: formData,
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                }).catch(e => console.error('Auto-save failed', e));
+            }
         }
 
         function applyAIText() {
-            if(currentTextTarget) {
-                const sugg = document.getElementById('aiTextSuggestion').innerText.replace("[Bản nháp từ AI]\n", "");
-                document.getElementById(currentTextTarget).value = sugg;
+            if (currentTextTarget && currentSuggestion) {
+                document.getElementById(currentTextTarget).value = currentSuggestion;
+                autoSaveBoard();
             }
             closeAIModals();
         }
 
-        function mockUploadVideo(inputElem, index) {
-            if (inputElem.files && inputElem.files[0]) {
-                const file = inputElem.files[0];
-                
-                // Ẩn khu vực upload, hiện khu vực preview
-                document.getElementById('upload-area-' + index).classList.add('hidden');
-                document.getElementById('video-preview-' + index).classList.remove('hidden');
-                document.getElementById('video-preview-' + index).classList.add('flex');
-                
-                // Đổi tên file hiển thị
-                document.getElementById('video-filename-' + index).innerText = file.name;
-
-                // Gắn đại 1 url giả vào thẻ hidden để giả lập validate hợp lệ
-                document.getElementById('Rows_' + index + '__ProductMediaUrls').value = "uploaded://" + file.name;
-            }
-        }
-
-        function removeMockVideo(index) {
-            // Xóa file trong input
-            document.getElementById('file-upload-' + index).value = '';
-            document.getElementById('Rows_' + index + '__ProductMediaUrls').value = '';
-
-            // Ẩn preview, hiện lại khung upload
-            document.getElementById('video-preview-' + index).classList.add('hidden');
-            document.getElementById('video-preview-' + index).classList.remove('flex');
-            document.getElementById('upload-area-' + index).classList.remove('hidden');
-
-            // Đóng khung kết quả phân tích AI nếu đang mở
-            document.getElementById('ai-result-' + index).classList.add('hidden');
-        }
-
-        function analyzeVideoInline(btnElement, mediaInputId, resultContainerId) {
-            const mediaLinks = document.getElementById(mediaInputId)?.value;
-            if(!mediaLinks) {
-                alert("Vui lòng tải lên một video trước khi yêu cầu AI phân tích!");
+        function uploadVideoAsync(file, index) {
+            if (!file) {
                 return;
             }
 
+            if (file.size > 50 * 1024 * 1024) {
+                Swal.fire({ icon: 'error', title: 'File quá lớn', text: 'Vui lòng chọn video dưới 50MB.', confirmButtonColor: '#6a994e' });
+                return;
+            }
+
+            showVideoPreview(index, `Đang tải lên: ${file.name}`, 'Đang chuẩn bị tải lên', 0);
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/Teacher/Attendances/UploadVideo');
+            const token = getRequestVerificationToken();
+            if (token) {
+                xhr.setRequestHeader('RequestVerificationToken', token);
+            }
+
+            xhr.upload.addEventListener('progress', (event) => {
+                if (!event.lengthComputable) {
+                    return;
+                }
+
+                const percent = Math.round((event.loaded / event.total) * 100);
+                showVideoPreview(index, file.name, `Đang tải lên ${percent}%`, percent);
+            });
+
+            xhr.onload = () => {
+                try {
+                    const result = JSON.parse(xhr.responseText || '{}');
+                    if (xhr.status >= 200 && xhr.status < 300 && result.success) {
+                        document.getElementById(`Rows_${index}__ProductMediaUrls`).value = result.url;
+                        showVideoPreview(index, file.name, 'Đã tải lên xong', 100);
+                        autoSaveBoard();
+                        Swal.fire({ icon: 'success', title: 'Đã tải lên', text: 'Tải video thành công.', timer: 1500, showConfirmButton: false });
+                        return;
+                    }
+
+                    throw new Error(result.message || 'Lỗi khi tải video lên server.');
+                } catch (error) {
+                    console.error('Upload failed:', error);
+                    Swal.fire({ icon: 'error', title: 'Upload thất bại', text: error.message || 'Lỗi khi tải video lên server.', confirmButtonColor: '#6a994e' });
+                    removeVideo(index);
+                }
+            };
+
+            xhr.onerror = () => {
+                Swal.fire({ icon: 'error', title: 'Upload thất bại', text: 'Không thể tải video lên server.', confirmButtonColor: '#6a994e' });
+                removeVideo(index);
+            };
+
+            xhr.send(formData);
+        }
+
+        function removeVideo(index) {
+            const fileInput = document.getElementById(`file-upload-${index}`);
+            if (fileInput) {
+                fileInput.value = '';
+            }
+
+            document.getElementById(`Rows_${index}__ProductMediaUrls`).value = '';
+            const aiEvalInput = document.getElementById(`Rows_${index}__AiEvaluation`);
+            if (aiEvalInput) aiEvalInput.value = '';
+            const btn = document.getElementById(`btn-ai-${index}`);
+            if (btn) btn.querySelector('.ai-action-label').textContent = 'Phân tích video bằng AI';
+
+            hideVideoPreview(index);
+            document.getElementById(`ai-result-${index}`)?.classList.add('hidden');
+        }
+
+        async function analyzeVideoInline(btnElement, mediaInputId, resultContainerId) {
+            const mediaLinks = document.getElementById(mediaInputId)?.value;
+            if (!mediaLinks) {
+                Swal.fire({ icon: 'info', title: 'Chưa có video', text: 'Vui lòng tải lên một video trước khi yêu cầu AI phân tích.', confirmButtonColor: '#b26a00' });
+                return;
+            }
+
+            const indexMatch = resultContainerId.match(/\d+$/);
+            const idx = indexMatch ? indexMatch[0] : '0';
+            const aiEvalInput = document.getElementById(`Rows_${idx}__AiEvaluation`);
             const resultContainer = document.getElementById(resultContainerId);
-            const loadingState = resultContainer.querySelector('.ai-loading-state');
-            const contentState = resultContainer.querySelector('.ai-analysis-content');
-
-            // Hiển thị khung loading
-            resultContainer.classList.remove('hidden');
-            loadingState.classList.remove('hidden');
-            contentState.classList.add('hidden');
+            const contentState = resultContainer?.querySelector('.ai-analysis-content');
             
-            // Vô hiệu hóa nút trong lúc chờ
-            const originalHtml = btnElement.innerHTML;
-            btnElement.disabled = true;
-            btnElement.innerHTML = '<span class="material-symbols-outlined animate-spin text-[20px]">sync</span> Đang phân tích...';
+            if (aiEvalInput && aiEvalInput.value) {
+                if (resultContainer.classList.contains('hidden')) {
+                    try {
+                        const res = JSON.parse(aiEvalInput.value);
+                        renderAiResult(idx, res);
+                        resultContainer.classList.remove('hidden');
+                        contentState.classList.remove('hidden');
+                        
+                        const loadingState = resultContainer?.querySelector('.ai-loading-state');
+                        if (loadingState) loadingState.classList.add('hidden');
+                        
+                        btnElement.querySelector('.ai-action-label').textContent = 'Đóng nhận xét AI';
+                    } catch(e) { console.error(e); }
+                } else {
+                    resultContainer.classList.add('hidden');
+                    btnElement.querySelector('.ai-action-label').textContent = 'Mở nhận xét AI';
+                }
+                return;
+            }
 
-            setTimeout(() => {
-                loadingState.classList.add('hidden');
-                contentState.classList.remove('hidden');
-                
+            const loadingState = resultContainer?.querySelector('.ai-loading-state');
+            const icon = btnElement.querySelector('.ai-action-icon');
+            const label = btnElement.querySelector('.ai-action-label');
+            const originalIcon = icon?.textContent;
+            const originalLabel = label?.textContent;
+
+            resultContainer?.classList.remove('hidden');
+            loadingState?.classList.remove('hidden');
+            contentState?.classList.add('hidden');
+
+            btnElement.disabled = true;
+            if (icon) {
+                icon.textContent = 'sync';
+                icon.classList.add('animate-spin');
+            }
+            if (label) {
+                label.textContent = 'Đang phân tích...';
+            }
+
+            try {
+                const token = getRequestVerificationToken();
+                const response = await fetch('/Teacher/AICopilot/AnalyzeVideo', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': token
+                    },
+                    body: JSON.stringify({ videoUrl: mediaLinks })
+                });
+                let data;
+                try {
+                    const textData = await response.text();
+                    try {
+                        data = JSON.parse(textData);
+                    } catch (e) {
+                        console.error("Non-JSON response from server:", textData);
+                        throw new Error("Server returned non-JSON response: " + response.status);
+                    }
+                } catch(e) { throw e; }
+
+                if (response.ok && data.success) {
+                    const res = data.result || {};
+                    const aiEvalInput = document.getElementById(`Rows_${idx}__AiEvaluation`);
+                    if (aiEvalInput) aiEvalInput.value = JSON.stringify(res);
+                    
+                    renderAiResult(idx, res);
+                    autoSaveBoard();
+                    loadingState?.classList.add('hidden');
+                    contentState?.classList.remove('hidden');
+                    if (label) label.textContent = 'Đóng nhận xét AI';
+                } else {
+                    Swal.fire({ icon: 'error', title: 'Lỗi phân tích', text: data.message || 'Có lỗi xảy ra khi phân tích video.', confirmButtonColor: '#b26a00' });
+                    resultContainer?.classList.add('hidden');
+                }
+            } catch (error) {
+                console.error(error);
+                Swal.fire({ icon: 'error', title: 'Mất kết nối', text: 'Không thể kết nối với hệ thống AI.', confirmButtonColor: '#b26a00' });
+                resultContainer?.classList.add('hidden');
+            } finally {
                 btnElement.disabled = false;
-                btnElement.innerHTML = originalHtml;
-            }, 2000);
+                if (icon) {
+                    icon.textContent = originalIcon || 'auto_awesome';
+                    icon.classList.remove('animate-spin');
+                }
+                if (label) {
+                    label.textContent = originalLabel || 'Phân tích video bằng AI';
+                }
+            }
         }
 
         function applyAIComment(targetInputId, btnElement) {
             const txtArea = document.getElementById(targetInputId);
-            if(txtArea) {
-                // Tìm text từ element cùng khối với button (sibling)
-                const sugg = btnElement.closest('.bg-\\[\\#f5f9fc\\]').querySelector('.ai-comment-text').innerText;
-                txtArea.value = (txtArea.value ? txtArea.value + "\n\n" : "") + "--- Đánh giá Video (AI) ---\n" + sugg;
-                alert("Đã chép gợi ý AI vào phần Ghi chú giáo viên!");
+            const commentText = btnElement.closest('.bg-\\[\\#f5f9fc\\]')?.querySelector('.ai-comment-text')?.textContent?.trim();
+            if (txtArea && commentText) {
+                txtArea.value = (txtArea.value ? `${txtArea.value}\n\n` : '') + `--- Đánh giá video (AI) ---\n${commentText}`;
+                Swal.fire({ icon: 'success', title: 'Thành công', text: 'Đã chép gợi ý AI vào ghi chú giáo viên.', timer: 2000, showConfirmButton: false });
             }
         }
 
         function closeAIModals() {
             document.getElementById('aiTextModal')?.classList.remove('is-open');
-            document.getElementById('aiVideoModal')?.classList.remove('is-open');
         }
+
+        document.addEventListener('DOMContentLoaded', initializeExistingVideos);
     </script>
 }
