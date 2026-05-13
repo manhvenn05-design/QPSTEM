@@ -62,15 +62,13 @@ description: Cung cấp toàn bộ ngữ cảnh hệ thống, kiến trúc và q
 |   `-- wwwroot/
 ```
 
+
 # 📌 MAP ROUTING & AUTH (IMPORTANT)
-
 ## Routing
-
 - `areas`: `{area:exists}/{controller=Dashboard}/{action=Index}/{id?}`
 - `default`: `{controller=Home}/{action=Index}/{id?}`
 
 ## Auth
-
 - Cookie Authentication
 - `LoginPath = /Account/Login`
 - Login tạo Claims:
@@ -83,20 +81,17 @@ description: Cung cấp toàn bộ ngữ cảnh hệ thống, kiến trúc và q
   - Student → `/StudentPortal/Index`
 
 ## Guard phổ biến
-
 - Admin/Teacher controller có `[Authorize(Roles="Admin")]`, `[Authorize(Roles="Teacher")]`
 - Student portal controller có `[Authorize(Roles="Student")]`
 
+
 # 📜 QUY TẮC PHÁT TRIỂN (CODING STANDARDS)
-
 ## Trước khi code
-
 1. Xác định đúng feature thuộc **Public / Student / Teacher / Admin**.
 2. Nếu chưa hiểu logic nghiệp vụ hoặc DB field, phải đọc liên quan: entity/model + controller + view + layout.
 3. Luôn đảm bảo feature không phá placement rules của CODING_GUIDE.
 
 ## Khi code
-
 1. Không “đẻ” cấu trúc mới lạc hướng (không chuyển sang Clean Architecture hoàn toàn nếu repo chưa làm).
 2. Backoffice phải nằm trong `Areas/Admin`.
 3. Controller admin phải có `[Area("Admin")]`.

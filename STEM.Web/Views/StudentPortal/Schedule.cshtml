@@ -1,0 +1,738 @@
+@using System.Text.Json
+@model STEM.Web.Models.StudentViewModels.StudentSchedulePageViewModel
+
+@{
+    ViewData["Title"] = "Lịch học";
+    Layout = "_StudentLayout";
+
+    var today = DateOnly.FromDateTime(DateTime.Today);
+    var calYear = Model.CalendarYear;
+    var calMonth = Model.CalendarMonth;
+    var firstDay = new DateOnly(calYear, calMonth, 1);
+    var monthSessions = Model.Sessions
+        .OrderBy(x => x.Date)
+        .ThenBy(x => x.StartTime)
+        .ThenBy(x => x.ClassCode)
+        .ThenBy(x => x.SessionNo)
+        .ToList();
+
+    static string GetDayLabel(DayOfWeek dayOfWeek) => dayOfWeek switch
+    {
+        DayOfWeek.Monday => "Thứ hai",
+        DayOfWeek.Tuesday => "Thứ ba",
+        DayOfWeek.Wednesday => "Thứ tư",
+        DayOfWeek.Thursday => "Thứ năm",
+        DayOfWeek.Friday => "Thứ sáu",
+        DayOfWeek.Saturday => "Thứ bảy",
+        _ => "Chủ nhật"
+    };
+
+    static string ToDateKey(DateOnly date) => date.ToString("yyyy-MM-dd");
+
+    var initialSelectedDate = calYear == today.Year && calMonth == today.Month
+        ? today
+        : monthSessions.FirstOrDefault()?.Date ?? firstDay;
+
+    var calendarPayload = new
+    {
+        year = calYear,
+        month = calMonth,
+        totalCount = monthSessions.Count,
+        selectedDateKey = ToDateKey(initialSelectedDate),
+        sessions = monthSessions.Select(x => new
+        {
+            sessionId = x.SessionId,
+            dateKey = ToDateKey(x.Date),
+            dateDisplay = x.Date.ToString("dd/MM/yyyy"),
+            dayLabel = GetDayLabel(x.Date.DayOfWeek),
+            courseName = x.CourseName,
+            classCode = x.ClassCode,
+            sessionNo = x.SessionNo,
+            startTime = x.StartTime.ToString("HH:mm"),
+            endTime = x.EndTime.ToString("HH:mm"),
+            topic = x.Topic,
+            teacherName = x.TeacherName,
+            teachingMaterialUrl = x.TeachingMaterialUrl,
+            statusLabel = x.StatusLabel,
+            attendanceLabel = x.HasAttendance ? x.AttendanceLabel : "Chưa điểm danh",
+            hasAttendance = x.HasAttendance,
+            wasPresent = x.WasPresent,
+            isPast = x.IsPast,
+            isToday = x.IsToday,
+            evidenceUrl = x.IsPast && x.HasAttendance && x.WasPresent == true
+                ? Url.Action("Evidence", "StudentPortal", new { sessionId = x.SessionId })
+                : null
+        }).ToList()
+    };
+}
+
+<style>
+    .schedule-shell { display: grid; gap: 24px; }
+    .schedule-layout { display: grid; gap: 24px; grid-template-columns: minmax(280px, 320px) minmax(0, 1fr); }
+    .schedule-sidebar-card, .schedule-main-card { background: #fff; border: 1px solid #e3e3de; border-radius: 8px; overflow: hidden; }
+    .schedule-sidebar-card { display: flex; flex-direction: column; min-height: 100%; }
+    .schedule-main-card { position: relative; }
+    .schedule-loading::after { background: rgba(255,255,255,.72); content: ""; inset: 0; pointer-events: none; position: absolute; z-index: 3; }
+    .schedule-loading .schedule-main-body, .schedule-loading .schedule-sidebar-body { opacity: .55; }
+    .schedule-sidebar-head, .schedule-main-head { border-bottom: 1px solid #e3e3de; padding: 16px 18px; }
+    .schedule-main-head { align-items: center; display: flex; gap: 16px; justify-content: space-between; }
+    .schedule-month-chip { align-items: center; background: #3b6722; border-radius: 8px; color: #fff; display: inline-flex; font-size: 14px; font-weight: 700; height: 40px; padding: 0 14px; }
+    .schedule-nav-btn { align-items: center; background: #fff; border: 1px solid #d6d6d0; border-radius: 8px; color: #42493d; display: inline-flex; height: 36px; justify-content: center; transition: background-color .2s ease, color .2s ease; width: 36px; }
+    .schedule-nav-btn:hover { background: #f4f4ee; color: #1a1c19; }
+    .schedule-main-title { color: #1a1c19; font-size: 18px; font-weight: 700; margin: 0; }
+    .schedule-main-subtitle { color: #73796b; font-size: 13px; margin-top: 4px; }
+    .schedule-sidebar-body, .schedule-main-body { transition: opacity .18s ease; }
+    .schedule-mini-grid { display: grid; gap: 10px 8px; grid-template-columns: repeat(7, minmax(0, 1fr)); }
+    .schedule-mini-head { align-items: center; color: #73796b; display: flex; font-size: 11px; font-weight: 700; height: 34px; justify-content: center; text-transform: uppercase; }
+    .schedule-mini-day { align-items: center; background: none; border: none; border-radius: 9999px; color: #5d6557; display: flex; font-size: 14px; height: 38px; justify-content: center; position: relative; transition: background-color .2s ease, color .2s ease; width: 38px; }
+    .schedule-mini-day--other { color: #c2c9b9; }
+    .schedule-mini-day--selected { background: #6a994e; color: #fff; font-weight: 700; }
+    .schedule-mini-day--today:not(.schedule-mini-day--selected) { background: #edf7e8; color: #3b6722; font-weight: 700; }
+    .schedule-mini-day--has-session::after { background: #6a994e; border-radius: 9999px; content: ""; height: 5px; position: absolute; right: 4px; top: 4px; width: 5px; }
+    .schedule-selected-date { background: #3b6722; color: #fff; font-size: 15px; font-weight: 700; padding: 12px 16px; }
+    .schedule-selected-body { display: grid; gap: 12px; padding: 16px; }
+    .schedule-selected-meta { color: #73796b; font-size: 13px; line-height: 20px; }
+    .schedule-selected-list { display: grid; gap: 10px; }
+    .schedule-selected-item { background: #fafaf4; border: 1px solid #e3e3de; border-radius: 8px; padding: 12px; text-align: left; transition: border-color .2s ease, background-color .2s ease; width: 100%; }
+    .schedule-selected-item:hover { background: #f4f7f1; border-color: #b7c8ac; }
+    .schedule-selected-empty { border: 1px dashed #d6d6d0; border-radius: 8px; color: #73796b; font-size: 14px; padding: 16px; text-align: center; }
+    .schedule-summary { display: grid; gap: 10px; padding: 0 16px 16px; }
+    .schedule-summary-row { align-items: center; color: #42493d; display: flex; font-size: 14px; justify-content: space-between; }
+    .schedule-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); }
+    .schedule-grid-head { background: #fafaf4; border-bottom: 1px solid #e3e3de; border-right: 1px solid #e3e3de; color: #42493d; font-size: 13px; font-weight: 700; padding: 10px 12px; }
+    .schedule-grid-head:last-child { border-right: none; }
+    .schedule-grid-head--sunday { color: #d94841; }
+    .schedule-day { background: #fff; border-bottom: 1px solid #e3e3de; border-right: 1px solid #e3e3de; box-sizing: border-box; cursor: pointer; display: flex; flex-direction: column; gap: 10px; min-height: 170px; min-width: 0; overflow: hidden; padding: 10px; transition: background-color .2s ease, box-shadow .2s ease; }
+    .schedule-day:nth-child(7n) { border-right: none; }
+    .schedule-day:hover { background: #fcfcf8; }
+    .schedule-day.is-selected { background: #f2f7f0; box-shadow: inset 0 0 0 2px #9cc27f; }
+    .schedule-day--other { background: #fafaf4; }
+    .schedule-day--today:not(.is-selected) { background: #f5fbf3; }
+    .schedule-day-number { color: #1a1c19; font-size: 16px; font-weight: 700; line-height: 24px; }
+    .schedule-day-number--other { color: #c2c9b9; }
+    .schedule-day-number--sunday { color: #d94841; }
+    .schedule-events { display: grid; gap: 6px; min-width: 0; }
+    .schedule-event { background: #f6f6f1; border: 1px solid transparent; border-radius: 8px; box-sizing: border-box; display: block; font-size: 12px; max-width: 100%; min-width: 0; overflow: hidden; padding: 7px 8px; text-align: left; transition: transform .15s ease, box-shadow .15s ease; width: 100%; }
+    .schedule-event:hover { box-shadow: 0 8px 18px rgba(26,28,25,.08); transform: translateY(-1px); }
+    .schedule-event--upcoming { background: #fff6eb; border-color: #ffd8a8; color: #9b682f; }
+    .schedule-event--today { background: #edf7e8; border-color: #c8e0b8; color: #3b6722; }
+    .schedule-event--present { background: #edf7e8; border-color: #c8e0b8; color: #456c3f; }
+    .schedule-event--absent { background: #ffefed; border-color: #ffc9c2; color: #ba1a1a; }
+    .schedule-event--past { background: #f4f4ee; border-color: #d6d6d0; color: #5d6557; }
+    .schedule-event-time { display: block; font-size: 11px; font-weight: 700; line-height: 15px; overflow-wrap: anywhere; }
+    .schedule-event-title { -webkit-box-orient: vertical; -webkit-line-clamp: 2; display: -webkit-box; font-size: 11px; font-weight: 700; line-height: 16px; margin-top: 3px; overflow: hidden; overflow-wrap: anywhere; text-overflow: ellipsis; white-space: normal; word-break: break-word; }
+    .schedule-event-summary { -webkit-box-orient: vertical; -webkit-line-clamp: 2; color: inherit; display: -webkit-box; font-size: 11px; font-weight: 500; line-height: 15px; margin-top: 2px; opacity: .88; overflow: hidden; overflow-wrap: anywhere; word-break: break-word; }
+    .schedule-more { color: #73796b; font-size: 11px; font-weight: 600; padding-left: 2px; }
+    .schedule-day-modal-backdrop { align-items: center; background: rgba(20,23,19,.5); display: none; inset: 0; justify-content: center; padding: 16px; position: fixed; z-index: 70; }
+    .schedule-day-modal-backdrop.is-open { display: flex; }
+    .schedule-day-modal { background: #fff; border-radius: 12px; box-shadow: 0 24px 48px rgba(20,23,19,.18); max-height: min(86vh, 900px); max-width: 760px; overflow: hidden; width: 100%; }
+    .schedule-day-modal-head { border-bottom: 1px solid #e3e3de; display: flex; gap: 16px; justify-content: space-between; padding: 18px 20px; }
+    .schedule-day-modal-body { max-height: calc(86vh - 84px); overflow-y: auto; padding: 20px; }
+    .schedule-day-modal-list { display: grid; gap: 14px; }
+    .schedule-day-session { background: #fafaf4; border: 1px solid #e3e3de; border-radius: 10px; padding: 16px; }
+    .schedule-day-session-grid { display: grid; gap: 14px; grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 14px; }
+    .schedule-meta-label { color: #73796b; font-size: 12px; line-height: 16px; }
+    .schedule-meta-value { color: #1a1c19; font-size: 14px; font-weight: 600; line-height: 22px; margin-top: 2px; }
+    .schedule-pill { align-items: center; border-radius: 9999px; display: inline-flex; font-size: 12px; font-weight: 700; gap: 6px; min-height: 30px; padding: 0 12px; }
+    .schedule-pill--today, .schedule-pill--present { background: #edf7e8; color: #456c3f; }
+    .schedule-pill--upcoming { background: #fff4e8; color: #9b682f; }
+    .schedule-pill--past { background: #eeeee9; color: #42493d; }
+    .schedule-pill--absent { background: #ffdad6; color: #ba1a1a; }
+    .schedule-link-btn { align-items: center; border-radius: 8px; display: inline-flex; font-size: 13px; font-weight: 700; gap: 8px; height: 40px; justify-content: center; padding: 0 16px; }
+    .schedule-link-btn--primary { background: #3b6722; color: #fff; }
+    .schedule-link-btn--secondary { background: #f2f7f0; color: #3b6722; }
+    .schedule-list-group { display: grid; gap: 14px; }
+    .schedule-list-card { background: #fff; border: 1px solid #e3e3de; border-radius: 8px; padding: 18px; }
+    @@media (max-width: 1279px) { .schedule-layout { grid-template-columns: 1fr; } }
+    @@media (max-width: 767px) {
+        .schedule-grid { min-width: 860px; }
+        .schedule-main-scroll { overflow-x: auto; }
+        .schedule-day { min-height: 148px; }
+        .schedule-day-session-grid { grid-template-columns: 1fr; }
+    }
+</style>
+
+<section class="student-page">
+    <div class="student-page-header">
+        <div>
+            <h1 class="student-page-title">Lịch học</h1>
+            <p class="student-page-subtitle">Chọn vào ngày bất kỳ để mở cửa sổ nổi hiển thị học phần và lịch học của ngày đó.</p>
+        </div>
+        <div class="flex items-center gap-2 shrink-0">
+            <a asp-action="Schedule" asp-route-view="calendar" asp-route-month="@calMonth" asp-route-year="@calYear"
+               class="inline-flex items-center gap-2 rounded-lg px-4 h-10 text-sm font-semibold border transition-colors @(Model.ViewMode == "calendar" ? "bg-[#3b6722] text-white border-[#3b6722]" : "bg-white border-[#c2c9b9] text-[#42493d] hover:bg-[#f2f7f0]")">
+                <span class="material-symbols-outlined text-[18px]">calendar_month</span>
+                <span>Lịch tháng</span>
+            </a>
+            <a asp-action="Schedule" asp-route-view="list" asp-route-filter="upcoming"
+               class="inline-flex items-center gap-2 rounded-lg px-4 h-10 text-sm font-semibold border transition-colors @(Model.ViewMode == "list" ? "bg-[#3b6722] text-white border-[#3b6722]" : "bg-white border-[#c2c9b9] text-[#42493d] hover:bg-[#f2f7f0]")">
+                <span class="material-symbols-outlined text-[18px]">view_list</span>
+                <span>Danh sách</span>
+            </a>
+        </div>
+    </div>
+
+    @if (Model.ViewMode == "list")
+    {
+        var filters = new[] { new { Key = "upcoming", Label = "Sắp tới" }, new { Key = "past", Label = "Đã qua" }, new { Key = "all", Label = "Tất cả" } };
+
+        <div class="flex flex-wrap gap-2">
+            @foreach (var filterItem in filters)
+            {
+                var isActive = Model.Filter == filterItem.Key;
+                <a asp-action="Schedule" asp-route-view="list" asp-route-filter="@filterItem.Key"
+                   class="inline-flex items-center gap-2 rounded-lg px-4 h-10 text-sm font-semibold transition-colors @(isActive ? "bg-[#3b6722] text-white" : "bg-white border border-[#c2c9b9] text-[#42493d] hover:bg-[#f2f7f0]")">
+                    <span>@filterItem.Label</span>
+                    @if (isActive)
+                    {
+                        <span class="inline-flex items-center justify-center rounded-full bg-white/20 px-2 h-5 text-xs">@Model.TotalCount</span>
+                    }
+                </a>
+            }
+        </div>
+
+        @if (!Model.Sessions.Any())
+        {
+            <div class="student-card">
+                <div class="student-card-section py-16 text-center">
+                    <span class="material-symbols-outlined text-[48px] text-[#c2c9b9]">calendar_month</span>
+                    <p class="mt-4 text-sm text-[#73796b]">
+                        @(Model.Filter == "upcoming" ? "Không có buổi học nào sắp tới." : Model.Filter == "past" ? "Chưa có buổi học nào đã qua." : "Chưa có lịch học nào.")
+                    </p>
+                </div>
+            </div>
+        }
+        else
+        {
+            var grouped = Model.Sessions.GroupBy(x => x.Date).OrderBy(g => Model.Filter == "past" ? -g.Key.DayNumber : g.Key.DayNumber);
+            <div class="schedule-list-group">
+                @foreach (var group in grouped)
+                {
+                    var isTodayGroup = group.Key == today;
+                    <div>
+                        <div class="mb-3 flex items-center gap-3">
+                            <span class="text-sm font-bold @(isTodayGroup ? "text-[#3b6722]" : "text-[#42493d]")">@GetDayLabel(group.Key.DayOfWeek), @group.Key.ToString("dd/MM/yyyy")</span>
+                            @if (isTodayGroup)
+                            {
+                                <span class="schedule-pill schedule-pill--today">Hôm nay</span>
+                            }
+                            <div class="h-px flex-1 bg-[#e3e3de]"></div>
+                        </div>
+                        <div class="space-y-3">
+                            @foreach (var session in group)
+                            {
+                                var evidenceUrl = session.IsPast && session.HasAttendance && session.WasPresent == true
+                                    ? Url.Action("Evidence", "StudentPortal", new { sessionId = session.SessionId })
+                                    : null;
+                                <article class="schedule-list-card">
+                                    <div class="flex items-start justify-between gap-4">
+                                        <div class="min-w-0 flex-1">
+                                            <div class="flex flex-wrap items-center gap-2">
+                                                <p class="text-sm font-semibold text-[#1a1c19]">@session.CourseName <span class="font-normal text-[#73796b]">&middot; Lớp @session.ClassCode</span></p>
+                                                <span class="inline-flex items-center rounded-full bg-[#eeeee9] px-2.5 py-0.5 text-xs font-semibold text-[#42493d]">Buổi @session.SessionNo.ToString("00")</span>
+                                            </div>
+                                            <p class="mt-1 text-sm text-[#73796b]">@session.StartTime.ToString("HH\\:mm") - @session.EndTime.ToString("HH\\:mm")</p>
+                                            @if (!string.IsNullOrWhiteSpace(session.TeacherName))
+                                            {
+                                                <p class="mt-2 text-sm text-[#42493d]"><span class="font-medium">Giáo viên:</span> @session.TeacherName</p>
+                                            }
+                                            @if (!string.IsNullOrWhiteSpace(session.Topic))
+                                            {
+                                                <p class="mt-1 text-sm text-[#42493d]"><span class="font-medium">Nội dung học:</span> @session.Topic</p>
+                                            }
+                                        </div>
+                                        <div class="flex flex-col items-end gap-2 shrink-0">
+                                            <span class="schedule-pill @(session.IsToday ? "schedule-pill--today" : session.IsPast ? "schedule-pill--past" : "schedule-pill--upcoming")">@session.StatusLabel</span>
+                                            @if (session.HasAttendance)
+                                            {
+                                                <span class="schedule-pill @(session.WasPresent == true ? "schedule-pill--present" : "schedule-pill--absent")">@session.AttendanceLabel</span>
+                                            }
+                                            @if (!string.IsNullOrWhiteSpace(evidenceUrl))
+                                            {
+                                                <a href="@evidenceUrl" class="schedule-link-btn schedule-link-btn--primary">
+                                                    <span class="material-symbols-outlined text-[16px]">rate_review</span>
+                                                    <span>Xem nhận xét</span>
+                                                </a>
+                                            }
+                                        </div>
+                                    </div>
+                                </article>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    }
+    else
+    {
+        <div class="schedule-shell">
+            <div class="schedule-layout">
+                <aside class="schedule-sidebar-card" id="student-schedule-sidebar"></aside>
+                <div class="schedule-main-card" id="student-schedule-main"></div>
+            </div>
+        </div>
+    }
+</section>
+
+@if (Model.ViewMode == "calendar")
+{
+    <div id="schedule-day-modal-backdrop" class="schedule-day-modal-backdrop" onclick="if (event.target === this) closeDayModal();">
+        <div class="schedule-day-modal">
+            <div class="schedule-day-modal-head">
+                <div>
+                    <h3 class="text-base font-semibold text-[#1a1c19]" id="day-modal-title">Chi tiết ngày học</h3>
+                    <p class="mt-1 text-sm text-[#73796b]" id="day-modal-subtitle"></p>
+                </div>
+                <button type="button" class="text-[#73796b] hover:text-[#1a1c19] transition-colors" onclick="closeDayModal()">
+                    <span class="material-symbols-outlined text-[22px]">close</span>
+                </button>
+            </div>
+            <div class="schedule-day-modal-body">
+                <div id="day-modal-list" class="schedule-day-modal-list"></div>
+            </div>
+        </div>
+    </div>
+
+    @section Scripts {
+        <script>
+            const scheduleCalendarEndpoint = '@Url.Action("ScheduleCalendarData", "StudentPortal")';
+            const scheduleMonthNames = ['', 'Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6', 'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'];
+            const scheduleDayHeaders = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'Chủ Nhật'];
+            const todayDateKey = '@today.ToString("yyyy-MM-dd")';
+            let calendarState = @Html.Raw(JsonSerializer.Serialize(calendarPayload));
+            let selectedDateKey = calendarState.selectedDateKey;
+            let isMonthLoading = false;
+
+            function escapeHtml(value) {
+                return String(value ?? '')
+                    .replaceAll('&', '&amp;')
+                    .replaceAll('<', '&lt;')
+                    .replaceAll('>', '&gt;')
+                    .replaceAll('"', '&quot;')
+                    .replaceAll("'", '&#39;');
+            }
+
+            function formatDateLabel(dateKey) {
+                const date = new Date(dateKey + 'T00:00:00');
+                const label = new Intl.DateTimeFormat('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' }).format(date);
+                return label.charAt(0).toUpperCase() + label.slice(1);
+            }
+
+            function buildDateKey(year, month, day) {
+                return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+            }
+
+            function getSessionsByDate() {
+                return calendarState.sessions.reduce((acc, session) => {
+                    if (!acc[session.dateKey]) {
+                        acc[session.dateKey] = [];
+                    }
+                    acc[session.dateKey].push(session);
+                    return acc;
+                }, {});
+            }
+
+            function getStatusClass(session) {
+                if (session.isToday) return 'schedule-pill schedule-pill--today';
+                if (session.isPast) return 'schedule-pill schedule-pill--past';
+                return 'schedule-pill schedule-pill--upcoming';
+            }
+
+            function getAttendanceClass(session) {
+                if (!session.hasAttendance) return 'schedule-pill schedule-pill--past';
+                return session.wasPresent ? 'schedule-pill schedule-pill--present' : 'schedule-pill schedule-pill--absent';
+            }
+
+            function getEventClass(session) {
+                if (session.isToday) return 'schedule-event schedule-event--today';
+                if (session.isPast && session.hasAttendance && session.wasPresent === true) return 'schedule-event schedule-event--present';
+                if (session.isPast && session.hasAttendance && session.wasPresent === false) return 'schedule-event schedule-event--absent';
+                if (session.isPast) return 'schedule-event schedule-event--past';
+                return 'schedule-event schedule-event--upcoming';
+            }
+
+            function buildMonthShape(year, month) {
+                const firstDay = new Date(year, month - 1, 1);
+                const daysInMonth = new Date(year, month, 0).getDate();
+                let startOffset = firstDay.getDay() - 1;
+                if (startOffset < 0) startOffset = 6;
+                return { daysInMonth, startOffset, totalRows: Math.ceil((startOffset + daysInMonth) / 7) };
+            }
+
+            function renderSidebar() {
+                const sidebar = document.getElementById('student-schedule-sidebar');
+                const sessionsByDate = getSessionsByDate();
+                const monthShape = buildMonthShape(calendarState.year, calendarState.month);
+                const dayButtons = [];
+
+                for (let i = 0; i < monthShape.startOffset; i++) {
+                    const prevDayDate = new Date(calendarState.year, calendarState.month - 1, -(monthShape.startOffset - i - 1));
+                    dayButtons.push(`<div class="schedule-mini-day schedule-mini-day--other">${prevDayDate.getDate()}</div>`);
+                }
+
+                for (let day = 1; day <= monthShape.daysInMonth; day++) {
+                    const dateKey = buildDateKey(calendarState.year, calendarState.month, day);
+                    const classNames = ['schedule-mini-day'];
+                    if (dateKey === selectedDateKey) classNames.push('schedule-mini-day--selected');
+                    else if (dateKey === todayDateKey) classNames.push('schedule-mini-day--today');
+                    if (sessionsByDate[dateKey]?.length) classNames.push('schedule-mini-day--has-session');
+                    dayButtons.push(`<button type="button" class="${classNames.join(' ')} js-schedule-mini-day" data-date-key="${dateKey}">${day}</button>`);
+                }
+
+                const selectedSessions = sessionsByDate[selectedDateKey] || [];
+                const selectedListHtml = selectedSessions.length
+                    ? selectedSessions.map(session => `
+                        <button type="button" class="schedule-selected-item js-schedule-open-day" data-date-key="${selectedDateKey}" data-session-id="${session.sessionId}">
+                            <div class="flex items-start justify-between gap-3">
+                                <div class="min-w-0">
+                                    <p class="truncate text-sm font-semibold text-[#1a1c19]">${escapeHtml(session.courseName)}</p>
+                                    <p class="mt-1 text-xs text-[#73796b]">Lớp ${escapeHtml(session.classCode)} · Buổi ${String(session.sessionNo).padStart(2, '0')}</p>
+                                </div>
+                                <span class="${getStatusClass(session)}">${escapeHtml(session.statusLabel)}</span>
+                            </div>
+                            <p class="mt-3 text-sm font-medium text-[#42493d]">${escapeHtml(session.startTime)} - ${escapeHtml(session.endTime)}</p>
+                            <p class="mt-1 text-sm text-[#73796b]">${escapeHtml(session.topic || session.courseName)}</p>
+                        </button>
+                    `).join('')
+                    : `<div class="schedule-selected-empty">Ngày này chưa có lịch học.</div>`;
+
+                sidebar.className = `schedule-sidebar-card${isMonthLoading ? ' schedule-loading' : ''}`;
+                sidebar.innerHTML = `
+                    <div class="schedule-sidebar-head">
+                        <div class="flex items-center justify-between gap-3">
+                            <span class="schedule-month-chip">${String(calendarState.month).padStart(2, '0')}/${calendarState.year}</span>
+                            <div class="flex items-center gap-2">
+                                <button type="button" class="schedule-nav-btn js-schedule-nav" data-offset="-1" aria-label="Tháng trước">
+                                    <span class="material-symbols-outlined text-[18px]">chevron_left</span>
+                                </button>
+                                <button type="button" class="schedule-nav-btn js-schedule-nav" data-offset="1" aria-label="Tháng sau">
+                                    <span class="material-symbols-outlined text-[18px]">chevron_right</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="schedule-sidebar-body">
+                        <div class="p-4">
+                            <div class="schedule-mini-grid">
+                                ${['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'].map(x => `<div class="schedule-mini-head">${x}</div>`).join('')}
+                                ${dayButtons.join('')}
+                            </div>
+                        </div>
+                        <div class="schedule-selected-date">${formatDateLabel(selectedDateKey)}</div>
+                        <div class="schedule-selected-body">
+                            <div class="schedule-selected-meta">Chọn vào ngày để mở cửa sổ nổi của ngày đó.</div>
+                            <div class="schedule-selected-list">${selectedListHtml}</div>
+                        </div>
+                        <div class="schedule-summary">
+                            <div class="schedule-summary-row"><span>Tổng buổi trong tháng</span><strong>${calendarState.totalCount}</strong></div>
+                            <div class="schedule-summary-row"><span>Đã điểm danh</span><strong>${calendarState.sessions.filter(x => x.hasAttendance).length}</strong></div>
+                            <div class="schedule-summary-row"><span>Buổi sắp tới</span><strong>${calendarState.sessions.filter(x => !x.isPast).length}</strong></div>
+                            <div class="schedule-summary-row"><span>Ngày có lịch</span><strong>${Object.keys(sessionsByDate).length}</strong></div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            function renderMain() {
+                const main = document.getElementById('student-schedule-main');
+                const sessionsByDate = getSessionsByDate();
+                const monthShape = buildMonthShape(calendarState.year, calendarState.month);
+                const monthTitle = `${scheduleMonthNames[calendarState.month]} ${calendarState.year}`;
+                const cells = [];
+
+                for (let index = 0; index < monthShape.totalRows * 7; index++) {
+                    const dayNumber = index - monthShape.startOffset + 1;
+
+                    if (dayNumber < 1) {
+                        const prevDateValue = new Date(calendarState.year, calendarState.month - 1, dayNumber);
+                        cells.push(`<div class="schedule-day schedule-day--other"><div class="schedule-day-number schedule-day-number--other">${prevDateValue.getDate()}</div></div>`);
+                        continue;
+                    }
+
+                    if (dayNumber > monthShape.daysInMonth) {
+                        const nextDateValue = new Date(calendarState.year, calendarState.month - 1, dayNumber);
+                        cells.push(`<div class="schedule-day schedule-day--other"><div class="schedule-day-number schedule-day-number--other">${nextDateValue.getDate()}</div></div>`);
+                        continue;
+                    }
+
+                    const dateKey = buildDateKey(calendarState.year, calendarState.month, dayNumber);
+                    const sessions = sessionsByDate[dateKey] || [];
+                    const classNames = ['schedule-day'];
+                    if (dateKey === selectedDateKey) classNames.push('is-selected');
+                    if (dateKey === todayDateKey) classNames.push('schedule-day--today');
+
+                    const dayDate = new Date(calendarState.year, calendarState.month - 1, dayNumber);
+                    const isSunday = dayDate.getDay() === 0;
+
+                    cells.push(`
+                        <div class="${classNames.join(' ')} js-schedule-day" data-date-key="${dateKey}" role="button" tabindex="0">
+                            <div class="schedule-day-number${isSunday ? ' schedule-day-number--sunday' : ''}">${dayNumber}</div>
+                            <div class="schedule-events">
+                                ${sessions.slice(0, 3).map(session => `
+                                    <button type="button" class="${getEventClass(session)} js-schedule-event" data-date-key="${dateKey}" data-session-id="${session.sessionId}">
+                                        <span class="schedule-event-time">${escapeHtml(session.startTime)} - ${escapeHtml(session.endTime)}</span>
+                                        <span class="schedule-event-title">${escapeHtml(session.courseName)}</span>
+                                        <span class="schedule-event-summary">Lớp ${escapeHtml(session.classCode)} · ${escapeHtml(session.topic || 'Chưa cập nhật nội dung')}</span>
+                                    </button>
+                                `).join('')}
+                                ${sessions.length > 3 ? `<div class="schedule-more">+${sessions.length - 3} buổi nữa</div>` : ''}
+                            </div>
+                        </div>
+                    `);
+                }
+
+                main.className = `schedule-main-card${isMonthLoading ? ' schedule-loading' : ''}`;
+                main.innerHTML = `
+                    <div class="schedule-main-head">
+                        <div>
+                            <h2 class="schedule-main-title">${monthTitle}</h2>
+                            <p class="schedule-main-subtitle">Bấm vào ngày trong lịch để mở ngay cửa sổ nổi của ngày đó.</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button type="button" class="schedule-nav-btn js-schedule-nav" data-offset="-1" aria-label="Tháng trước">
+                                <span class="material-symbols-outlined text-[18px]">chevron_left</span>
+                            </button>
+                            <button type="button" class="inline-flex items-center gap-2 rounded-lg border border-[#c2c9b9] bg-white px-4 h-10 text-sm font-semibold text-[#42493d] hover:bg-[#f2f7f0] transition-colors js-schedule-today">
+                                <span class="material-symbols-outlined text-[18px]">today</span>
+                                <span>Về hôm nay</span>
+                            </button>
+                            <button type="button" class="schedule-nav-btn js-schedule-nav" data-offset="1" aria-label="Tháng sau">
+                                <span class="material-symbols-outlined text-[18px]">chevron_right</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="schedule-main-body">
+                        <div class="schedule-main-scroll">
+                            <div class="schedule-grid">
+                                ${scheduleDayHeaders.map((header, index) => `<div class="schedule-grid-head${index === 6 ? ' schedule-grid-head--sunday' : ''}">${header}</div>`).join('')}
+                                ${cells.join('')}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            function renderCalendar() {
+                renderSidebar();
+                renderMain();
+            }
+
+            function selectDate(dateKey, openModal) {
+                selectedDateKey = dateKey;
+                renderCalendar();
+                if (openModal) {
+                    openDayModal(dateKey);
+                }
+            }
+
+            async function loadCalendarMonth(month, year, pushState, preferredDateKey) {
+                if (isMonthLoading) return;
+
+                isMonthLoading = true;
+                renderCalendar();
+
+                try {
+                    const response = await fetch(`${scheduleCalendarEndpoint}?month=${month}&year=${year}`, {
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    });
+
+                    if (!response.ok) return;
+
+                    calendarState = await response.json();
+
+                    if (preferredDateKey) {
+                        const preferredDate = new Date(preferredDateKey + 'T00:00:00');
+                        if (preferredDate.getFullYear() === calendarState.year && preferredDate.getMonth() + 1 === calendarState.month) {
+                            selectedDateKey = preferredDateKey;
+                        } else {
+                            selectedDateKey = calendarState.selectedDateKey;
+                        }
+                    } else {
+                        selectedDateKey = calendarState.selectedDateKey;
+                    }
+
+                    renderCalendar();
+
+                    if (pushState) {
+                        const query = new URLSearchParams({ view: 'calendar', month: calendarState.month, year: calendarState.year });
+                        history.pushState({ month: calendarState.month, year: calendarState.year }, '', `${window.location.pathname}?${query.toString()}`);
+                    }
+                } finally {
+                    isMonthLoading = false;
+                    renderCalendar();
+                }
+            }
+
+            function navigateMonth(offset) {
+                const nextDate = new Date(calendarState.year, calendarState.month - 1 + offset, 1);
+                loadCalendarMonth(nextDate.getMonth() + 1, nextDate.getFullYear(), true);
+            }
+
+            function navigateSelectedDate(offset) {
+                const currentDate = new Date(selectedDateKey + 'T00:00:00');
+                currentDate.setDate(currentDate.getDate() + offset);
+
+                const nextDateKey = buildDateKey(
+                    currentDate.getFullYear(),
+                    currentDate.getMonth() + 1,
+                    currentDate.getDate()
+                );
+
+                if (currentDate.getFullYear() === calendarState.year && currentDate.getMonth() + 1 === calendarState.month) {
+                    selectDate(nextDateKey, false);
+                    return;
+                }
+
+                loadCalendarMonth(currentDate.getMonth() + 1, currentDate.getFullYear(), true, nextDateKey);
+            }
+
+            function goToToday() {
+                const now = new Date();
+                loadCalendarMonth(now.getMonth() + 1, now.getFullYear(), true);
+            }
+
+            function openDayModal(dateKey, focusSessionId) {
+                const modal = document.getElementById('schedule-day-modal-backdrop');
+                const title = document.getElementById('day-modal-title');
+                const subtitle = document.getElementById('day-modal-subtitle');
+                const list = document.getElementById('day-modal-list');
+                const sessions = calendarState.sessions
+                    .filter(x => x.dateKey === dateKey)
+                    .sort((a, b) => a.startTime.localeCompare(b.startTime) || a.classCode.localeCompare(b.classCode));
+
+                title.textContent = formatDateLabel(dateKey);
+                subtitle.textContent = sessions.length
+                    ? `${sessions.length} học phần / buổi học trong ngày này`
+                    : 'Ngày này chưa có lịch học';
+
+                if (!sessions.length) {
+                    list.innerHTML = `<div class="schedule-selected-empty">Ngày này chưa có lịch học.</div>`;
+                } else {
+                    list.innerHTML = sessions.map(session => `
+                        <article class="schedule-day-session${focusSessionId === session.sessionId ? ' ring-2 ring-[#9cc27f]' : ''}">
+                            <div class="flex flex-wrap items-start justify-between gap-3">
+                                <div>
+                                    <div class="flex flex-wrap items-center gap-2">
+                                        <h4 class="text-base font-semibold text-[#1a1c19]">${escapeHtml(session.courseName)}</h4>
+                                        <span class="inline-flex items-center rounded-full bg-[#eeeee9] px-2.5 py-0.5 text-xs font-semibold text-[#42493d]">Lớp ${escapeHtml(session.classCode)} · Buổi ${String(session.sessionNo).padStart(2, '0')}</span>
+                                    </div>
+                                    <p class="mt-1 text-sm text-[#73796b]">${escapeHtml(session.dayLabel)}, ${escapeHtml(session.dateDisplay)}</p>
+                                </div>
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <span class="${getStatusClass(session)}">${escapeHtml(session.statusLabel)}</span>
+                                    <span class="${getAttendanceClass(session)}">${escapeHtml(session.attendanceLabel)}</span>
+                                </div>
+                            </div>
+                            <div class="schedule-day-session-grid">
+                                <div>
+                                    <div class="schedule-meta-label">Giờ học</div>
+                                    <div class="schedule-meta-value">${escapeHtml(session.startTime)} - ${escapeHtml(session.endTime)}</div>
+                                </div>
+                                <div>
+                                    <div class="schedule-meta-label">Giáo viên</div>
+                                    <div class="schedule-meta-value">${escapeHtml(session.teacherName || 'Chưa cập nhật')}</div>
+                                </div>
+                                <div style="grid-column: 1 / -1;">
+                                    <div class="schedule-meta-label">Học phần / nội dung học</div>
+                                    <div class="schedule-meta-value">${escapeHtml(session.topic || session.courseName)}</div>
+                                </div>
+                            </div>
+                            <div class="mt-4 flex flex-wrap gap-3">
+                                ${session.evidenceUrl ? `
+                                    <a href="${escapeHtml(session.evidenceUrl)}" class="schedule-link-btn schedule-link-btn--primary">
+                                        <span class="material-symbols-outlined text-[16px]">rate_review</span>
+                                        <span>Xem nhận xét</span>
+                                    </a>
+                                ` : ''}
+                            </div>
+                        </article>
+                    `).join('');
+                }
+
+                modal.classList.add('is-open');
+                document.body.style.overflow = 'hidden';
+            }
+
+            function closeDayModal() {
+                document.getElementById('schedule-day-modal-backdrop').classList.remove('is-open');
+                document.body.style.overflow = '';
+            }
+
+            document.addEventListener('click', event => {
+                const navButton = event.target.closest('.js-schedule-nav');
+                if (navButton) {
+                    event.preventDefault();
+                    if (navButton.closest('#student-schedule-sidebar')) {
+                        navigateSelectedDate(Number(navButton.dataset.offset));
+                    } else {
+                        navigateMonth(Number(navButton.dataset.offset));
+                    }
+                    return;
+                }
+
+                const todayButton = event.target.closest('.js-schedule-today');
+                if (todayButton) {
+                    event.preventDefault();
+                    goToToday();
+                    return;
+                }
+
+                const eventButton = event.target.closest('.js-schedule-event');
+                if (eventButton) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    openDayModal(eventButton.dataset.dateKey, Number(eventButton.dataset.sessionId));
+                    return;
+                }
+
+                const selectedDayButton = event.target.closest('.js-schedule-open-day');
+                if (selectedDayButton) {
+                    event.preventDefault();
+                    openDayModal(selectedDayButton.dataset.dateKey, Number(selectedDayButton.dataset.sessionId));
+                    return;
+                }
+
+                const miniDayButton = event.target.closest('.js-schedule-mini-day');
+                if (miniDayButton) {
+                    event.preventDefault();
+                    selectDate(miniDayButton.dataset.dateKey, true);
+                    return;
+                }
+
+                const dayCell = event.target.closest('.js-schedule-day');
+                if (dayCell) {
+                    event.preventDefault();
+                    selectDate(dayCell.dataset.dateKey, true);
+                }
+            });
+
+            document.addEventListener('keydown', event => {
+                const dayCell = event.target.closest('.js-schedule-day');
+                if (dayCell && (event.key === 'Enter' || event.key === ' ')) {
+                    event.preventDefault();
+                    selectDate(dayCell.dataset.dateKey, true);
+                    return;
+                }
+
+                if (event.key === 'Escape') {
+                    closeDayModal();
+                }
+            });
+
+            window.addEventListener('popstate', event => {
+                if (event.state?.month && event.state?.year) {
+                    loadCalendarMonth(event.state.month, event.state.year, false);
+                }
+            });
+
+            history.replaceState(
+                { month: calendarState.month, year: calendarState.year },
+                '',
+                `${window.location.pathname}?view=calendar&month=${calendarState.month}&year=${calendarState.year}`
+            );
+
+            renderCalendar();
+        </script>
+    }
+}
