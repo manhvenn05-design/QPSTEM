@@ -36,7 +36,6 @@ public class StudentScheduleItemViewModel
     public DateTime Date { get; set; }
     public TimeOnly StartTime { get; set; }
     public TimeOnly EndTime { get; set; }
-    public string Location { get; set; } = "STEM Lab";
     public string Topic { get; set; } = string.Empty;
     public string Status { get; set; } = "Upcoming"; // "Upcoming", "Today"
 }

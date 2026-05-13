@@ -1,0 +1,267 @@
+@model STEM.Web.Models.StudentViewModels.StudentEvidencePageViewModel
+
+@{
+    ViewData["Title"] = "Nhận xét & Minh chứng";
+    Layout = "_StudentLayout";
+}
+
+<section class="student-page">
+    <div class="student-page-header">
+        <div>
+            <h1 class="student-page-title">Nhận xét &amp; Minh chứng</h1>
+            <p class="student-page-subtitle">Nhận xét của giáo viên và hình ảnh/video sản phẩm học tập của bé sau mỗi buổi học.</p>
+        </div>
+        <div class="shrink-0">
+            <span class="inline-flex items-center gap-2 rounded-lg border border-[#c2c9b9] bg-white px-4 h-10 text-sm font-medium text-[#42493d]">
+                <span class="material-symbols-outlined text-[18px] text-[#6a994e]">library_books</span>
+                @Model.TotalCount buổi học có ghi chú
+            </span>
+        </div>
+    </div>
+
+    @* Filter theo lớp *@
+    @if (Model.AvailableClasses.Count > 1)
+    {
+        <div class="flex flex-wrap items-center gap-2">
+            <span class="text-sm font-medium text-[#73796b]">Lọc theo lớp:</span>
+            <a asp-action="Evidence"
+               class="inline-flex items-center rounded-lg px-3 h-9 text-sm font-semibold transition-colors
+                      @(Model.SelectedClass == null ? "bg-[#3b6722] text-white" : "bg-white border border-[#c2c9b9] text-[#42493d] hover:bg-[#f2f7f0]")">
+                Tất cả
+            </a>
+            @foreach (var cls in Model.AvailableClasses)
+            {
+                <a asp-action="Evidence" asp-route-classCode="@cls"
+                   class="inline-flex items-center rounded-lg px-3 h-9 text-sm font-semibold transition-colors
+                          @(Model.SelectedClass == cls ? "bg-[#3b6722] text-white" : "bg-white border border-[#c2c9b9] text-[#42493d] hover:bg-[#f2f7f0]")">
+                    @cls
+                </a>
+            }
+        </div>
+    }
+
+    @if (!Model.Items.Any())
+    {
+        <div class="student-card">
+            <div class="student-card-section py-20 text-center">
+                <span class="material-symbols-outlined text-[56px] text-[#c2c9b9]">rate_review</span>
+                <p class="mt-4 text-base font-semibold text-[#42493d]">Chưa có nhận xét nào</p>
+                <p class="mt-1 text-sm text-[#73796b]">
+                    @if (Model.SelectedClass != null)
+                    {
+                        <span>Lớp <strong>@Model.SelectedClass</strong> chưa có nhận xét nào.</span>
+                    }
+                    else
+                    {
+                        <span>Nhận xét và minh chứng sẽ xuất hiện ở đây sau khi giáo viên cập nhật.</span>
+                    }
+                </p>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="space-y-6">
+            @foreach (var item in Model.Items)
+            {
+                @* id để scroll đến khi deep-link từ Schedule *@
+                <article id="evidence-session-@item.SessionId"
+                         class="student-card transition-shadow @(item.IsHighlighted ? "ring-2 ring-[#6a994e] ring-offset-2" : "")">
+                    @* Header *@
+                    <div class="flex items-center justify-between gap-4 border-b border-[#e3e3de] px-6 py-4">
+                        <div>
+                            <p class="text-sm font-semibold text-[#1a1c19]">
+                                @item.CourseName
+                                <span class="font-normal text-[#73796b]">&middot; Lớp @item.ClassCode &middot; Buổi @item.SessionNo.ToString("00")</span>
+                            </p>
+                            <p class="mt-0.5 text-xs text-[#73796b]">Ngày học: @item.SessionDate.ToString("dd/MM/yyyy")</p>
+                        </div>
+                        <div class="flex items-center gap-2 shrink-0">
+                            @if (item.IsHighlighted)
+                            {
+                                <span class="inline-flex items-center gap-1 rounded-full bg-[#edf7e8] px-2.5 py-1 text-xs font-semibold text-[#456c3f]">
+                                    <span class="material-symbols-outlined text-[12px]">bookmark</span>Buổi đã chọn
+                                </span>
+                            }
+                            @if (item.MediaCount > 0)
+                            {
+                                <span class="inline-flex items-center gap-1.5 rounded-full bg-[#f2f7f0] px-3 py-1 text-xs font-semibold text-[#3b6722]">
+                                    <span class="material-symbols-outlined text-[14px]">perm_media</span>
+                                    @item.MediaCount minh chứng
+                                </span>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="student-card-section space-y-5">
+                        @* AI Evaluation (ưu tiên hiển thị trước nếu có) *@
+                        @if (!string.IsNullOrWhiteSpace(item.AiEvaluation))
+                        {
+                            <div class="rounded-lg border border-[#c8e0b8] bg-[#f2f7f0] p-4">
+                                <div class="mb-2 flex items-center gap-1.5">
+                                    <span class="material-symbols-outlined text-[18px] text-[#3b6722]">auto_awesome</span>
+                                    <span class="text-xs font-bold uppercase tracking-wide text-[#3b6722]">Nhận xét tổng hợp từ AI</span>
+                                </div>
+                                <p class="text-sm leading-6 text-[#1a1c19]">@item.AiEvaluation</p>
+                            </div>
+                        }
+
+                        @* Teacher Note *@
+                        @if (!string.IsNullOrWhiteSpace(item.TeacherRawNote))
+                        {
+                            <div>
+                                <div class="mb-2 flex items-center gap-1.5">
+                                    <span class="material-symbols-outlined text-[16px] text-[#73796b]">edit_note</span>
+                                    <span class="text-xs font-semibold uppercase tracking-wide text-[#73796b]">Ghi chú của giáo viên</span>
+                                </div>
+                                <p class="rounded-lg bg-[#fafaf4] border border-[#e3e3de] px-4 py-3 text-sm leading-6 text-[#42493d] whitespace-pre-line">@item.TeacherRawNote</p>
+                            </div>
+                        }
+
+                        @if (string.IsNullOrWhiteSpace(item.AiEvaluation) && string.IsNullOrWhiteSpace(item.TeacherRawNote))
+                        {
+                            <p class="text-sm italic text-[#73796b]">Giáo viên chưa nhập nhận xét cho buổi học này.</p>
+                        }
+
+                        @* Media: Video YouTube *@
+                        @if (item.VideoUrls.Any())
+                        {
+                            <div>
+                                <div class="mb-3 flex items-center gap-1.5">
+                                    <span class="material-symbols-outlined text-[16px] text-[#73796b]">smart_display</span>
+                                    <span class="text-xs font-semibold uppercase tracking-wide text-[#73796b]">Video (@item.VideoUrls.Count)</span>
+                                </div>
+                                <div class="grid gap-4 @(item.VideoUrls.Count > 1 ? "sm:grid-cols-2" : "")">
+                                    @foreach (var videoUrl in item.VideoUrls)
+                                    {
+                                        string embedUrl = videoUrl;
+                                            if (videoUrl.Contains("youtu.be/"))
+                                            {
+                                                var videoId = videoUrl.Split("youtu.be/").Last().Split('?').First();
+                                                embedUrl = $"https://www.youtube.com/embed/{videoId}";
+                                            }
+                                            else if (videoUrl.Contains("youtube.com/watch"))
+                                            {
+                                                var uri = new Uri(videoUrl);
+                                                var qs = System.Web.HttpUtility.ParseQueryString(uri.Query);
+                                                var videoId = qs["v"];
+                                                if (!string.IsNullOrEmpty(videoId))
+                                                    embedUrl = $"https://www.youtube.com/embed/{videoId}";
+                                            }
+                                        <div class="aspect-video overflow-hidden rounded-lg border border-[#e3e3de] bg-[#1a1c19]">
+                                            <iframe src="@embedUrl"
+                                                    title="Video buổi học"
+                                                    frameborder="0"
+                                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                                    allowfullscreen
+                                                    class="h-full w-full">
+                                            </iframe>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        }
+
+                        @* Media: Ảnh *@
+                        @if (item.ImageUrls.Any())
+                        {
+                            <div>
+                                <div class="mb-3 flex items-center gap-1.5">
+                                    <span class="material-symbols-outlined text-[16px] text-[#73796b]">photo_library</span>
+                                    <span class="text-xs font-semibold uppercase tracking-wide text-[#73796b]">Ảnh sản phẩm (@item.ImageUrls.Count)</span>
+                                </div>
+                                <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+                                    @foreach (var imgUrl in item.ImageUrls)
+                                    {
+                                        <a href="@imgUrl" target="_blank" rel="noopener noreferrer"
+                                           class="group relative aspect-square overflow-hidden rounded-lg border border-[#e3e3de] bg-[#f4f4ee]">
+                                            <img src="@imgUrl"
+                                                 alt="Ảnh sản phẩm học tập"
+                                                 class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                                                 loading="lazy"
+                                                 onerror="this.parentElement.innerHTML='<div class=\'h-full flex items-center justify-center text-[#73796b]\' title=\'Không tải được ảnh\'><span class=\'material-symbols-outlined text-[32px]\'>broken_image</span></div>'" />
+                                            <div class="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
+                                                <span class="material-symbols-outlined text-white text-[24px]">open_in_new</span>
+                                            </div>
+                                        </a>
+                                    }
+                                </div>
+                            </div>
+                        }
+
+                        @* External Links (Google Drive, etc.) *@
+                        @if (item.ExternalUrls.Any())
+                        {
+                            <div>
+                                <div class="mb-2 flex items-center gap-1.5">
+                                    <span class="material-symbols-outlined text-[16px] text-[#73796b]">link</span>
+                                    <span class="text-xs font-semibold uppercase tracking-wide text-[#73796b]">Liên kết tài liệu</span>
+                                </div>
+                                <div class="space-y-2">
+                                    @foreach (var extUrl in item.ExternalUrls)
+                                    {
+                                        <a href="@extUrl" target="_blank" rel="noopener noreferrer"
+                                           class="flex items-center gap-2 rounded-lg border border-[#e3e3de] px-4 py-2.5 text-sm text-[#3b6722] hover:bg-[#f2f7f0] transition-colors">
+                                            <span class="material-symbols-outlined text-[16px]">open_in_new</span>
+                                            <span class="truncate">@extUrl</span>
+                                        </a>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </article>
+            }
+        </div>
+
+        @* Pagination *@
+        @if (Model.TotalPages > 1)
+        {
+            <div class="flex items-center justify-between gap-4 pt-2">
+                <p class="text-sm text-[#73796b]">
+                    Trang @Model.Page / @Model.TotalPages
+                    &middot; <span class="font-medium">@Model.TotalCount</span> buổi học
+                </p>
+                <div class="flex items-center gap-2">
+                    @if (Model.HasPrev)
+                    {
+                        <a asp-action="Evidence"
+                           asp-route-classCode="@Model.SelectedClass"
+                           asp-route-page="@(Model.Page - 1)"
+                           class="inline-flex items-center gap-1 rounded-lg border border-[#c2c9b9] bg-white px-3 h-9 text-sm font-semibold text-[#42493d] hover:bg-[#f2f7f0] transition-colors">
+                            <span class="material-symbols-outlined text-[16px]">chevron_left</span>
+                            Trước
+                        </a>
+                    }
+                    @if (Model.HasNext)
+                    {
+                        <a asp-action="Evidence"
+                           asp-route-classCode="@Model.SelectedClass"
+                           asp-route-page="@(Model.Page + 1)"
+                           class="inline-flex items-center gap-1 rounded-lg border border-[#c2c9b9] bg-white px-3 h-9 text-sm font-semibold text-[#42493d] hover:bg-[#f2f7f0] transition-colors">
+                            Tiếp
+                            <span class="material-symbols-outlined text-[16px]">chevron_right</span>
+                        </a>
+                    }
+                </div>
+            </div>
+        }
+    }
+</section>
+
+@* Auto-scroll đến card được highlight nếu deep-link từ Schedule *@
+@if (Model.HighlightSession.HasValue)
+{
+    @section Scripts {
+        <script>
+            (function () {
+                var el = document.getElementById('evidence-session-@Model.HighlightSession.Value');
+                if (el) {
+                    setTimeout(function () {
+                        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }, 200);
+                }
+            })();
+        </script>
+    }
+}
