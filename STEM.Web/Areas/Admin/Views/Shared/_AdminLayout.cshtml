@@ -133,11 +133,11 @@
         }
 
         .admin-page-header {
-            align-items: flex-start;
+            align-items: center;
             display: flex;
             flex-direction: column;
-            gap: 16px;
-            justify-content: space-between;
+            gap: 12px;
+            justify-content: flex-end;
         }
 
         @@media (min-width: 1024px) {
@@ -896,7 +896,10 @@
         }
 
         .admin-header-title {
-            display: none;
+            color: var(--admin-text);
+            font-size: 15px;
+            font-weight: 600;
+            line-height: 20px;
         }
 
         .admin-shell.sidebar-collapsed .admin-nav-link span:last-child,
@@ -954,6 +957,21 @@
         }
 
         @@media (max-width: 767px) {
+            .admin-card-section,
+            .admin-stat-card {
+                padding: 16px;
+            }
+
+            .admin-stat-card {
+                min-height: 120px;
+            }
+
+            .admin-stat-value {
+                font-size: 28px;
+                line-height: 36px;
+                margin-top: 16px;
+            }
+
             .admin-page-title {
                 font-size: 28px;
                 line-height: 36px;
@@ -966,6 +984,18 @@
 
             .admin-header > div:last-child {
                 gap: 8px;
+            }
+
+            .admin-header > div:last-child .admin-btn-secondary,
+            .admin-header > div:last-child .admin-btn-primary {
+                min-width: 40px;
+                padding-left: 10px !important;
+                padding-right: 10px !important;
+            }
+
+            .admin-header > div:last-child .admin-btn-secondary span:last-child,
+            .admin-header > div:last-child .admin-btn-primary span:last-child {
+                display: none;
             }
         }
     </style>
@@ -1224,6 +1254,7 @@
             const shell = document.querySelector("[data-admin-shell]");
             const toggle = document.querySelector("[data-admin-sidebar-toggle]");
             const backdrop = document.querySelector("[data-admin-sidebar-backdrop]");
+            const headerTitle = document.querySelector(".admin-header-title");
             const mediaQuery = window.matchMedia("(max-width: 1023px)");
 
             if (shell && toggle) {
@@ -1259,6 +1290,28 @@
                     syncLayout();
                 });
             }
+
+            document.querySelectorAll(".admin-page-header").forEach((header) => {
+                const titleBlock = header.firstElementChild;
+                if (!(titleBlock instanceof HTMLElement)) {
+                    return;
+                }
+
+                if (!titleBlock.querySelector(".admin-page-title") && !titleBlock.querySelector(".admin-page-subtitle")) {
+                    return;
+                }
+
+                const pageTitle = titleBlock.querySelector(".admin-page-title");
+                if (headerTitle && pageTitle) {
+                    headerTitle.textContent = pageTitle.textContent?.trim() || headerTitle.textContent;
+                }
+
+                titleBlock.remove();
+
+                if (!header.children.length) {
+                    header.remove();
+                }
+            });
 
             const modal = document.getElementById("admin-confirm-modal");
             const title = document.getElementById("admin-confirm-title");

@@ -5,28 +5,6 @@
 }
 
 <section class="admin-page">
-    <div class="admin-page-header">
-        <div>
-            <h1 class="admin-page-title">Tổng quan</h1>
-            <p class="admin-page-subtitle">@Model.TodayLabel</p>
-        </div>
-
-        <div class="admin-actions">
-            <a asp-area="Admin" asp-controller="Users" asp-action="Create" class="admin-btn-secondary">
-                <span class="material-symbols-outlined text-[18px]">person_add</span>
-                <span>Người dùng</span>
-            </a>
-            <a asp-area="Admin" asp-controller="Classes" asp-action="Create" class="admin-btn-secondary">
-                <span class="material-symbols-outlined text-[18px]">add</span>
-                <span>Lớp học</span>
-            </a>
-            <a asp-area="Admin" asp-controller="Finance" asp-action="CreateInvoice" class="admin-btn-primary">
-                <span class="material-symbols-outlined text-[18px]">receipt_long</span>
-                <span>Hóa đơn</span>
-            </a>
-        </div>
-    </div>
-
     <div class="admin-stat-grid four-col">
         @foreach (var metric in Model.Metrics)
         {

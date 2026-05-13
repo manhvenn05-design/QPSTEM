@@ -269,7 +269,10 @@
         }
 
         .teacher-header-title {
-            display: none;
+            color: var(--teacher-text);
+            font-size: 15px;
+            font-weight: 600;
+            line-height: 20px;
         }
 
         .teacher-page {
@@ -469,6 +472,29 @@
         @@media (min-width: 1180px) {
             .teacher-search-form {
                 max-width: 360px;
+            }
+        }
+
+        @@media (max-width: 767px) {
+            .teacher-card-section,
+            .teacher-stat-card {
+                padding: 16px;
+            }
+
+            .teacher-stat-card {
+                min-height: 128px;
+            }
+
+            .teacher-stat-value {
+                font-size: 28px;
+                line-height: 36px;
+                margin-top: 16px;
+            }
+
+            .teacher-toolbar,
+            .teacher-actions,
+            .teacher-filter-list {
+                gap: 12px;
             }
         }
 
@@ -912,6 +938,7 @@
             const modal = document.querySelector('[data-teacher-logout-modal]');
             const openButton = document.querySelector('[data-teacher-logout-open]');
             const closeButtons = document.querySelectorAll('[data-teacher-logout-close]');
+            const headerTitle = document.querySelector('.teacher-header-title');
             const storageKey = 'teacher-sidebar-collapsed';
             const mobileQuery = window.matchMedia('(max-width: 1023px)');
 
@@ -948,6 +975,29 @@
             mobileQuery.addEventListener('change', () => {
                 shell.classList.remove('sidebar-open');
                 syncShellState();
+            });
+
+            document.querySelectorAll('.teacher-page-header').forEach((header) => {
+                const titleBlock = header.firstElementChild;
+                if (!(titleBlock instanceof HTMLElement)) {
+                    return;
+                }
+
+                const pageTitle = titleBlock.querySelector('.teacher-page-title');
+                const pageSubtitle = titleBlock.querySelector('.teacher-page-subtitle');
+                if (!pageTitle && !pageSubtitle) {
+                    return;
+                }
+
+                if (headerTitle && pageTitle) {
+                    headerTitle.textContent = pageTitle.textContent?.trim() || headerTitle.textContent;
+                }
+
+                titleBlock.remove();
+
+                if (!header.children.length) {
+                    header.remove();
+                }
             });
 
             if (!modal || !openButton) {
