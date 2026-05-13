@@ -1,0 +1,229 @@
+@model STEM.Web.Models.StudentViewModels.StudentProfileViewModel
+@using STEM.Web.Models.StudentViewModels
+
+@{
+    ViewData["Title"] = "Hồ sơ của tôi";
+    Layout = "_StudentLayout";
+}
+
+<section class="student-page">
+    <div class="student-page-header">
+        <div>
+            <h1 class="student-page-title">Hồ sơ của tôi</h1>
+            <p class="student-page-subtitle">Thông tin cá nhân và quá trình học tập của bé.</p>
+        </div>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="flex items-center gap-3 rounded-lg border border-[#c8e0b8] bg-[#edf7e8] px-4 py-3 text-sm text-[#456c3f]">
+            <span class="material-symbols-outlined text-[20px]">check_circle</span>
+            @TempData["SuccessMessage"]
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="flex items-center gap-3 rounded-lg border border-[#ffb4ab] bg-[#ffdad6] px-4 py-3 text-sm text-[#ba1a1a]">
+            <span class="material-symbols-outlined text-[20px]">error</span>
+            @TempData["ErrorMessage"]
+        </div>
+    }
+
+    <div class="grid gap-6 lg:grid-cols-3">
+        @* CỘT TRÁI: Avatar + thông tin cơ bản *@
+        <div class="space-y-6">
+            @* Avatar & tên *@
+            <div class="student-card">
+                <div class="student-card-section text-center">
+                    @if (!string.IsNullOrWhiteSpace(Model.AvatarUrl))
+                    {
+                        <img src="@Model.AvatarUrl"
+                             alt="@Model.FullName"
+                             class="mx-auto h-24 w-24 rounded-full border-2 border-[#c2c9b9] object-cover" />
+                    }
+                    else
+                    {
+                        <div class="mx-auto flex h-24 w-24 items-center justify-center rounded-full border-2 border-[#c2c9b9] bg-[#f2f7f0] text-2xl font-bold text-[#3b6722]">
+                            @Model.FullName.Trim()[0].ToString().ToUpperInvariant()
+                        </div>
+                    }
+                    <h2 class="mt-4 text-base font-semibold text-[#1a1c19]">@Model.FullName</h2>
+                    <p class="text-sm text-[#73796b]">@@​@Model.Username</p>
+                    <span class="mt-2 inline-flex items-center rounded-full bg-[#edf7e8] px-2.5 py-1 text-xs font-semibold text-[#456c3f]">Học sinh</span>
+                </div>
+            </div>
+
+            @* Thông tin liên lạc *@
+            <div class="student-card">
+                <div class="border-b border-[#e3e3de] px-6 py-3">
+                    <h3 class="text-sm font-semibold text-[#42493d]">Thông tin liên lạc</h3>
+                </div>
+                <div class="student-card-section space-y-3">
+                    <div class="flex items-start gap-3">
+                        <span class="material-symbols-outlined text-[18px] text-[#73796b] mt-0.5">mail</span>
+                        <div>
+                            <p class="text-xs text-[#73796b]">Email</p>
+                            <p class="text-sm text-[#1a1c19]">@(Model.Email ?? "Chưa cập nhật")</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-3">
+                        <span class="material-symbols-outlined text-[18px] text-[#73796b] mt-0.5">phone</span>
+                        <div>
+                            <p class="text-xs text-[#73796b]">Số điện thoại</p>
+                            <p class="text-sm text-[#1a1c19]">@(Model.Phone ?? "Chưa cập nhật")</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-3">
+                        <span class="material-symbols-outlined text-[18px] text-[#73796b] mt-0.5">school</span>
+                        <div>
+                            <p class="text-xs text-[#73796b]">Trường đang học</p>
+                            <p class="text-sm text-[#1a1c19]">@(Model.CurrentSchool ?? "Chưa cập nhật")</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            @* Đổi mật khẩu *@
+            <div class="student-card">
+                <div class="border-b border-[#e3e3de] px-6 py-3">
+                    <h3 class="text-sm font-semibold text-[#42493d]">Bảo mật</h3>
+                </div>
+                <div class="student-card-section">
+                    <button type="button"
+                            id="btn-change-password"
+                            onclick="document.getElementById('change-password-modal').classList.remove('hidden')"
+                            class="w-full inline-flex items-center justify-center gap-2 rounded-lg border border-[#c2c9b9] bg-white px-4 h-10 text-sm font-semibold text-[#42493d] hover:bg-[#f4f4ee] transition-colors">
+                        <span class="material-symbols-outlined text-[18px]">lock_reset</span>
+                        Đổi mật khẩu
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        @* CỘT PHẢI: Chi tiết hồ sơ + lớp học *@
+        <div class="lg:col-span-2 space-y-6">
+            @* Thông tin phụ huynh *@
+            <div class="student-card">
+                <div class="border-b border-[#e3e3de] px-6 py-3">
+                    <h3 class="text-sm font-semibold text-[#42493d]">Thông tin phụ huynh / người giám hộ</h3>
+                </div>
+                <div class="student-card-section">
+                    <div class="grid gap-4 sm:grid-cols-2">
+                        <div>
+                            <p class="text-xs text-[#73796b]">Họ tên phụ huynh</p>
+                            <p class="mt-1 text-sm font-medium text-[#1a1c19]">@(Model.GuardianName ?? "Chưa cập nhật")</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-[#73796b]">Số điện thoại phụ huynh</p>
+                            <p class="mt-1 text-sm font-medium text-[#1a1c19]">@(Model.GuardianPhone ?? "Chưa cập nhật")</p>
+                        </div>
+                    </div>
+                    @if (!string.IsNullOrWhiteSpace(Model.MedicalNotes))
+                    {
+                        <div class="mt-4 rounded-lg border border-[#ffb4ab] bg-[#fff8f7] p-3">
+                            <div class="flex items-center gap-1.5 mb-1">
+                                <span class="material-symbols-outlined text-[16px] text-[#ba1a1a]">medical_information</span>
+                                <span class="text-xs font-semibold text-[#ba1a1a]">Ghi chú y tế</span>
+                            </div>
+                            <p class="text-sm text-[#42493d]">@Model.MedicalNotes</p>
+                        </div>
+                    }
+                    <p class="mt-3 text-xs text-[#73796b]">
+                        <span class="material-symbols-outlined text-[14px] align-middle">info</span>
+                        Để cập nhật thông tin phụ huynh, vui lòng liên hệ trung tâm.
+                    </p>
+                </div>
+            </div>
+
+            @* Danh sách lớp học *@
+            <div class="student-card">
+                <div class="flex items-center justify-between border-b border-[#e3e3de] px-6 py-3">
+                    <h3 class="text-sm font-semibold text-[#42493d]">Các lớp học</h3>
+                    <span class="text-xs text-[#73796b]">@Model.EnrolledClasses.Count lớp</span>
+                </div>
+                <div class="student-card-section">
+                    @if (!Model.EnrolledClasses.Any())
+                    {
+                        <p class="text-sm italic text-[#73796b]">Chưa đăng ký lớp học nào.</p>
+                    }
+                    else
+                    {
+                        <div class="space-y-4">
+                            @foreach (var cls in Model.EnrolledClasses)
+                            {
+                                <div class="rounded-lg border border-[#e3e3de] overflow-hidden">
+                                    <div class="flex items-start justify-between gap-4 bg-[#fafaf4] px-4 py-3">
+                                        <div>
+                                            <p class="text-sm font-semibold text-[#1a1c19]">@cls.CourseName</p>
+                                            <p class="text-xs text-[#73796b]">
+                                                Lớp @cls.ClassCode · GV: @cls.TeacherName
+                                            </p>
+                                        </div>
+                                        <span class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold @cls.StatusBadgeClass shrink-0">
+                                            @cls.StatusLabel
+                                        </span>
+                                    </div>
+                                    <div class="px-4 py-3 space-y-2">
+                                        <div class="flex items-center justify-between text-xs text-[#73796b]">
+                                            <span>@cls.StartDate.ToString("dd/MM/yyyy") – @(cls.EndDate.HasValue ? cls.EndDate.Value.ToString("dd/MM/yyyy") : "Chưa xác định")</span>
+                                            <span>@cls.AttendedSessions / @cls.TotalCourseSessions buổi có mặt</span>
+                                        </div>
+                                        <div class="student-progress">
+                                            <div class="student-progress-bar" style="width:@cls.AttendancePercent%"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@* MODAL ĐỔI MẬT KHẨU *@
+<div id="change-password-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+    <div class="w-full max-w-md rounded-xl bg-white shadow-xl">
+        <div class="flex items-center justify-between border-b border-[#e3e3de] px-6 py-4">
+            <h3 class="text-base font-semibold text-[#1a1c19]">Đổi mật khẩu</h3>
+            <button type="button"
+                    onclick="document.getElementById('change-password-modal').classList.add('hidden')"
+                    class="text-[#73796b] hover:text-[#1a1c19] transition-colors">
+                <span class="material-symbols-outlined text-[22px]">close</span>
+            </button>
+        </div>
+        <form asp-action="ChangePassword" asp-controller="StudentPortal" method="post" class="p-6 space-y-4">
+            @Html.AntiForgeryToken()
+            <div>
+                <label class="mb-1.5 block text-sm font-medium text-[#42493d]">Mật khẩu hiện tại</label>
+                <input type="password" name="CurrentPassword" required
+                       class="w-full rounded-lg border border-[#c2c9b9] bg-white px-3 h-10 text-sm focus:border-[#6a994e] focus:outline-none focus:ring-2 focus:ring-[#6a994e]/20"
+                       placeholder="Nhập mật khẩu hiện tại" />
+            </div>
+            <div>
+                <label class="mb-1.5 block text-sm font-medium text-[#42493d]">Mật khẩu mới</label>
+                <input type="password" name="NewPassword" required minlength="6"
+                       class="w-full rounded-lg border border-[#c2c9b9] bg-white px-3 h-10 text-sm focus:border-[#6a994e] focus:outline-none focus:ring-2 focus:ring-[#6a994e]/20"
+                       placeholder="Ít nhất 6 ký tự" />
+            </div>
+            <div>
+                <label class="mb-1.5 block text-sm font-medium text-[#42493d]">Xác nhận mật khẩu mới</label>
+                <input type="password" name="ConfirmPassword" required minlength="6"
+                       class="w-full rounded-lg border border-[#c2c9b9] bg-white px-3 h-10 text-sm focus:border-[#6a994e] focus:outline-none focus:ring-2 focus:ring-[#6a994e]/20"
+                       placeholder="Nhập lại mật khẩu mới" />
+            </div>
+            <div class="flex gap-3 pt-2">
+                <button type="button"
+                        onclick="document.getElementById('change-password-modal').classList.add('hidden')"
+                        class="flex-1 rounded-lg border border-[#c2c9b9] bg-white h-10 text-sm font-semibold text-[#42493d] hover:bg-[#f4f4ee] transition-colors">
+                    Hủy
+                </button>
+                <button type="submit"
+                        class="flex-1 rounded-lg bg-[#3b6722] h-10 text-sm font-semibold text-white hover:bg-[#2d5019] transition-colors">
+                    Đổi mật khẩu
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

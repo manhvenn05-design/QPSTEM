@@ -9,18 +9,18 @@
     <div class="student-page-header">
         <div>
             <h1 class="student-page-title">Xin chào, @Model.Student.FullName!</h1>
-            <p class="student-page-subtitle">Xem lịch học, nhận xét từ giáo viên và theo dõi học phí của con bạn tại đây.</p>
+            <p class="student-page-subtitle">Xem lịch học, nhận xét từ giáo viên và theo dõi học phí của bé tại đây.</p>
         </div>
 
         <div class="student-actions">
-            <button type="button" class="student-btn-secondary">
+            <a asp-action="Schedule" class="student-btn-secondary">
                 <span class="material-symbols-outlined text-[18px]">calendar_month</span>
-                <span>Xem lịch tuần này</span>
-            </button>
-            <button type="button" class="student-btn-primary">
-                <span class="material-symbols-outlined text-[18px]">photo_library</span>
-                <span>Mở thư viện sản phẩm</span>
-            </button>
+                <span>Xem lịch học</span>
+            </a>
+            <a asp-action="Evidence" class="student-btn-primary">
+                <span class="material-symbols-outlined text-[18px]">rate_review</span>
+                <span>Nhận xét &amp; Minh chứng</span>
+            </a>
         </div>
     </div>
 
@@ -103,7 +103,7 @@
                                         <div>
                                             <p class="text-sm font-semibold text-[#1a1c19]">@session.CourseName · Lớp @session.ClassCode</p>
                                             <p class="mt-1 text-sm text-[#73796b]">
-                                                Thứ @(session.Date.DayOfWeek == DayOfWeek.Sunday ? "CN" : ((int)session.Date.DayOfWeek + 1).ToString()), @session.Date.ToString("dd/MM/yyyy"), @session.StartTime.ToString("HH\\:mm") - @session.EndTime.ToString("HH\\:mm") · @session.Location
+                                                Thứ @(session.Date.DayOfWeek == DayOfWeek.Sunday ? "CN" : ((int)session.Date.DayOfWeek + 1).ToString()), @session.Date.ToString("dd/MM/yyyy"), @session.StartTime.ToString("HH\\:mm") - @session.EndTime.ToString("HH\\:mm")
                                             </p>
                                         </div>
                                         <span class="student-tag @tagClass">@session.SessionLabel</span>
@@ -121,14 +121,19 @@
             <!-- THƯ VIỆN SẢN PHẨM / MEDIA -->
             <div class="student-card">
                 <div class="student-card-section">
-                    <h2 class="student-section-title">Thư viện sản phẩm gần đây</h2>
-                    <p class="student-section-subtitle">Hình ảnh và video thuyết trình của bé do giáo viên tải lên.</p>
+                    <div class="flex items-center justify-between gap-4">
+                        <div>
+                            <h2 class="student-section-title">Thư viện sản phẩm gần đây</h2>
+                            <p class="student-section-subtitle">Hình ảnh và video thuyết trình của bé do giáo viên tải lên.</p>
+                        </div>
+                        <a asp-action="Evidence" class="text-sm font-semibold text-[#3b6722] hover:underline shrink-0">Xem tất cả</a>
+                    </div>
 
-                    <div class="student-media-grid mt-4">
+                    <div class="student-media-grid">
                         @{
                             var sessionsWithMedia = Model.RecentFeedbacks.Where(x => x.MediaItems.Any()).ToList();
                         }
-                        
+
                         @if (!sessionsWithMedia.Any())
                         {
                             <div class="py-8 text-center text-sm text-[#73796b] col-span-full">
@@ -139,25 +144,67 @@
                         {
                             @foreach (var feedback in sessionsWithMedia)
                             {
+                                var firstImage = feedback.MediaItems.FirstOrDefault(m => m.Type == "Image");
+                                var firstVideo = feedback.MediaItems.FirstOrDefault(m => m.Type == "Video");
                                 var imageCount = feedback.MediaItems.Count(m => m.Type == "Image");
                                 var videoCount = feedback.MediaItems.Count(m => m.Type == "Video");
-                                
-                                <article class="student-media-card">
-                                    <div class="student-media-thumb">
-                                        <span class="material-symbols-outlined text-[36px]">
-                                            @(videoCount > 0 ? "smart_display" : "photo_camera")
-                                        </span>
-                                    </div>
+
+                                @* Tính YouTube thumbnail URL nếu có video *@
+                                string? thumbSrc = null;
+                                if (firstImage != null)
+                                {
+                                    thumbSrc = firstImage.Url;
+                                }
+                                else if (firstVideo != null)
+                                {
+                                    string vidUrl = firstVideo.Url;
+                                    string? videoId = null;
+                                    if (vidUrl.Contains("youtu.be/"))
+                                        videoId = vidUrl.Split("youtu.be/").Last().Split('?').First();
+                                    else if (vidUrl.Contains("youtube.com/watch"))
+                                    {
+                                        var qs = System.Web.HttpUtility.ParseQueryString(new Uri(vidUrl).Query);
+                                        videoId = qs["v"];
+                                    }
+                                    if (!string.IsNullOrEmpty(videoId))
+                                        thumbSrc = $"https://img.youtube.com/vi/{videoId}/hqdefault.jpg";
+                                }
+
+                                <a asp-action="Evidence" asp-route-sessionId="@feedback.SessionId" class="student-media-card group">
+                                    @if (thumbSrc != null)
+                                    {
+                                        <div class="student-media-thumb relative overflow-hidden">
+                                            <img src="@thumbSrc"
+                                                 alt="Minh chứng buổi học"
+                                                 class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                                                 loading="lazy"
+                                                 onerror="this.parentElement.innerHTML='<div class=\'h-full flex items-center justify-center bg-[#dfead7]\'>\n<span class=\'material-symbols-outlined text-[36px] text-[#3b6722]\'>photo_camera</span></div>'" />
+                                            @if (videoCount > 0)
+                                            {
+                                                <div class="absolute inset-0 flex items-center justify-center bg-black/20">
+                                                    <span class="material-symbols-outlined text-[36px] text-white drop-shadow">play_circle</span>
+                                                </div>
+                                            }
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="student-media-thumb">
+                                            <span class="material-symbols-outlined text-[36px]">
+                                                @(videoCount > 0 ? "smart_display" : "photo_camera")
+                                            </span>
+                                        </div>
+                                    }
                                     <div class="student-media-body">
                                         <p class="text-sm font-semibold text-[#1a1c19]">@feedback.CourseName - @feedback.SessionLabel</p>
                                         <p class="mt-1 text-sm text-[#73796b]">
                                             @if(imageCount > 0) { <span>@imageCount ảnh</span> }
                                             @if(imageCount > 0 && videoCount > 0) { <span>, </span> }
                                             @if(videoCount > 0) { <span>@videoCount video</span> }
-                                            · Cập nhật ngày @feedback.Date.ToString("dd/MM/yyyy")
+                                            &middot; Cập nhật ngày @feedback.Date.ToString("dd/MM/yyyy")
                                         </p>
                                     </div>
-                                </article>
+                                </a>
                             }
                         }
                     </div>

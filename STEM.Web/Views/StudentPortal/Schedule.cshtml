@@ -1,0 +1,366 @@
+@model STEM.Web.Models.StudentViewModels.StudentSchedulePageViewModel
+@{
+    ViewData["Title"] = "Lịch học";
+    Layout = "_StudentLayout";
+    var today = DateOnly.FromDateTime(DateTime.Today);
+    var monthNames = new[]{"","Tháng 1","Tháng 2","Tháng 3","Tháng 4","Tháng 5","Tháng 6","Tháng 7","Tháng 8","Tháng 9","Tháng 10","Tháng 11","Tháng 12"};
+    var dayHeaders = new[]{"T2","T3","T4","T5","T6","T7","CN"};
+    // Calendar math
+    var calYear = Model.CalendarYear;
+    var calMonth = Model.CalendarMonth;
+    var firstDay = new DateOnly(calYear, calMonth, 1);
+    var daysInMonth = DateTime.DaysInMonth(calYear, calMonth);
+    var firstDow = (int)firstDay.DayOfWeek; // 0=Sun
+    var startOffset = firstDow == 0 ? 6 : firstDow - 1; // Mon=0
+    var totalRows = (int)Math.Ceiling((startOffset + daysInMonth) / 7.0);
+    var sessionsByDate = Model.Sessions.GroupBy(x => x.Date).ToDictionary(g => g.Key, g => g.ToList());
+    var prevMonth = firstDay.AddMonths(-1);
+    var nextMonth = firstDay.AddMonths(1);
+    // Mini calendar for list view also
+    var miniYear = Model.ViewMode == "list" ? today.Year : calYear;
+    var miniMonth = Model.ViewMode == "list" ? today.Month : calMonth;
+}
+
+<style>
+.cal-grid { display:grid; grid-template-columns:repeat(7,1fr); border-left:1px solid #e3e3de; border-top:1px solid #e3e3de; }
+.cal-cell { min-height:110px; border-right:1px solid #e3e3de; border-bottom:1px solid #e3e3de; padding:6px; position:relative; }
+.cal-cell--other { background:#fafaf4; }
+.cal-cell--today { background:#f2f7f0; }
+.cal-day-num { font-size:13px; font-weight:600; color:#42493d; width:26px; height:26px; display:flex; align-items:center; justify-content:center; border-radius:50%; margin-bottom:4px; }
+.cal-day-num--today { background:#3b6722; color:#fff; }
+.cal-day-num--other { color:#c2c9b9; }
+.cal-pill { display:block; width:100%; text-align:left; font-size:11px; font-weight:600; padding:2px 6px; border-radius:4px; margin-bottom:2px; cursor:pointer; border:none; line-height:1.4; transition:opacity .15s; }
+.cal-pill:hover { opacity:.8; }
+.cal-pill--upcoming { background:#fff4e8; color:#9b682f; }
+.cal-pill--today { background:#edf7e8; color:#3b6722; }
+.cal-pill--past-present { background:#e8f0e4; color:#456c3f; }
+.cal-pill--past-absent { background:#ffdad6; color:#ba1a1a; }
+.cal-pill--no-att { background:#eeeee9; color:#42493d; }
+.cal-more { font-size:10px; color:#73796b; padding:1px 4px; }
+.mini-cal { display:grid; grid-template-columns:repeat(7,1fr); gap:1px; }
+.mini-day { font-size:11px; text-align:center; padding:3px 1px; border-radius:4px; color:#42493d; }
+.mini-day--header { font-size:10px; font-weight:700; color:#73796b; }
+.mini-day--today { background:#3b6722; color:#fff; font-weight:700; }
+.mini-day--has-session::after { content:''; display:block; width:4px; height:4px; background:#6a994e; border-radius:50%; margin:1px auto 0; }
+.mini-day--other { color:#c2c9b9; }
+/* Modal */
+#session-modal { display:none; position:fixed; inset:0; z-index:50; background:rgba(0,0,0,.45); align-items:center; justify-content:center; padding:16px; }
+#session-modal.open { display:flex; }
+#modal-box { background:#fff; border-radius:12px; width:100%; max-width:460px; box-shadow:0 24px 48px rgba(0,0,0,.18); overflow:hidden; }
+</style>
+
+<section class="student-page">
+    <div class="student-page-header">
+        <div>
+            <h1 class="student-page-title">Lịch học</h1>
+            <p class="student-page-subtitle">Toàn bộ lịch học theo các lớp đang tham gia.</p>
+        </div>
+        <div class="flex items-center gap-2 shrink-0">
+            <a asp-action="Schedule" asp-route-view="list"
+               class="inline-flex items-center gap-2 rounded-lg px-4 h-10 text-sm font-semibold border transition-colors
+                      @(Model.ViewMode=="list" ? "bg-[#3b6722] text-white border-[#3b6722]" : "bg-white border-[#c2c9b9] text-[#42493d] hover:bg-[#f2f7f0]")">
+                <span class="material-symbols-outlined text-[18px]">view_list</span>Danh sách
+            </a>
+            <a asp-action="Schedule" asp-route-view="calendar" asp-route-month="@calMonth" asp-route-year="@calYear"
+               class="inline-flex items-center gap-2 rounded-lg px-4 h-10 text-sm font-semibold border transition-colors
+                      @(Model.ViewMode=="calendar" ? "bg-[#3b6722] text-white border-[#3b6722]" : "bg-white border-[#c2c9b9] text-[#42493d] hover:bg-[#f2f7f0]")">
+                <span class="material-symbols-outlined text-[18px]">calendar_month</span>Lịch
+            </a>
+        </div>
+    </div>
+
+    @if (Model.ViewMode == "list")
+    {
+        @* ── LIST VIEW ── *@
+        var filters = new[]{ new{Key="upcoming",Label="Sắp tới"}, new{Key="past",Label="Đã qua"}, new{Key="all",Label="Tất cả"} };
+        <div class="flex gap-2 flex-wrap">
+            @foreach (var f in filters)
+            {
+                var isAct = Model.Filter == f.Key;
+                <a asp-action="Schedule" asp-route-filter="@f.Key" asp-route-view="list"
+                   class="inline-flex items-center gap-2 rounded-lg px-4 h-10 text-sm font-semibold transition-colors
+                          @(isAct ? "bg-[#3b6722] text-white" : "bg-white border border-[#c2c9b9] text-[#42493d] hover:bg-[#f2f7f0]")">
+                    @f.Label
+                    @if (isAct){ <span class="inline-flex items-center justify-center rounded-full bg-white/20 px-2 h-5 text-xs">@Model.TotalCount</span> }
+                </a>
+            }
+        </div>
+
+        @if (!Model.Sessions.Any())
+        {
+            <div class="student-card"><div class="student-card-section py-16 text-center">
+                <span class="material-symbols-outlined text-[48px] text-[#c2c9b9]">calendar_month</span>
+                <p class="mt-4 text-sm text-[#73796b]">@(Model.Filter=="upcoming"?"Không có buổi học nào sắp tới.":Model.Filter=="past"?"Chưa có buổi học nào đã qua.":"Chưa có lịch học nào.")</p>
+            </div></div>
+        }
+        else
+        {
+            var grouped = Model.Sessions.GroupBy(x=>x.Date)
+                .OrderBy(g => Model.Filter=="past" ? -g.Key.DayNumber : g.Key.DayNumber);
+            <div class="space-y-4">
+            @foreach (var grp in grouped)
+            {
+                var gDate = grp.Key;
+                var isT = gDate == today;
+                var dLabel = gDate.DayOfWeek switch { DayOfWeek.Monday=>"Thứ Hai", DayOfWeek.Tuesday=>"Thứ Ba", DayOfWeek.Wednesday=>"Thứ Tư", DayOfWeek.Thursday=>"Thứ Năm", DayOfWeek.Friday=>"Thứ Sáu", DayOfWeek.Saturday=>"Thứ Bảy", _=>"Chủ Nhật" };
+                <div>
+                    <div class="mb-3 flex items-center gap-3">
+                        <span class="text-sm font-bold @(isT?"text-[#3b6722]":"text-[#42493d]")">@dLabel, @gDate.ToString("dd/MM/yyyy")</span>
+                        @if(isT){ <span class="inline-flex items-center rounded-full bg-[#edf7e8] px-2.5 py-0.5 text-xs font-semibold text-[#456c3f]">Hôm nay</span> }
+                        <div class="h-px flex-1 bg-[#e3e3de]"></div>
+                    </div>
+                    <div class="space-y-3">
+                    @foreach (var s in grp)
+                    {
+                        <article class="student-card hover:shadow-sm transition-shadow">
+                            <div class="student-card-section !py-4">
+                                <div class="flex items-start justify-between gap-4">
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex items-center gap-2 flex-wrap">
+                                            <p class="text-sm font-semibold text-[#1a1c19]">@s.CourseName <span class="font-normal text-[#73796b]">&middot; Lớp @s.ClassCode</span></p>
+                                            <span class="inline-flex items-center rounded-full bg-[#eeeee9] px-2.5 py-0.5 text-xs font-semibold text-[#42493d]">Buổi @s.SessionNo.ToString("00")</span>
+                                        </div>
+                                        <p class="mt-1 text-sm text-[#73796b]">
+                                            <span class="material-symbols-outlined text-[14px] align-middle">schedule</span>
+                                            @s.StartTime.ToString("HH\\:mm") – @s.EndTime.ToString("HH\\:mm")
+                                        </p>
+                                        @if(!string.IsNullOrWhiteSpace(s.Topic)){<p class="mt-2 text-sm text-[#42493d]"><span class="font-medium">Chủ đề:</span> @s.Topic</p>}
+                                    </div>
+                                    <div class="flex flex-col items-end gap-2 shrink-0">
+                                        <span class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold @s.StatusBadgeClass">@s.StatusLabel</span>
+                                        @if(s.HasAttendance){
+                                            <span class="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold @s.AttendanceBadgeClass">
+                                                <span class="material-symbols-outlined text-[12px]">@(s.WasPresent==true?"check_circle":"cancel")</span>@s.AttendanceLabel
+                                            </span>
+                                        }
+                                        @if(s.IsPast && s.HasAttendance && s.WasPresent==true){
+                                            <a asp-action="Evidence" asp-route-sessionId="@s.SessionId"
+                                               class="inline-flex items-center gap-1 rounded-lg border border-[#c8e0b8] bg-[#f2f7f0] px-2.5 py-1 text-xs font-semibold text-[#3b6722] hover:bg-[#e4f0df] transition-colors">
+                                                <span class="material-symbols-outlined text-[12px]">rate_review</span>Xem nhận xét
+                                            </a>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </article>
+                    }
+                    </div>
+                </div>
+            }
+            </div>
+        }
+    }
+    else
+    {
+        @* ── CALENDAR VIEW ── *@
+        <div class="grid gap-6" style="grid-template-columns:220px 1fr">
+            @* Mini calendar sidebar *@
+            <aside class="space-y-4">
+                <div class="student-card">
+                    <div class="student-card-section !p-4">
+                        <div class="flex items-center justify-between mb-3">
+                            <a asp-action="Schedule" asp-route-view="calendar"
+                               asp-route-month="@prevMonth.Month" asp-route-year="@prevMonth.Year"
+                               class="flex items-center justify-center w-8 h-8 rounded-lg hover:bg-[#f2f7f0] text-[#73796b] transition-colors">
+                                <span class="material-symbols-outlined text-[18px]">chevron_left</span>
+                            </a>
+                            <span class="text-sm font-bold text-[#1a1c19]">@monthNames[calMonth] @calYear</span>
+                            <a asp-action="Schedule" asp-route-view="calendar"
+                               asp-route-month="@nextMonth.Month" asp-route-year="@nextMonth.Year"
+                               class="flex items-center justify-center w-8 h-8 rounded-lg hover:bg-[#f2f7f0] text-[#73796b] transition-colors">
+                                <span class="material-symbols-outlined text-[18px]">chevron_right</span>
+                            </a>
+                        </div>
+                        <div class="mini-cal mb-1">
+                            @foreach(var dh in new[]{"T2","T3","T4","T5","T6","T7","CN"}){
+                                <div class="mini-day mini-day--header">@dh</div>
+                            }
+                        </div>
+                        <div class="mini-cal">
+                            @for(int i=0; i<startOffset; i++){
+                                var pd = firstDay.AddDays(-(startOffset-i));
+                                <div class="mini-day mini-day--other">@pd.Day</div>
+                            }
+                            @for(int d=1; d<=daysInMonth; d++){
+                                var cd = new DateOnly(calYear,calMonth,d);
+                                var isT2 = cd==today;
+                                var hasSess = sessionsByDate.ContainsKey(cd);
+                                <div class="mini-day @(isT2?"mini-day--today":"") @(hasSess&&!isT2?"mini-day--has-session":"")">@d</div>
+                            }
+                        </div>
+                        @* Go to today *@
+                        @if(calYear!=today.Year||calMonth!=today.Month){
+                            <a asp-action="Schedule" asp-route-view="calendar"
+                               asp-route-month="@today.Month" asp-route-year="@today.Year"
+                               class="mt-3 block text-center text-xs font-semibold text-[#3b6722] hover:underline">
+                                Về hôm nay
+                            </a>
+                        }
+                    </div>
+                </div>
+                @* Stats card *@
+                <div class="student-card">
+                    <div class="student-card-section !p-4 space-y-3">
+                        <p class="text-xs font-semibold uppercase tracking-wide text-[#73796b]">Tháng này</p>
+                        <div class="flex items-center justify-between text-sm">
+                            <span class="text-[#42493d]">Tổng buổi</span>
+                            <span class="font-bold text-[#1a1c19]">@Model.TotalCount</span>
+                        </div>
+                        <div class="flex items-center justify-between text-sm">
+                            <span class="text-[#42493d]">Có mặt</span>
+                            <span class="font-bold text-[#456c3f]">@Model.Sessions.Count(x=>x.HasAttendance&&x.WasPresent==true)</span>
+                        </div>
+                        <div class="flex items-center justify-between text-sm">
+                            <span class="text-[#42493d]">Vắng</span>
+                            <span class="font-bold text-[#ba1a1a]">@Model.Sessions.Count(x=>x.HasAttendance&&x.WasPresent==false)</span>
+                        </div>
+                        <div class="flex items-center justify-between text-sm">
+                            <span class="text-[#42493d]">Sắp tới</span>
+                            <span class="font-bold text-[#9b682f]">@Model.Sessions.Count(x=>!x.IsPast)</span>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+
+            @* Main calendar grid *@
+            <div class="student-card overflow-hidden">
+                @* Month header with nav *@
+                <div class="flex items-center justify-between px-5 py-4 border-b border-[#e3e3de]">
+                    <h2 class="text-base font-bold text-[#1a1c19]">@monthNames[calMonth] @calYear</h2>
+                    <div class="flex items-center gap-1">
+                        <a asp-action="Schedule" asp-route-view="calendar"
+                           asp-route-month="@prevMonth.Month" asp-route-year="@prevMonth.Year"
+                           class="flex items-center justify-center w-8 h-8 rounded-lg hover:bg-[#f2f7f0] text-[#73796b] transition-colors" title="Tháng trước">
+                            <span class="material-symbols-outlined text-[20px]">chevron_left</span>
+                        </a>
+                        <a asp-action="Schedule" asp-route-view="calendar"
+                           asp-route-month="@today.Month" asp-route-year="@today.Year"
+                           class="px-3 h-8 rounded-lg text-xs font-semibold bg-[#f2f7f0] text-[#3b6722] hover:bg-[#e4f0df] transition-colors inline-flex items-center">
+                            Hôm nay
+                        </a>
+                        <a asp-action="Schedule" asp-route-view="calendar"
+                           asp-route-month="@nextMonth.Month" asp-route-year="@nextMonth.Year"
+                           class="flex items-center justify-center w-8 h-8 rounded-lg hover:bg-[#f2f7f0] text-[#73796b] transition-colors" title="Tháng sau">
+                            <span class="material-symbols-outlined text-[20px]">chevron_right</span>
+                        </a>
+                    </div>
+                </div>
+                @* Day headers *@
+                <div class="cal-grid">
+                    @foreach(var dh in dayHeaders){
+                        <div class="border-right:1px solid #e3e3de border-b border-[#e3e3de] py-2 text-center text-xs font-bold text-[#73796b] bg-[#fafaf4]">@dh</div>
+                    }
+                    @* Calendar cells *@
+                    @for(int row=0; row<totalRows; row++){
+                        @for(int col=0; col<7; col++){
+                            int idx = row*7+col;
+                            int dayNum = idx - startOffset + 1;
+                            if(dayNum<1){
+                                var pd2 = firstDay.AddDays(dayNum-1);
+                                <div class="cal-cell cal-cell--other"><div class="cal-day-num cal-day-num--other">@pd2.Day</div></div>
+                            } else if(dayNum>daysInMonth){
+                                var nd = firstDay.AddMonths(1).AddDays(dayNum-daysInMonth-1);
+                                <div class="cal-cell cal-cell--other"><div class="cal-day-num cal-day-num--other">@nd.Day</div></div>
+                            } else {
+                                var cellDate = new DateOnly(calYear,calMonth,dayNum);
+                                var isT3 = cellDate==today;
+                                var daySess = sessionsByDate.GetValueOrDefault(cellDate) ?? new();
+                                <div class="cal-cell @(isT3?"cal-cell--today":"")">
+                                    <div class="cal-day-num @(isT3?"cal-day-num--today":"")">@dayNum</div>
+                                    @foreach(var s in daySess.Take(3)){
+                                        var pillCls = s.IsToday?"cal-pill--today":s.IsPast?(s.HasAttendance?(s.WasPresent==true?"cal-pill--past-present":"cal-pill--past-absent"):"cal-pill--no-att"):"cal-pill--upcoming";
+                                        <button class="cal-pill @pillCls"
+                                                onclick="openModal(@s.SessionId,'@System.Text.Json.JsonSerializer.Serialize(s.CourseName)','@s.ClassCode',@s.SessionNo,'@cellDate.ToString("dd/MM/yyyy")','@s.StartTime.ToString("HH:mm")','@s.EndTime.ToString("HH:mm")','@System.Web.HttpUtility.JavaScriptStringEncode(s.Topic??"")','@s.StatusLabel','@(s.HasAttendance?s.AttendanceLabel:"Chưa điểm danh")',@s.IsPast.ToString().ToLower(),@(s.HasAttendance&&s.WasPresent==true).ToString().ToLower())">
+                                            @s.StartTime.ToString("HH:mm") @s.CourseName.Split(' ').FirstOrDefault()
+                                        </button>
+                                    }
+                                    @if(daySess.Count>3){<div class="cal-more">+@(daySess.Count-3) buổi</div>}
+                                </div>
+                            }
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+    }
+</section>
+
+@* Session Detail Modal *@
+<div id="session-modal" role="dialog" aria-modal="true" onclick="if(event.target===this)closeModal()">
+    <div id="modal-box">
+        <div class="flex items-center justify-between px-6 py-4 border-b border-[#e3e3de]">
+            <h3 class="text-base font-semibold text-[#1a1c19]" id="modal-title">Chi tiết buổi học</h3>
+            <button onclick="closeModal()" class="text-[#73796b] hover:text-[#1a1c19] transition-colors">
+                <span class="material-symbols-outlined text-[22px]">close</span>
+            </button>
+        </div>
+        <div class="p-6 space-y-4">
+            <div class="flex items-start gap-3">
+                <span class="material-symbols-outlined text-[20px] text-[#6a994e] mt-0.5">school</span>
+                <div><p class="text-xs text-[#73796b]">Khóa học</p><p class="text-sm font-semibold text-[#1a1c19]" id="m-course"></p></div>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div class="flex items-start gap-3">
+                    <span class="material-symbols-outlined text-[20px] text-[#6a994e] mt-0.5">class</span>
+                    <div><p class="text-xs text-[#73796b]">Lớp / Buổi</p><p class="text-sm font-semibold text-[#1a1c19]" id="m-class"></p></div>
+                </div>
+                <div class="flex items-start gap-3">
+                    <span class="material-symbols-outlined text-[20px] text-[#6a994e] mt-0.5">calendar_today</span>
+                    <div><p class="text-xs text-[#73796b]">Ngày học</p><p class="text-sm font-semibold text-[#1a1c19]" id="m-date"></p></div>
+                </div>
+            </div>
+            <div class="flex items-start gap-3">
+                <span class="material-symbols-outlined text-[20px] text-[#6a994e] mt-0.5">schedule</span>
+                <div><p class="text-xs text-[#73796b]">Thời gian</p><p class="text-sm font-semibold text-[#1a1c19]" id="m-time"></p></div>
+            </div>
+            <div id="m-topic-row" class="flex items-start gap-3">
+                <span class="material-symbols-outlined text-[20px] text-[#6a994e] mt-0.5">menu_book</span>
+                <div><p class="text-xs text-[#73796b]">Chủ đề</p><p class="text-sm text-[#42493d]" id="m-topic"></p></div>
+            </div>
+            <div class="flex items-center justify-between pt-1 border-t border-[#e3e3de]">
+                <span class="text-xs text-[#73796b]">Trạng thái</span>
+                <span id="m-status" class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold bg-[#eeeee9] text-[#42493d]"></span>
+            </div>
+            <div class="flex items-center justify-between">
+                <span class="text-xs text-[#73796b]">Điểm danh</span>
+                <span id="m-att" class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold bg-[#eeeee9] text-[#42493d]"></span>
+            </div>
+        </div>
+        <div id="m-evidence-row" class="hidden px-6 pb-5">
+            <a id="m-evidence-link" href="#"
+               class="flex items-center justify-center gap-2 w-full rounded-lg bg-[#3b6722] h-10 text-sm font-semibold text-white hover:bg-[#2d5019] transition-colors">
+                <span class="material-symbols-outlined text-[18px]">rate_review</span>Xem nhận xét buổi này
+            </a>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+function openModal(id,course,classCode,sessionNo,date,start,end,topic,status,att,isPast,hasEvidence){
+    course = JSON.parse(course);
+    document.getElementById('modal-title').textContent = 'Buổi ' + String(sessionNo).padStart(2,'0');
+    document.getElementById('m-course').textContent = course;
+    document.getElementById('m-class').textContent = 'Lớp ' + classCode + ' · Buổi ' + String(sessionNo).padStart(2,'0');
+    document.getElementById('m-date').textContent = date;
+    document.getElementById('m-time').textContent = start + ' – ' + end;
+    var topicRow = document.getElementById('m-topic-row');
+    if(topic){ topicRow.style.display='flex'; document.getElementById('m-topic').textContent=topic; }
+    else { topicRow.style.display='none'; }
+    document.getElementById('m-status').textContent = status;
+    document.getElementById('m-att').textContent = att;
+    var evRow = document.getElementById('m-evidence-row');
+    if(isPast && hasEvidence){
+        evRow.classList.remove('hidden');
+        document.getElementById('m-evidence-link').href='/StudentPortal/Evidence?sessionId='+id;
+    } else { evRow.classList.add('hidden'); }
+    document.getElementById('session-modal').classList.add('open');
+    document.body.style.overflow='hidden';
+}
+function closeModal(){
+    document.getElementById('session-modal').classList.remove('open');
+    document.body.style.overflow='';
+}
+document.addEventListener('keydown',function(e){ if(e.key==='Escape') closeModal(); });
+</script>
+}
