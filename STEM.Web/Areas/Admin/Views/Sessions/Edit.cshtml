@@ -17,7 +17,7 @@
         </div>
     </div>
 
-    <form asp-area="Admin" asp-controller="Sessions" asp-action="Edit" method="post" class="admin-page">
+    <form asp-area="Admin" asp-controller="Sessions" asp-action="Edit" method="post" enctype="multipart/form-data" class="admin-page">
         @Html.AntiForgeryToken()
         <input asp-for="Id" type="hidden" />
         <div asp-validation-summary="ModelOnly" class="admin-alert admin-alert--error"></div>
@@ -67,6 +67,13 @@
                         <label asp-for="Topic" class="admin-label"></label>
                         <input asp-for="Topic" class="admin-input" placeholder="Ví dụ: Làm quen cảm biến cơ bản" />
                         <span asp-validation-for="Topic" class="admin-validation"></span>
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <label asp-for="MaterialFile" class="admin-label"></label>
+                        <input type="file" asp-for="MaterialFile" accept=".pdf" class="admin-input p-2" />
+                        <span asp-validation-for="MaterialFile" class="admin-validation"></span>
+                        <p class="mt-2 text-sm text-[#73796b]">Chỉ hỗ trợ file PDF (Max 20MB). File tải lên sẽ có thể xem trực tiếp mượt mà ngay trên web.</p>
                     </div>
 
                     <div class="md:col-span-2">

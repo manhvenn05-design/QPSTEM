@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace STEM.Web.Areas.Admin.Models;
@@ -66,8 +67,11 @@ public class CreateSessionViewModel : IValidatableObject
     [Display(Name = "Chủ đề buổi học")]
     public string? Topic { get; set; }
 
-    [Display(Name = "Link giáo án")]
+    [Display(Name = "Link giáo án ngoài (Nếu không upload file)")]
     public string? TeachingMaterialUrl { get; set; }
+
+    [Display(Name = "File giáo án (PDF)")]
+    public IFormFile? MaterialFile { get; set; }
 
     [Display(Name = "Media cả lớp")]
     public string? ClassMediaUrls { get; set; }

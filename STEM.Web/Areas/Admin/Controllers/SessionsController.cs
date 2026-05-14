@@ -5,6 +5,9 @@ using Microsoft.EntityFrameworkCore;
 using STEM.Web.Areas.Admin.Models;
 using STEM.Web.Data;
 using STEM.Web.Models;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
+using System.IO;
 
 namespace STEM.Web.Areas.Admin.Controllers;
 
@@ -14,10 +17,12 @@ public class SessionsController : Controller
 {
     private const int PageSize = 10;
     private readonly ApplicationDbContext _context;
+    private readonly IWebHostEnvironment _environment;
 
-    public SessionsController(ApplicationDbContext context)
+    public SessionsController(ApplicationDbContext context, IWebHostEnvironment environment)
     {
         _context = context;
+        _environment = environment;
     }
 
     [HttpGet]
@@ -182,6 +187,21 @@ public class SessionsController : Controller
             return View(model);
         }
 
+        string? teachingMaterialUrl = NormalizeText(model.TeachingMaterialUrl);
+        try
+        {
+            var uploadedUrl = await HandleFileUploadAsync(model.MaterialFile);
+            if (!string.IsNullOrEmpty(uploadedUrl))
+            {
+                teachingMaterialUrl = uploadedUrl;
+            }
+        }
+        catch (InvalidOperationException ex)
+        {
+            ModelState.AddModelError(nameof(model.MaterialFile), ex.Message);
+            return View(model);
+        }
+
         var entity = new Session
         {
             ClassId = model.ClassId!.Value,
@@ -190,7 +210,7 @@ public class SessionsController : Controller
             StartTime = model.StartTime!.Value,
             EndTime = model.EndTime!.Value,
             Topic = NormalizeText(model.Topic),
-            TeachingMaterialUrl = NormalizeText(model.TeachingMaterialUrl),
+            TeachingMaterialUrl = teachingMaterialUrl,
             ClassMediaUrls = NormalizeText(model.ClassMediaUrls),
             AssistantNote = NormalizeText(model.AssistantNote)
         };
@@ -251,13 +271,35 @@ public class SessionsController : Controller
             return View(model);
         }
 
+        string? teachingMaterialUrl = NormalizeText(model.TeachingMaterialUrl);
+        try
+        {
+            var uploadedUrl = await HandleFileUploadAsync(model.MaterialFile);
+            if (!string.IsNullOrEmpty(uploadedUrl))
+            {
+                // Nếu up file mới thì xóa file cũ nếu có
+                DeleteOldFileIfManaged(entity.TeachingMaterialUrl);
+                teachingMaterialUrl = uploadedUrl;
+            }
+            else if (teachingMaterialUrl != entity.TeachingMaterialUrl && !string.IsNullOrEmpty(entity.TeachingMaterialUrl))
+            {
+                // Xóa file cũ nếu đổi sang link khác hoặc xóa hẳn link
+                DeleteOldFileIfManaged(entity.TeachingMaterialUrl);
+            }
+        }
+        catch (InvalidOperationException ex)
+        {
+            ModelState.AddModelError(nameof(model.MaterialFile), ex.Message);
+            return View(model);
+        }
+
         entity.ClassId = model.ClassId!.Value;
         entity.SessionNo = model.SessionNo;
         entity.Date = model.Date!.Value;
         entity.StartTime = model.StartTime!.Value;
         entity.EndTime = model.EndTime!.Value;
         entity.Topic = NormalizeText(model.Topic);
-        entity.TeachingMaterialUrl = NormalizeText(model.TeachingMaterialUrl);
+        entity.TeachingMaterialUrl = teachingMaterialUrl;
         entity.ClassMediaUrls = NormalizeText(model.ClassMediaUrls);
         entity.AssistantNote = NormalizeText(model.AssistantNote);
 
@@ -287,6 +329,8 @@ public class SessionsController : Controller
             TempData["ErrorMessage"] = $"Buổi học này đang có {entity.Attendances.Count} bản ghi điểm danh và {entity.EquipmentBorrows.Count} mượn thiết bị. Dùng ‘Xóa toàn bộ’ để xóa sạch.";
             return RedirectToAction(nameof(Index));
         }
+
+        DeleteOldFileIfManaged(entity.TeachingMaterialUrl);
 
         _context.Sessions.Remove(entity);
         await _context.SaveChangesAsync();
@@ -327,6 +371,7 @@ public class SessionsController : Controller
             _context.Attendances.RemoveRange(attendances);
 
             // 3. Xóa buổi học
+            DeleteOldFileIfManaged(entity.TeachingMaterialUrl);
             _context.Sessions.Remove(entity);
             await _context.SaveChangesAsync();
 
@@ -439,6 +484,58 @@ public class SessionsController : Controller
     private static string? NormalizeText(string? value)
     {
         return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+    }
+
+    private async Task<string?> HandleFileUploadAsync(IFormFile? file)
+    {
+        if (file == null || file.Length == 0) return null;
+
+        var allowedExtensions = new[] { ".pdf" };
+        var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+
+        if (!allowedExtensions.Contains(extension))
+        {
+            throw new InvalidOperationException("Hệ thống hiện tại chỉ hỗ trợ trình chiếu file PDF. Vui lòng xuất giáo án ra định dạng .pdf để tải lên.");
+        }
+
+        if (file.Length > 20 * 1024 * 1024)
+        {
+            throw new InvalidOperationException("Dung lượng file tải lên vượt quá 20MB.");
+        }
+
+        var uploadsFolder = Path.Combine(_environment.WebRootPath, "uploads", "slides");
+        if (!Directory.Exists(uploadsFolder))
+        {
+            Directory.CreateDirectory(uploadsFolder);
+        }
+
+        var uniqueFileName = $"{Guid.NewGuid()}{extension}";
+        var filePath = Path.Combine(uploadsFolder, uniqueFileName);
+
+        await using var stream = new FileStream(filePath, FileMode.Create);
+        await file.CopyToAsync(stream);
+
+        return $"/uploads/slides/{uniqueFileName}";
+    }
+
+    private void DeleteOldFileIfManaged(string? fileUrl)
+    {
+        if (string.IsNullOrWhiteSpace(fileUrl) || !fileUrl.StartsWith("/uploads/slides/")) return;
+
+        var relativePath = fileUrl.TrimStart('/');
+        var fullPath = Path.Combine(_environment.WebRootPath, relativePath.Replace("/", "\\"));
+        
+        if (System.IO.File.Exists(fullPath))
+        {
+            try
+            {
+                System.IO.File.Delete(fullPath);
+            }
+            catch
+            {
+                // Ignore delete errors
+            }
+        }
     }
 
     private sealed class SessionListProjection

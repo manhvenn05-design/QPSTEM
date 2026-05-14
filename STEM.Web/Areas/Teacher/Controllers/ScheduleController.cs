@@ -1,4 +1,4 @@
-﻿using System.Security.Claims;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -226,6 +226,32 @@ public class ScheduleController : Controller
 
         ViewData["Title"] = "Lịch dạy";
         return View(model);
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> Viewer(int id)
+    {
+        var teacherId = GetCurrentTeacherId();
+        if (!teacherId.HasValue)
+        {
+            return Challenge();
+        }
+
+        var session = await _context.Sessions
+            .AsNoTracking()
+            .Where(x => x.Id == id && x.Class.TeacherId == teacherId.Value)
+            .FirstOrDefaultAsync();
+
+        if (session == null || string.IsNullOrWhiteSpace(session.TeachingMaterialUrl))
+        {
+            return NotFound("Không tìm thấy giáo án cho buổi học này.");
+        }
+
+        ViewBag.MaterialUrl = session.TeachingMaterialUrl;
+        ViewBag.SessionLabel = $"Buổi số {session.SessionNo:00}";
+        ViewBag.Topic = session.Topic;
+        
+        return View();
     }
 
     private int? GetCurrentTeacherId()

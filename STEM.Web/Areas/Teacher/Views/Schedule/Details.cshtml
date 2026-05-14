@@ -1,4 +1,4 @@
-﻿@model STEM.Web.Areas.Teacher.Models.TeacherScheduleDetailsViewModel
+@model STEM.Web.Areas.Teacher.Models.TeacherScheduleDetailsViewModel
 
 @{
     ViewData["Title"] = "Lịch dạy";
@@ -14,9 +14,9 @@
         <div class="teacher-actions">
             @if (!string.IsNullOrWhiteSpace(Model.TeachingMaterialUrl))
             {
-                <a href="@Model.TeachingMaterialUrl" target="_blank" rel="noreferrer" class="teacher-btn-secondary">
-                    <span class="material-symbols-outlined text-[18px]">menu_book</span>
-                    <span>Mở giáo án</span>
+                <a asp-area="Teacher" asp-controller="Schedule" asp-action="Viewer" asp-route-id="@Model.SessionId" class="teacher-btn-secondary !text-[#f97316] !border-[#f97316] hover:!bg-[#fff7ed]">
+                    <span class="material-symbols-outlined text-[18px]">smart_display</span>
+                    <span>Trình chiếu</span>
                 </a>
             }
             <a asp-area="Teacher" asp-controller="Attendances" asp-action="Board" asp-route-sessionId="@Model.SessionId" class="teacher-btn-primary">

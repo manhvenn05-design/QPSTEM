@@ -1,4 +1,4 @@
-﻿@model STEM.Web.Areas.Teacher.Models.TeacherScheduleIndexViewModel
+@model STEM.Web.Areas.Teacher.Models.TeacherScheduleIndexViewModel
 
 @{
     ViewData["Title"] = "Lịch dạy";
@@ -227,7 +227,7 @@
                                     <div class="teacher-inline-list w-full justify-end">
                                         @if (session.HasTeachingMaterial)
                                         {
-                                            <a href="@session.TeachingMaterialUrl" target="_blank" rel="noreferrer" class="teacher-btn-secondary">Mở giáo án</a>
+                                            <a asp-area="Teacher" asp-controller="Schedule" asp-action="Viewer" asp-route-id="@session.SessionId" class="teacher-btn-secondary text-[#f97316] border-[#f97316] hover:bg-[#fff7ed]">Trình chiếu</a>
                                         }
                                         <a asp-area="Teacher" asp-controller="Schedule" asp-action="Details" asp-route-id="@session.SessionId" class="teacher-btn-secondary">Chi tiết</a>
                                         <a asp-area="Teacher" asp-controller="Attendances" asp-action="Board" asp-route-sessionId="@session.SessionId" class="teacher-btn-primary">Điểm danh</a>
