@@ -1,4 +1,4 @@
-﻿@using System.Security.Claims
+@using System.Security.Claims
 @inject STEM.Web.Services.IAdminShellService AdminShellService
 
 <!DOCTYPE html>
@@ -1375,6 +1375,89 @@
                 if (event.key === "Escape" && !modal.classList.contains("hidden")) {
                     closeModal();
                 }
+            });
+            // ── Table Action Dropdown – định vị bằng fixed để thoát overflow:hidden ──
+            (() => {
+                // Dropdown panel cố định duy nhất được inject vào body
+                const panel = document.createElement('div');
+                panel.id = 'table-action-panel';
+                panel.className = 'admin-dropdown';
+                panel.style.cssText = 'position:fixed;z-index:9999;min-width:11rem;display:none;';
+                document.body.appendChild(panel);
+
+                let activeDetails = null;
+
+                // Mở panel tại vị trí nút
+                function openPanel(details) {
+                    const menu = details.querySelector('[data-table-menu]');
+                    if (!menu) return;
+
+                    // Clone nội dung menu vào panel cố định
+                    panel.innerHTML = menu.innerHTML;
+
+                    // Tính toán vị trí
+                    const btn = details.querySelector('summary');
+                    const rect = btn.getBoundingClientRect();
+                    const panelW = 176; // w-44 = 11rem = 176px
+                    const spaceBelow = window.innerHeight - rect.bottom;
+
+                    panel.style.display = 'block';
+
+                    // Ưu tiên hiện bên dưới, nếu không đủ chỗ thì hiện phía trên
+                    if (spaceBelow >= 140) {
+                        panel.style.top = (rect.bottom + 4) + 'px';
+                    } else {
+                        panel.style.top = (rect.top - panel.offsetHeight - 4) + 'px';
+                    }
+
+                    // Căn phải theo nút, nhưng không vượt trái màn hình
+                    let left = rect.right - panelW;
+                    if (left < 8) left = 8;
+                    panel.style.left = left + 'px';
+
+                    activeDetails = details;
+                }
+
+                function closePanel() {
+                    panel.style.display = 'none';
+                    if (activeDetails) {
+                        activeDetails.removeAttribute('open');
+                        activeDetails = null;
+                    }
+                }
+
+                // Lắng nghe tất cả <details> có data-table-action
+                document.addEventListener('toggle', (e) => {
+                    const details = e.target;
+                    if (!(details instanceof HTMLElement) || !details.hasAttribute('data-table-action')) return;
+
+                    if (details.open) {
+                        // Đóng panel cũ nếu có
+                        if (activeDetails && activeDetails !== details) {
+                            activeDetails.removeAttribute('open');
+                        }
+                        openPanel(details);
+                    } else {
+                        closePanel();
+                    }
+                }, true);
+
+                // Đóng khi click ra ngoài
+                document.addEventListener('click', (e) => {
+                    if (activeDetails && !activeDetails.contains(e.target) && !panel.contains(e.target)) {
+                        closePanel();
+                    }
+                });
+
+                // Đóng khi scroll hoặc resize
+                window.addEventListener('scroll', closePanel, true);
+                window.addEventListener('resize', closePanel);
+            })();
+
+            document.addEventListener('click', (e) => {
+                const panel = document.getElementById('table-action-panel');
+                if (!panel || panel.style.display === 'none') return;
+                // Cho phép click bên trong panel hoạt động bình thường
             });
         })();
     </script>

@@ -121,11 +121,11 @@
                                     </td>
                                     <td>
                                         <div class="flex justify-end">
-                                            <details class="relative">
+                                            <details class="relative" data-table-action>
                                                 <summary class="admin-menu-button cursor-pointer list-none">
                                                     <span class="material-symbols-outlined text-[18px]">more_horiz</span>
                                                 </summary>
-                                                <div class="admin-dropdown absolute right-0 top-11 z-20 w-44 overflow-hidden">
+                                                <div data-table-menu class="hidden">
                                                     <a asp-area="Admin" asp-controller="Cms" asp-action="PostDetails" asp-route-id="@post.Id" class="admin-menu-item">
                                                         <span class="material-symbols-outlined text-[18px]">visibility</span>
                                                         <span>Chi tiết</span>

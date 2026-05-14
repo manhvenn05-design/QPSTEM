@@ -46,7 +46,6 @@ Trạng thái cập nhật: 2026-05-05
 3. Hoàn thiện `Teacher Borrow / Return Equipment`
 4. Nối logic cho `StudentPortal`
 5. Quay lại tối ưu đồng bộ toàn bộ UI/wording
-
 ## Checklist vận hành trước khi test teacher
 
 - Có ít nhất 1 user role `Teacher`
