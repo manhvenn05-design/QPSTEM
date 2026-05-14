@@ -6,8 +6,9 @@ using Microsoft.EntityFrameworkCore;
 using STEM.Web.Data;
 using STEM.Web.Models.StudentViewModels;
 
-namespace STEM.Web.Controllers;
+namespace STEM.Web.Areas.Student.Controllers;
 
+[Area("Student")]
 [Authorize(Roles = "Student")]
 public class StudentPortalController : Controller
 {
@@ -306,7 +307,7 @@ public class StudentPortalController : Controller
                 isPast = x.IsPast,
                 isToday = x.IsToday,
                 evidenceUrl = x.IsPast && x.HasAttendance && x.WasPresent == true
-                    ? $"/StudentPortal/Evidence?sessionId={x.SessionId}#evidence-session-{x.SessionId}"
+                    ? $"/Student/StudentPortal/Evidence?sessionId={x.SessionId}#evidence-session-{x.SessionId}"
                     : null
             })
         });

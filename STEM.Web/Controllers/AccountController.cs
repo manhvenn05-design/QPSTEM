@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -34,7 +34,7 @@ public class AccountController : Controller
 
             if (User.IsInRole("Student"))
             {
-                return RedirectToAction("Index", "StudentPortal");
+                return RedirectToAction("Index", "StudentPortal", new { area = "Student" });
             }
 
             return RedirectToAction("Index", "Home");
@@ -102,7 +102,7 @@ public class AccountController : Controller
 
         if (user.Role.Name == "Student")
         {
-            return RedirectToAction("Index", "StudentPortal");
+            return RedirectToAction("Index", "StudentPortal", new { area = "Student" });
         }
 
         return RedirectToAction("Index", "Home");
