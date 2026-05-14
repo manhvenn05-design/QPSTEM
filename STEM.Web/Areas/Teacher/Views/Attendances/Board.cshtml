@@ -175,7 +175,7 @@
                                     <input type="hidden" asp-for="Rows[@i].ProductMediaUrls" id="Rows_@(i)__ProductMediaUrls" />
                                      <input type="hidden" asp-for="Rows[@i].AiEvaluation" id="Rows_@(i)__AiEvaluation" />
 
-                                    <div class="mt-2 flex cursor-pointer justify-center rounded-xl border-2 border-dashed border-[#c2c9b9] bg-[#f8faf7] px-6 py-6 transition-colors hover:border-[#3b6722] hover:bg-[#f2f7f0]" id="upload-area-@(i)" onclick="document.getElementById('file-upload-@(i)').click()" ondragover="handleUploadDragOver(event)" ondragleave="handleUploadDragLeave(event)" ondrop="handleUploadDrop(event, @(i))">
+                                    <div class="mt-2 flex cursor-pointer justify-center rounded-lg border-2 border-dashed border-[#c2c9b9] bg-[#f8faf7] px-6 py-6 transition-colors hover:border-[#3b6722] hover:bg-[#f2f7f0]" id="upload-area-@(i)" onclick="document.getElementById('file-upload-@(i)').click()" ondragover="handleUploadDragOver(event)" ondragleave="handleUploadDragLeave(event)" ondrop="handleUploadDrop(event, @(i))">
                                         <div class="text-center">
                                             <span class="material-symbols-outlined text-[36px] text-[#73796b]">cloud_upload</span>
                                             <div class="mt-2 flex justify-center text-sm leading-6 text-[#42493f]">
@@ -212,23 +212,23 @@
 
                                     <span asp-validation-for="Rows[@i].ProductMediaUrls" class="teacher-field-error"></span>
 
-                                    <button type="button" id="btn-ai-@(i)" class="mt-3 flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-[#b26a00] to-[#e79211] px-4 py-2.5 text-sm font-bold text-white shadow-md transition-all hover:from-[#9f5d00] hover:to-[#cf810c] hover:shadow-lg active:scale-[0.98]" onclick="analyzeVideoInline(this, 'Rows_@(i)__ProductMediaUrls', 'ai-result-@(i)')">
+                                    <button type="button" id="btn-ai-@(i)" class="mt-3 flex w-full items-center justify-center gap-2 rounded-lg bg-[#6a994e] px-4 py-2.5 text-sm font-bold text-white transition-all hover:bg-[#3b6722] active:scale-[0.98]" onclick="analyzeVideoInline(this, 'Rows_@(i)__ProductMediaUrls', 'ai-result-@(i)')">
                                         <span class="material-symbols-outlined text-[20px] ai-action-icon">auto_awesome</span>
-                                        <span class="ai-action-label">Phân tích video bằng AI</span>
+                                        <span class="ai-action-label">Đánh giá video (AI)</span>
                                     </button>
 
-                                    <div id="ai-result-@(i)" class="mt-4 hidden overflow-hidden rounded-xl border border-[#e3e3de] bg-white shadow-sm">
-                                        <div class="border-b border-[#e3e3de] bg-[#fffaf3] px-4 py-3 flex justify-between items-center cursor-pointer select-none" onclick="toggleAiContent(@(i))">
-                                            <h4 class="flex items-center gap-2 text-sm font-bold text-[#b26a00]">
+                                    <div id="ai-result-@(i)" class="mt-4 hidden overflow-hidden rounded-lg border border-[#e3e3de] bg-white shadow-sm">
+                                        <div class="border-b border-[#e3e3de] bg-[#f2f7f0] px-4 py-3 flex justify-between items-center cursor-pointer select-none" onclick="toggleAiContent(@(i))">
+                                            <h4 class="flex items-center gap-2 text-sm font-bold text-[#3b6722]">
                                                 <span class="material-symbols-outlined text-[18px]">analytics</span>
-                                                Báo cáo phân tích AI
+                                                Kết quả đánh giá
                                             </h4>
                                             <span class="material-symbols-outlined text-[#b26a00] transition-transform duration-300" id="ai-toggle-icon-@(i)">expand_less</span>
                                         </div>
 
                                         <div class="ai-loading-state flex flex-col items-center justify-center py-8">
-                                            <div class="h-10 w-10 animate-spin rounded-full border-4 border-[#f2f7f0] border-t-[#e79211]"></div>
-                                            <p class="mt-4 animate-pulse text-sm font-medium text-[#b26a00]">AI đang phân tích khung hình và giọng nói...</p>
+                                            <div class="h-10 w-10 animate-spin rounded-full border-4 border-[#f2f7f0] border-t-[#6a994e]"></div>
+                                            <p class="mt-4 text-sm font-medium text-[#73796b]">Đang xử lý dữ liệu...</p>
                                         </div>
 
                                         <div class="ai-analysis-content hidden p-4" id="ai-analysis-content-@(i)">
@@ -301,13 +301,13 @@
 
             <div id="aiTextLoading" class="hidden py-8 text-center text-[#73796b]">
                 <span class="material-symbols-outlined mb-2 animate-spin text-[32px] text-[#6a994e]" style="animation: spin 1s linear infinite;">refresh</span>
-                <p class="text-sm">AI đang suy nghĩ và biên tập câu từ...</p>
+                <p class="text-sm">Đang phân tích dữ liệu...</p>
                 <style>@@keyframes spin { 100% { transform: rotate(360deg); } }</style>
             </div>
 
             <div id="aiTextResult" class="hidden">
-                <p class="mb-3 text-sm font-medium text-[#42493d]">Phiên bản nhận xét đã được tinh chỉnh:</p>
-                <div class="mb-5 min-h-[160px] whitespace-pre-line rounded-xl border border-[#c9ddbf] bg-gradient-to-br from-[#f2f7f0] to-[#e6f0e3] p-5 text-base leading-relaxed text-[#1a1c19] shadow-inner" id="aiTextSuggestion"></div>
+                <p class="mb-3 text-sm font-medium text-[#42493d]">Nội dung đề xuất:</p>
+                <div class="mb-5 min-h-[160px] whitespace-pre-line rounded-lg border border-[#c2c9b9] bg-[#f2f7f0] p-5 text-base leading-relaxed text-[#1a1c19]" id="aiTextSuggestion"></div>
                 <div class="flex justify-end gap-3">
                     <button type="button" class="teacher-btn-secondary !h-10" onclick="closeAIModals()">Huỷ</button>
                     <button type="button" class="teacher-btn-primary !h-10" onclick="applyAIText()">Thay thế nhận xét</button>

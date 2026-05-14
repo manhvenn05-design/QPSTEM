@@ -4,53 +4,100 @@
     Layout = "_AuthLayout";
 }
 
-<main class="auth-page auth-page-login">
-    <section class="auth-card auth-card-login">
-        <header class="auth-header auth-header-center">
-            <span class="material-symbols-outlined auth-school-icon" aria-hidden="true">school</span>
-            <h1>Chào mừng trở lại!</h1>
-            <p>Đăng nhập để tiếp tục học tập cùng QPSTEM.</p>
-        </header>
+<style>
+    /* Ghi đè class auth-body cũ để full màn hình không bị bó hẹp */
+    body.auth-body {
+        background-color: #ffffff;
+        display: block;
+        padding: 0;
+        margin: 0;
+    }
+</style>
 
-        <form class="auth-form" asp-controller="Account" asp-action="Login" asp-route-returnUrl="@ViewData["ReturnUrl"]" method="post">
-            <div asp-validation-summary="All" style="color: #dc3545; font-size: 0.9rem; margin-bottom: 16px; padding: 10px; background: #f8d7da; border-radius: 4px; display: @(ViewData.ModelState.IsValid ? "none" : "block")"></div>
+<div class="min-h-screen w-full flex flex-col md:flex-row bg-white font-sans text-gray-800">
+    
+    <!-- Cột trái: Hình ảnh & Tiêu đề -->
+    <div class="hidden md:flex flex-1 flex-col items-center justify-center p-8 lg:p-12 border-r border-gray-100">
+        <div class="max-w-xl text-center flex flex-col items-center">
+            <h1 class="text-[22px] lg:text-[26px] font-normal text-[#333333] mb-2 tracking-wide" style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+                HỌC VIỆN CÔNG NGHỆ QP STEM
+            </h1>
+            <p class="text-[#555555] text-[17px] mb-10">Làm việc mọi lúc mọi nơi</p>
+            <div class="relative w-full max-w-[500px] mt-4">
+                <!-- Hình ảnh minh hoạ -->
+                <img src="~/images/auth_illustration.png" alt="Học viện QP STEM" class="w-full h-auto object-contain drop-shadow-sm hover:drop-shadow-md transition-all duration-300" />
+            </div>
+        </div>
+    </div>
 
-            <div class="form-field">
-                <label asp-for="UsernameOrEmail"></label>
-                <div class="input-with-icon">
-                    <span class="material-symbols-outlined" aria-hidden="true">person</span>
-                    <input asp-for="UsernameOrEmail" type="text" placeholder="Nhập email hoặc tên đăng nhập của bạn" />
-                </div>
+    <!-- Cột phải: Form Đăng nhập -->
+    <div class="flex-1 flex items-center justify-center p-4 sm:p-8 bg-[#fafbfe] md:bg-white relative">
+        <div class="w-full max-w-[460px] bg-white rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.08)] overflow-hidden relative">
+            
+            <!-- Background sóng ở trên -->
+            <div class="absolute top-0 left-0 right-0 h-[160px] bg-[#f2f7f0] overflow-hidden">
+                <svg viewBox="0 0 1440 320" class="absolute bottom-[-2px] w-[110%] left-[-5%]" preserveAspectRatio="none" style="height: 70px;">
+                    <path fill="#ffffff" fill-opacity="1" d="M0,128L80,133.3C160,139,320,149,480,138.7C640,128,800,96,960,101.3C1120,107,1280,149,1360,170.7L1440,192L1440,320L1360,320C1280,320,1120,320,960,320C800,320,640,320,480,320C320,320,160,320,80,320L0,320Z"></path>
+                </svg>
             </div>
 
-            <div class="form-field">
-                <div class="form-field-row">
-                    <label asp-for="Password"></label>
-                    <a class="auth-link" href="#">Quên mật khẩu?</a>
+            <!-- Nội dung Card -->
+            <div class="relative z-10 px-8 pt-10 pb-10">
+                
+                <!-- Avatar Logo vòng tròn -->
+                <div class="mx-auto w-[100px] h-[100px] bg-white rounded-full flex items-center justify-center shadow-[0_4px_20px_rgba(0,0,0,0.06)] border-[6px] border-white mb-6">
+                    <span class="material-symbols-outlined text-[#6a994e]" style="font-size: 52px; font-variation-settings: 'FILL' 1, 'wght' 600;">switch_account</span>
                 </div>
-                <div class="input-with-icon">
-                    <span class="material-symbols-outlined" aria-hidden="true">lock</span>
-                    <input asp-for="Password" type="password" placeholder="Nhập mật khẩu" data-password-input />
-                    <button class="password-toggle" type="button" data-toggle-password aria-label="Hiện hoặc ẩn mật khẩu">
-                        <span class="material-symbols-outlined" aria-hidden="true">visibility_off</span>
+
+                <div class="text-center mb-8">
+                    <h2 class="text-[13px] font-semibold text-[#333333] uppercase mb-1">
+                        Chào mừng đến với HỌC VIỆN CÔNG NGHỆ QP STEM
+                    </h2>
+                    <p class="text-[12px] text-gray-500">Vui lòng đăng nhập vào tài khoản của bạn</p>
+                </div>
+
+                <form asp-controller="Account" asp-action="Login" asp-route-returnUrl="@ViewData["ReturnUrl"]" method="post" class="space-y-4">
+                    <div asp-validation-summary="All" class="text-red-500 text-sm mb-4 p-3 bg-red-50 rounded" style="display: @(ViewData.ModelState.IsValid ? "none" : "block")"></div>
+
+                    <div>
+                        <label asp-for="UsernameOrEmail" class="block text-[13px] text-[#444] mb-1.5 ml-1">Email/Tên đăng nhập</label>
+                        <input asp-for="UsernameOrEmail" type="text" class="w-full px-4 py-3 bg-[#f2f7f0] border-none rounded-md focus:ring-2 focus:ring-[#6a994e] transition-all text-sm text-gray-700" placeholder=" " />
+                    </div>
+
+                    <div>
+                        <label asp-for="Password" class="block text-[13px] text-[#444] mb-1.5 ml-1">Mật khẩu</label>
+                        <input asp-for="Password" type="password" class="w-full px-4 py-3 bg-[#f2f7f0] border-none rounded-md focus:ring-2 focus:ring-[#6a994e] transition-all text-sm text-gray-700" placeholder=" " />
+                        <div class="text-right mt-2">
+                            <a href="#" class="text-[12px] text-gray-500 hover:text-[#6a994e] transition-colors">Quên mật khẩu</a>
+                        </div>
+                    </div>
+
+                    <div class="hidden">
+                        <input asp-for="RememberMe" type="checkbox" checked />
+                    </div>
+
+                    <button type="submit" class="w-full py-3 mt-3 bg-[#6a994e] hover:bg-[#5c8b3e] text-white rounded-md font-semibold tracking-wide shadow-sm hover:shadow-md transition-all text-[14px]">
+                        ĐĂNG NHẬP
                     </button>
+                </form>
+
+                <!-- Divider -->
+                <div class="mt-8 mb-5 flex items-center justify-center space-x-3 opacity-70">
+                    <div class="h-px bg-gray-300 w-10"></div>
+                    <span class="text-[10px] text-gray-500">Cài đặt ứng dụng trên điện thoại</span>
+                    <div class="h-px bg-gray-300 w-10"></div>
+                </div>
+
+                <!-- App Badges -->
+                <div class="flex justify-center items-center gap-3">
+                    <a href="#" class="inline-flex h-9 w-[120px] bg-white border border-gray-200 rounded shadow-sm hover:shadow-md transition-all items-center justify-center px-2">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg" alt="Google Play" class="h-[22px] object-contain" />
+                    </a>
+                    <a href="#" class="inline-flex h-9 w-[120px] bg-white border border-gray-200 rounded shadow-sm hover:shadow-md transition-all items-center justify-center px-2">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/3/3c/Download_on_the_App_Store_Badge.svg" alt="App Store" class="h-[22px] object-contain" />
+                    </a>
                 </div>
             </div>
-
-            <label class="checkbox-row">
-                <input asp-for="RememberMe" type="checkbox" />
-                <span>Ghi nhớ đăng nhập</span>
-            </label>
-
-            <button class="button button-primary button-block auth-submit" type="submit">Đăng nhập</button>
-
-            <p class="auth-switch">
-                <a asp-controller="Home" asp-action="Index">Quay về trang chủ</a>
-            </p>
-        </form>
-    </section>
-
-    <footer class="auth-footer auth-footer-simple">
-        <p>© 2024 QPSTEM Education. All rights reserved.</p>
-    </footer>
-</main>
+        </div>
+    </div>
+</div>

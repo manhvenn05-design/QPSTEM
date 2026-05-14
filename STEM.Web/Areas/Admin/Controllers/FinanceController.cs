@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.Data.SqlClient;
@@ -327,7 +327,7 @@ public class FinanceController : Controller
 
         if (entity.Payments.Count > 0)
         {
-            TempData["ErrorMessage"] = "Không thể xóa hóa đơn đã có thanh toán.";
+            TempData["ErrorMessage"] = $"Hóa đơn \"{entity.InvoiceNo}\" đã có {entity.Payments.Count} lần thanh toán. Không thể xóa hồ sơ tài chính. Dùng \"Hủy hóa đơn\" nếu không còn hiệu lực.";
             return RedirectToAction(nameof(Index));
         }
 
@@ -335,6 +335,35 @@ public class FinanceController : Controller
         await _context.SaveChangesAsync();
 
         TempData["SuccessMessage"] = "Đã xóa hóa đơn.";
+        return RedirectToAction(nameof(Index));
+    }
+
+    /// <summary>
+    /// Hủy hóa đơn: Đặt Status = 4 (Hủy), giữ lại record để audit trail.
+    /// Không xóa dữ liệu tài chính. Hành động an toàn, có thể hoàn tác bằng cách sửa status.
+    /// </summary>
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> VoidInvoice(int id)
+    {
+        var entity = await _context.Invoices.FirstOrDefaultAsync(x => x.Id == id);
+
+        if (entity == null)
+        {
+            TempData["ErrorMessage"] = "Không tìm thấy hóa đơn.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        if (entity.Status == 4)
+        {
+            TempData["ErrorMessage"] = "Hóa đơn này đã ở trạng thái Hủy.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        entity.Status = 4; // 4 = Đã hủy
+        await _context.SaveChangesAsync();
+
+        TempData["SuccessMessage"] = $"Đã hủy hóa đơn \"{entity.InvoiceNo}\". Hồ sơ vẫn được lưu lại.";
         return RedirectToAction(nameof(Index));
     }
 
@@ -565,6 +594,7 @@ public class FinanceController : Controller
             1 => ("Chưa thu", "bg-[#ffdad6] text-[#ba1a1a]"),
             2 => ("Thu một phần", "bg-[#fff4e8] text-[#9b682f]"),
             3 => ("Đã thu đủ", "bg-[#edf7e8] text-[#456c3f]"),
+            4 => ("Đã hủy", "bg-[#eeeee9] text-[#42493d]"),
             _ => ($"Trạng thái {status}", "bg-[#eeeee9] text-[#42493d]")
         };
     }

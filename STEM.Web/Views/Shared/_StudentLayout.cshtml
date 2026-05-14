@@ -30,7 +30,7 @@
             --student-warning-soft: #fff4e8;
             --student-success: #456c3f;
             --student-success-soft: #edf7e8;
-            --student-shadow: 0 20px 40px rgba(26, 28, 25, 0.08);
+            --student-shadow: 0 4px 12px rgba(26, 28, 25, 0.05);
         }
 
         .material-symbols-outlined {
@@ -63,12 +63,18 @@
         .student-logo-mark {
             align-items: center;
             background: var(--student-primary-strong);
-            border-radius: 12px;
+            border-radius: 50%;
+            box-shadow: 0 4px 12px rgba(59, 103, 34, 0.25);
             color: #fff;
             display: inline-flex;
-            height: 52px;
+            height: 64px;
             justify-content: center;
-            width: 52px;
+            width: 64px;
+        }
+
+        .student-logo-mark .material-symbols-outlined {
+            font-size: 36px;
+            font-variation-settings: 'FILL' 1, 'wght' 700, 'GRAD' 0, 'opsz' 48;
         }
 
         .student-logo-wordmark {

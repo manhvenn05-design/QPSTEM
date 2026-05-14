@@ -288,8 +288,6 @@ public class ClassesController : Controller
         return RedirectToAction(nameof(Index));
     }
 
-    // ─── Delete ───────────────────────────────────────────────────────────────
-
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Delete(int id)
@@ -308,7 +306,7 @@ public class ClassesController : Controller
 
         if (entity.Enrollments.Count > 0 || entity.Sessions.Count > 0 || entity.Invoices.Count > 0)
         {
-            TempData["ErrorMessage"] = "Không thể xóa lớp học này vì đang có học viên, buổi học hoặc hóa đơn liên quan.";
+            TempData["ErrorMessage"] = "Không thể xóa lớp học này vì đang có học viên, buổi học hoặc hóa đơn liên quan. Dùng \"Xóa toàn bộ dữ liệu\" nếu muốn xóa sạch.";
             return RedirectToAction(nameof(Index));
         }
 
@@ -316,6 +314,91 @@ public class ClassesController : Controller
         await _context.SaveChangesAsync();
 
         TempData["SuccessMessage"] = "Đã xóa lớp học.";
+        return RedirectToAction(nameof(Index));
+    }
+
+    /// <summary>
+    /// Xóa toàn bộ lớp học và tất cả dữ liệu liên quan theo đúng thứ tự FK.
+    /// Yêu cầu admin nhập lại ClassCode để xác nhận.
+    /// </summary>
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Purge(int id, string confirmCode)
+    {
+        var entity = await _context.Classes
+            .FirstOrDefaultAsync(x => x.Id == id);
+
+        if (entity == null)
+        {
+            TempData["ErrorMessage"] = "Không tìm thấy lớp học.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        if (!string.Equals(confirmCode?.Trim(), entity.ClassCode, StringComparison.OrdinalIgnoreCase))
+        {
+            TempData["ErrorMessage"] = $"Mã lớp xác nhận không khớp. Vui lòng nhập đúng \"{entity.ClassCode}\".";
+            return RedirectToAction(nameof(Index));
+        }
+
+        try
+        {
+            // 1. Xóa Attendance (thuộc Sessions của lớp)
+            var sessionIds = await _context.Sessions
+                .Where(x => x.ClassId == id)
+                .Select(x => x.Id)
+                .ToListAsync();
+
+            if (sessionIds.Count > 0)
+            {
+                var attendances = await _context.Attendances
+                    .Where(x => sessionIds.Contains(x.SessionId))
+                    .ToListAsync();
+                _context.Attendances.RemoveRange(attendances);
+            }
+
+            // 2. Xóa Sessions
+            var sessions = await _context.Sessions
+                .Where(x => x.ClassId == id)
+                .ToListAsync();
+            _context.Sessions.RemoveRange(sessions);
+
+            // 3. Xóa Payments (thuộc Invoices của lớp)
+            var invoiceIds = await _context.Invoices
+                .Where(x => x.ClassId == id)
+                .Select(x => x.Id)
+                .ToListAsync();
+
+            if (invoiceIds.Count > 0)
+            {
+                var payments = await _context.Payments
+                    .Where(x => invoiceIds.Contains(x.InvoiceId))
+                    .ToListAsync();
+                _context.Payments.RemoveRange(payments);
+            }
+
+            // 4. Xóa Invoices
+            var invoices = await _context.Invoices
+                .Where(x => x.ClassId == id)
+                .ToListAsync();
+            _context.Invoices.RemoveRange(invoices);
+
+            // 5. Xóa Enrollments
+            var enrollments = await _context.Enrollments
+                .Where(x => x.ClassId == id)
+                .ToListAsync();
+            _context.Enrollments.RemoveRange(enrollments);
+
+            // 6. Cuối cùng xóa Class
+            _context.Classes.Remove(entity);
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = $"Đã xóa toàn bộ dữ liệu của lớp \"{entity.ClassCode}\".";
+        }
+        catch (Exception ex)
+        {
+            TempData["ErrorMessage"] = $"Xóa thất bại: {ex.Message}";
+        }
+
         return RedirectToAction(nameof(Index));
     }
 

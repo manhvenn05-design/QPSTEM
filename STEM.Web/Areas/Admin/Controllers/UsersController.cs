@@ -377,25 +377,224 @@ public class UsersController : Controller
             return RedirectToAction(nameof(Index));
         }
 
+        // Kiểm tra có dữ liệu liên quan không
+        var hasRelatedData =
+            await _context.Attendances.AnyAsync(x => x.StudentId == id) ||
+            await _context.Enrollments.AnyAsync(x => x.StudentId == id) ||
+            await _context.Invoices.AnyAsync(x => x.StudentId == id) ||
+            await _context.Classes.AnyAsync(x => x.TeacherId == id) ||
+            await _context.MaintenanceLogs.AnyAsync(x => x.ReportedBy == id) ||
+            await _context.EquipmentBorrows.AnyAsync(x => x.BorrowerId == id) ||
+            await _context.Posts.AnyAsync(x => x.AuthorId == id);
+
+        if (hasRelatedData)
+        {
+            TempData["ErrorMessage"] = $"Tài khoản \"{ user.FullName}\" đang có dữ liệu liên quan. Dùng \"Khóa tài khoản\" để vô hiệu hóa, hoặc \"Xóa toàn bộ dữ liệu\" nếu là tài khoản test.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        var avatarUrl = user.AvatarUrl;
+
+        if (user.StudentProfile != null)
+            _context.StudentProfiles.Remove(user.StudentProfile);
+
+        _context.Users.Remove(user);
+        await _context.SaveChangesAsync();
+        AdminImageStorage.DeleteIfManaged(avatarUrl, _environment.WebRootPath);
+
+        TempData["SuccessMessage"] = "Đã xóa người dùng.";
+        return RedirectToAction(nameof(Index));
+    }
+
+    /// <summary>
+    /// Xóa toàn bộ người dùng và tất cả dữ liệu liên quan theo đúng thứ tự FK.
+    /// Yêu cầu admin nhập lại username để xác nhận.
+    /// </summary>
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Purge(int id, string confirmUsername)
+    {
+        var user = await _context.Users
+            .Include(x => x.StudentProfile)
+            .FirstOrDefaultAsync(x => x.Id == id);
+
+        if (user == null)
+        {
+            TempData["ErrorMessage"] = "Không tìm thấy người dùng.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        // Xác nhận bằng tên đăng nhập để tránh xóa nhầm
+        if (!string.Equals(confirmUsername?.Trim(), user.Username, StringComparison.OrdinalIgnoreCase))
+        {
+            TempData["ErrorMessage"] = $"Tên đăng nhập xác nhận không khớp. Vui lòng nhập đúng \"{user.Username}\".";
+            return RedirectToAction(nameof(Index));
+        }
+
         var avatarUrl = user.AvatarUrl;
 
         try
         {
+            // ── Xóa theo đúng thứ tự FK: con trước, cha sau ──────────────────
+
+            // 1. MaintenanceLogs (ReportedBy NOT NULL)
+            var maintenanceLogs = await _context.MaintenanceLogs
+                .Where(x => x.ReportedBy == id)
+                .ToListAsync();
+            _context.MaintenanceLogs.RemoveRange(maintenanceLogs);
+
+            // 2. EquipmentBorrows (BorrowerId NOT NULL)
+            var equipmentBorrows = await _context.EquipmentBorrows
+                .Where(x => x.BorrowerId == id)
+                .ToListAsync();
+            _context.EquipmentBorrows.RemoveRange(equipmentBorrows);
+
+            // 3. Posts (AuthorId NOT NULL — giáo viên/admin viết bài CMS)
+            var posts = await _context.Posts
+                .Where(x => x.AuthorId == id)
+                .ToListAsync();
+            _context.Posts.RemoveRange(posts);
+
+            // 4. Xử lý Classes mà user là giáo viên phụ trách
+            var classIds = await _context.Classes
+                .Where(x => x.TeacherId == id)
+                .Select(x => x.Id)
+                .ToListAsync();
+
+            if (classIds.Count > 0)
+            {
+                // 4a. Attendances thuộc Sessions của các lớp này
+                var classSessionIds = await _context.Sessions
+                    .Where(x => classIds.Contains(x.ClassId))
+                    .Select(x => x.Id)
+                    .ToListAsync();
+
+                if (classSessionIds.Count > 0)
+                {
+                    var sessionAttendances = await _context.Attendances
+                        .Where(x => classSessionIds.Contains(x.SessionId))
+                        .ToListAsync();
+                    _context.Attendances.RemoveRange(sessionAttendances);
+
+                    var sessionBorrows = await _context.EquipmentBorrows
+                        .Where(x => classSessionIds.Contains(x.SessionId))
+                        .ToListAsync();
+                    _context.EquipmentBorrows.RemoveRange(sessionBorrows);
+                }
+
+                // 4b. Sessions của lớp
+                var classSessions = await _context.Sessions
+                    .Where(x => classIds.Contains(x.ClassId))
+                    .ToListAsync();
+                _context.Sessions.RemoveRange(classSessions);
+
+                // 4c. Payments → Invoices của lớp
+                var classInvoiceIds = await _context.Invoices
+                    .Where(x => x.ClassId != null && classIds.Contains(x.ClassId.Value))
+                    .Select(x => x.Id)
+                    .ToListAsync();
+
+                if (classInvoiceIds.Count > 0)
+                {
+                    var classPayments = await _context.Payments
+                        .Where(x => classInvoiceIds.Contains(x.InvoiceId))
+                        .ToListAsync();
+                    _context.Payments.RemoveRange(classPayments);
+
+                    var classInvoices = await _context.Invoices
+                        .Where(x => classInvoiceIds.Contains(x.Id))
+                        .ToListAsync();
+                    _context.Invoices.RemoveRange(classInvoices);
+                }
+
+                // 4d. Enrollments của lớp
+                var classEnrollments = await _context.Enrollments
+                    .Where(x => classIds.Contains(x.ClassId))
+                    .ToListAsync();
+                _context.Enrollments.RemoveRange(classEnrollments);
+
+                // 4e. Bản thân các lớp
+                var classes = await _context.Classes
+                    .Where(x => classIds.Contains(x.Id))
+                    .ToListAsync();
+                _context.Classes.RemoveRange(classes);
+            }
+
+            // 5. Attendances (StudentId — nếu user là học sinh)
+            var studentAttendances = await _context.Attendances
+                .Where(x => x.StudentId == id)
+                .ToListAsync();
+            _context.Attendances.RemoveRange(studentAttendances);
+
+            // 6. Enrollments (StudentId)
+            var enrollments = await _context.Enrollments
+                .Where(x => x.StudentId == id)
+                .ToListAsync();
+            _context.Enrollments.RemoveRange(enrollments);
+
+            // 7. Payments → Invoices (StudentId)
+            var invoiceIds = await _context.Invoices
+                .Where(x => x.StudentId == id)
+                .Select(x => x.Id)
+                .ToListAsync();
+
+            if (invoiceIds.Count > 0)
+            {
+                var payments = await _context.Payments
+                    .Where(x => invoiceIds.Contains(x.InvoiceId))
+                    .ToListAsync();
+                _context.Payments.RemoveRange(payments);
+            }
+
+            var invoices = await _context.Invoices
+                .Where(x => x.StudentId == id)
+                .ToListAsync();
+            _context.Invoices.RemoveRange(invoices);
+
+            // 8. StudentProfile
             if (user.StudentProfile != null)
             {
                 _context.StudentProfiles.Remove(user.StudentProfile);
             }
 
+            // 9. Cuối cùng: xóa User
             _context.Users.Remove(user);
             await _context.SaveChangesAsync();
+
             AdminImageStorage.DeleteIfManaged(avatarUrl, _environment.WebRootPath);
 
-            TempData["SuccessMessage"] = "Đã xóa người dùng.";
+            TempData["SuccessMessage"] = $"Đã xóa toàn bộ dữ liệu của \"{user.FullName}\".";
         }
-        catch (DbUpdateException)
+        catch (Exception ex)
         {
-            TempData["ErrorMessage"] = "Không thể xóa người dùng này vì đang có dữ liệu liên quan trong hệ thống.";
+            TempData["ErrorMessage"] = $"Xóa thất bại: {ex.InnerException?.Message ?? ex.Message}";
         }
+
+        return RedirectToAction(nameof(Index));
+    }
+
+    /// <summary>
+    /// Khóa hoặc mở khóa tài khoản người dùng (toggle IsActive).
+    /// Đây là hành động an toàn, có thể hoàn tác.
+    /// </summary>
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ToggleLock(int id)
+    {
+        var user = await _context.Users.FirstOrDefaultAsync(x => x.Id == id);
+
+        if (user == null)
+        {
+            TempData["ErrorMessage"] = "Không tìm thấy người dùng.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        user.IsActive = !user.IsActive;
+        await _context.SaveChangesAsync();
+
+        TempData["SuccessMessage"] = user.IsActive
+            ? $"Đã mở khóa tài khoản \"{user.FullName}\"."
+            : $"Đã khóa tài khoản \"{user.FullName}\". Người dùng sẽ không thể đăng nhập.";
 
         return RedirectToAction(nameof(Index));
     }

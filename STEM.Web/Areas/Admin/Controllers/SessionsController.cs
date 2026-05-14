@@ -284,7 +284,7 @@ public class SessionsController : Controller
 
         if (entity.Attendances.Count > 0 || entity.EquipmentBorrows.Count > 0)
         {
-            TempData["ErrorMessage"] = "Không thể xóa buổi học này vì đã có điểm danh hoặc dữ liệu mượn trả thiết bị liên quan.";
+            TempData["ErrorMessage"] = $"Buổi học này đang có {entity.Attendances.Count} bản ghi điểm danh và {entity.EquipmentBorrows.Count} mượn thiết bị. Dùng ‘Xóa toàn bộ’ để xóa sạch.";
             return RedirectToAction(nameof(Index));
         }
 
@@ -292,6 +292,51 @@ public class SessionsController : Controller
         await _context.SaveChangesAsync();
 
         TempData["SuccessMessage"] = "Đã xóa buổi học.";
+        return RedirectToAction(nameof(Index));
+    }
+
+    /// <summary>
+    /// Xóa toàn bộ buổi học kèm điểm danh và mượn thiết bị.
+    /// Dành cho dữ liệu test, không có dữ liệu tài chính liên quan.
+    /// </summary>
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Purge(int id)
+    {
+        var entity = await _context.Sessions
+            .FirstOrDefaultAsync(x => x.Id == id);
+
+        if (entity == null)
+        {
+            TempData["ErrorMessage"] = "Không tìm thấy buổi học.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        try
+        {
+            // 1. Xóa mượn thiết bị
+            var borrows = await _context.EquipmentBorrows
+                .Where(x => x.SessionId == id)
+                .ToListAsync();
+            _context.EquipmentBorrows.RemoveRange(borrows);
+
+            // 2. Xóa điểm danh (kèm video AI)
+            var attendances = await _context.Attendances
+                .Where(x => x.SessionId == id)
+                .ToListAsync();
+            _context.Attendances.RemoveRange(attendances);
+
+            // 3. Xóa buổi học
+            _context.Sessions.Remove(entity);
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = $"Đã xóa toàn bộ: buổi {entity.SessionNo:00}, {attendances.Count} điểm danh, {borrows.Count} mượn thiết bị.";
+        }
+        catch (Exception ex)
+        {
+            TempData["ErrorMessage"] = $"Xóa thất bại: {ex.Message}";
+        }
+
         return RedirectToAction(nameof(Index));
     }
 

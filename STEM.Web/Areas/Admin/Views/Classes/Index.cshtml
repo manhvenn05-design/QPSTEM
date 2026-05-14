@@ -117,13 +117,21 @@
                                                     <span class="material-symbols-outlined text-[18px]">edit</span>
                                                     <span>Cập nhật</span>
                                                 </a>
-                                                <form asp-area="Admin" asp-controller="Classes" asp-action="Delete" asp-route-id="@item.Id" method="post" data-confirm-title="Xóa lớp học" data-confirm-message="Xóa lớp học này? Hành động này không thể hoàn tác." data-confirm-submit-text="Xóa lớp học">
+                                                <form asp-area="Admin" asp-controller="Classes" asp-action="Delete" asp-route-id="@item.Id" method="post" data-confirm-title="Xóa lớp học" data-confirm-message="Xóa lớp học này? Nếu có dữ liệu liên quan thì dùng 'Xóa toàn bộ dữ liệu'." data-confirm-submit-text="Xóa lớp học">
                                                     @Html.AntiForgeryToken()
                                                     <button type="submit" class="admin-menu-item admin-menu-item--danger w-full text-left">
                                                         <span class="material-symbols-outlined text-[18px]">delete</span>
                                                         <span>Xóa</span>
                                                     </button>
                                                 </form>
+                                                <button type="button"
+                                                        class="admin-menu-item admin-menu-item--danger w-full text-left"
+                                                        data-purge-id="@item.Id"
+                                                        data-purge-name="@item.ClassCode"
+                                                        data-purge-code="@item.ClassCode">
+                                                    <span class="material-symbols-outlined text-[18px]">delete_forever</span>
+                                                    <span>Xóa toàn bộ dữ liệu</span>
+                                                </button>
                                             </div>
                                         </details>
                                     </div>
@@ -162,3 +170,87 @@
         </div>
     </div>
 </section>
+
+@* Modal xác nhận Xóa toàn bộ dữ liệu lớp học *@
+<div id="purge-modal" class="admin-modal fixed inset-0 z-[100] hidden items-center justify-center px-4">
+    <div class="admin-modal-panel w-full max-w-md p-6">
+        <div class="flex items-start justify-between gap-4">
+            <div>
+                <h2 class="admin-section-title text-[#b54740]">Xóa toàn bộ dữ liệu lớp</h2>
+                <p id="purge-desc" class="admin-section-subtitle !mt-2"></p>
+            </div>
+            <button id="purge-close" type="button" class="admin-btn-secondary !h-10 !w-10 !px-0">
+                <span class="material-symbols-outlined text-[18px]">close</span>
+            </button>
+        </div>
+
+        <div class="mt-4 rounded-[8px] bg-[#fff4f3] border border-[#f0c9c7] p-4 text-sm text-[#b54740]">
+            ⚠️ Hành động này sẽ xóa <strong>toàn bộ</strong>: điểm danh, buổi học, thanh toán, hóa đơn, đăng ký và lớp học. Không thể hoàn tác.
+        </div>
+
+        <div class="mt-4">
+            <label class="text-sm font-medium text-[#42493d]">Nhập mã lớp để xác nhận:</label>
+            <input id="purge-confirm-input" type="text" placeholder="Ví dụ: PYTHON-K2" autocomplete="off"
+                   class="admin-input mt-2 w-full" />
+        </div>
+
+        <form id="purge-form" asp-area="Admin" asp-controller="Classes" asp-action="Purge" method="post" class="mt-6 flex justify-end gap-3">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="id" id="purge-class-id" />
+            <input type="hidden" name="confirmCode" id="purge-confirm-code" />
+            <button type="button" id="purge-cancel" class="admin-btn-secondary">Hủy</button>
+            <button type="submit" id="purge-submit" class="admin-btn-danger" disabled>Xóa toàn bộ</button>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    (() => {
+        const modal       = document.getElementById('purge-modal');
+        const desc        = document.getElementById('purge-desc');
+        const input       = document.getElementById('purge-confirm-input');
+        const classId     = document.getElementById('purge-class-id');
+        const codeHidden  = document.getElementById('purge-confirm-code');
+        const submit      = document.getElementById('purge-submit');
+
+        let expectedCode = '';
+
+        function openPurge(id, name, code) {
+            expectedCode   = code;
+            classId.value  = id;
+            desc.textContent = `Bạn đang chuẩn bị xóa toàn bộ dữ liệu của lớp "${name}".`;
+            input.value    = '';
+            submit.disabled = true;
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            setTimeout(() => input.focus(), 100);
+        }
+
+        function closePurge() {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        document.addEventListener('click', e => {
+            const btn = e.target.closest('[data-purge-id]');
+            if (!btn) return;
+            openPurge(btn.dataset.purgeId, btn.dataset.purgeName, btn.dataset.purgeCode);
+        });
+
+        document.getElementById('purge-close').addEventListener('click', closePurge);
+        document.getElementById('purge-cancel').addEventListener('click', closePurge);
+        modal.addEventListener('click', e => { if (e.target === modal) closePurge(); });
+
+        input.addEventListener('input', () => {
+            const match = input.value.trim().toUpperCase() === expectedCode.toUpperCase();
+            submit.disabled = !match;
+            if (match) codeHidden.value = input.value.trim();
+        });
+
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape' && !modal.classList.contains('hidden')) closePurge();
+        });
+    })();
+</script>
+}

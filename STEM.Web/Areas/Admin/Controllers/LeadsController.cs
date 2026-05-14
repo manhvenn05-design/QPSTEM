@@ -207,4 +207,33 @@ public class LeadsController : Controller
             (!lead.InterestedId.HasValue || c.CourseId == lead.InterestedId.Value) &&
             (!c.EndDate.HasValue || c.EndDate.Value >= today));
     }
+
+    /// <summary>
+    /// Xóa lead. Lead không có dữ liệu con nên có thể xóa trực tiếp.
+    /// Lead đã được chuyển đổi (Status=2) không nên xóa để giữ lịch sử.
+    /// </summary>
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Delete(int id)
+    {
+        var lead = await _context.Leads.FirstOrDefaultAsync(x => x.Id == id);
+
+        if (lead == null)
+        {
+            TempData["ErrorMessage"] = "Không tìm thấy khách tư vấn.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        if (lead.Status == 2)
+        {
+            TempData["ErrorMessage"] = $"Không thể xóa \"{lead.ParentName}\" vì đã được chuyển đổi thành học viên. Dữ liệu này thuộc lịch sử tuyển sinh.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        _context.Leads.Remove(lead);
+        await _context.SaveChangesAsync();
+
+        TempData["SuccessMessage"] = $"Đã xóa khách tư vấn \"{lead.ParentName}\"";
+        return RedirectToAction(nameof(Index));
+    }
 }

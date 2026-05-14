@@ -108,18 +108,17 @@
 
                         <div>
                             <label asp-for="ThumbnailFile" class="admin-label"></label>
-                            @if (!string.IsNullOrEmpty(Model.CurrentImageUrl))
-                            {
-                                <div class="mb-3 rounded-lg overflow-hidden border border-[#e3e3de]">
-                                    <img src="@Model.CurrentImageUrl" alt="Ảnh hiện tại"
-                                         style="width:100%; max-height:160px; object-fit:cover;" />
-                                </div>
-                                <p class="text-xs text-[#73796b] mb-2">Ảnh hiện tại – chọn file mới để thay thế.</p>
-                            }
-                            <input asp-for="ThumbnailFile" type="file"
-                                   accept="image/jpeg,image/png,image/webp"
+                            
+                            <div id="thumbnail-preview-container" class="mb-3 rounded-lg overflow-hidden border border-[#e3e3de]" style="@(string.IsNullOrEmpty(Model.CurrentImageUrl) ? "display:none;" : "")">
+                                <img id="thumbnail-preview" src="@(Model.CurrentImageUrl ?? "#")" alt="Ảnh hiện tại"
+                                     style="width:100%; max-height:160px; object-fit:cover;" />
+                            </div>
+                            <p id="thumbnail-help-text" class="text-xs text-[#73796b] mb-2" style="@(string.IsNullOrEmpty(Model.CurrentImageUrl) ? "display:none;" : "")">Ảnh hiện tại – chọn file mới để thay thế.</p>
+
+                            <input asp-for="ThumbnailFile" type="file" id="thumbnail-input"
+                                   accept="image/*"
                                    class="admin-input py-2" />
-                            <p class="text-xs text-[#73796b] mt-1">JPG, PNG, WEBP – tối đa 5 MB.</p>
+                            <p class="text-xs text-[#73796b] mt-1">Hỗ trợ các định dạng ảnh (JPG, PNG, WEBP, AVIF...) – tối đa 5 MB.</p>
                             <span asp-validation-for="ThumbnailFile" class="admin-field-validation"></span>
                         </div>
                     </div>
@@ -190,6 +189,30 @@
             }
 
             sync();
+
+            // Hiển thị preview ảnh khi chọn file
+            const thumbnailInput = document.getElementById('thumbnail-input');
+            const thumbnailPreviewContainer = document.getElementById('thumbnail-preview-container');
+            const thumbnailPreview = document.getElementById('thumbnail-preview');
+            const thumbnailHelpText = document.getElementById('thumbnail-help-text');
+
+            if (thumbnailInput && thumbnailPreviewContainer && thumbnailPreview) {
+                thumbnailInput.addEventListener('change', function(e) {
+                    const file = e.target.files[0];
+                    if (file) {
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            thumbnailPreview.src = e.target.result;
+                            thumbnailPreviewContainer.style.display = 'block';
+                            if (thumbnailHelpText) {
+                                thumbnailHelpText.textContent = 'Ảnh mới sẽ được cập nhật khi lưu.';
+                                thumbnailHelpText.style.display = 'block';
+                            }
+                        }
+                        reader.readAsDataURL(file);
+                    }
+                });
+            }
         })();
     </script>
 }

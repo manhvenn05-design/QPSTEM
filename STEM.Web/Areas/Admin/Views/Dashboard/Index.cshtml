@@ -1,4 +1,4 @@
-﻿@model STEM.Web.Areas.Admin.Models.AdminDashboardViewModel
+@model STEM.Web.Areas.Admin.Models.AdminDashboardViewModel
 
 @{
     ViewData["Title"] = "Tổng quan";
@@ -9,11 +9,13 @@
         @foreach (var metric in Model.Metrics)
         {
             <article class="admin-stat-card">
-                <div class="flex items-start justify-between gap-3">
-                    <span class="admin-stat-label">@metric.Label</span>
-                    <span class="material-symbols-outlined text-[20px] text-[#6a994e]">@metric.Icon</span>
+                <div class="admin-stat-card-icon">
+                    <span class="material-symbols-outlined text-[20px] text-[#6a994e]" style="font-variation-settings:'FILL' 1;">@metric.Icon</span>
                 </div>
-                <div class="admin-stat-value">@metric.Value</div>
+                <div class="admin-stat-card-body">
+                    <span class="admin-stat-label">@metric.Label</span>
+                    <span class="admin-stat-value">@metric.Value</span>
+                </div>
             </article>
         }
     </div>

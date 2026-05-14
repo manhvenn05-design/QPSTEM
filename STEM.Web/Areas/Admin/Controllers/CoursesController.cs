@@ -338,8 +338,17 @@ public class CoursesController : Controller
 
         if (course.Classes.Count > 0 || course.Leads.Count > 0)
         {
-            TempData["ErrorMessage"] = "Không thể xóa khóa học này vì đang có lớp học hoặc dữ liệu quan tâm liên quan.";
+            var hint = course.Classes.Count > 0
+                ? $"Khóa học này đang có {course.Classes.Count} lớp học. Vào trang Lớp học, tìm theo mã \"{course.Code}\" và xóa từng lớp trước."
+                : "Khóa học này đang có dữ liệu quan tâm (Leads) liên quan.";
+            TempData["ErrorMessage"] = hint;
             return RedirectToAction(nameof(Index));
+        }
+
+        // Xóa Leads trước (không có con)
+        if (course.Leads.Count > 0)
+        {
+            _context.Leads.RemoveRange(course.Leads);
         }
 
         var imageUrl = course.ImageUrl;

@@ -118,13 +118,39 @@
                                                 <span class="material-symbols-outlined text-[18px]">edit</span>
                                                 <span>Cập nhật</span>
                                             </a>
-                                            <form asp-area="Admin" asp-controller="Users" asp-action="Delete" asp-route-id="@user.Id" method="post" data-confirm-title="Xóa người dùng" data-confirm-message="Xóa người dùng này? Hành động này không thể hoàn tác." data-confirm-submit-text="Xóa người dùng">
+                                            @* Khóa/Mở khóa — hành động an toàn, có thể hoàn tác *@
+                                            <form asp-area="Admin" asp-controller="Users" asp-action="ToggleLock" asp-route-id="@user.Id" method="post">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="admin-menu-item admin-menu-item--danger w-full text-left">
+                                                    @if (user.Status == "Hoạt động")
+                                                    {
+                                                        <span class="material-symbols-outlined text-[18px]">lock</span>
+                                                        <span>Khóa tài khoản</span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="material-symbols-outlined text-[18px]">lock_open</span>
+                                                        <span>Mở khóa tài khoản</span>
+                                                    }
+                                                </button>
+                                            </form>
+                                            @* Phân cách — bên dưới là hành động không thể hoàn tác *@
+                                            <div class="my-1 border-t border-[#e8ece3]"></div>
+                                            <form asp-area="Admin" asp-controller="Users" asp-action="Delete" asp-route-id="@user.Id" method="post" data-confirm-title="Xóa người dùng" data-confirm-message="Chỉ xóa được nếu tài khoản chưa có dữ liệu. Nếu có dữ liệu hãy dùng 'Khóa tài khoản'." data-confirm-submit-text="Xóa người dùng">
                                                 @Html.AntiForgeryToken()
                                                 <button type="submit" class="admin-menu-item admin-menu-item--danger w-full text-left">
                                                     <span class="material-symbols-outlined text-[18px]">delete</span>
-                                                    <span>Xóa</span>
+                                                    <span>Xóa tài khoản</span>
                                                 </button>
                                             </form>
+                                            <button type="button"
+                                                    class="admin-menu-item admin-menu-item--danger w-full text-left"
+                                                    data-purge-id="@user.Id"
+                                                    data-purge-name="@user.Name"
+                                                    data-purge-username="@user.Username">
+                                                <span class="material-symbols-outlined text-[18px]">delete_forever</span>
+                                                <span>Xóa toàn bộ dữ liệu</span>
+                                            </button>
                                         </div>
                                     </details>
                                 </div>
@@ -150,3 +176,96 @@
         </div>
     </div>
 </section>
+
+@* Modal xác nhận Xóa toàn bộ dữ liệu *@
+<div id="purge-modal" class="admin-modal fixed inset-0 z-[100] hidden items-center justify-center px-4">
+    <div class="admin-modal-panel w-full max-w-md p-6">
+        <div class="flex items-start justify-between gap-4">
+            <div>
+                <h2 class="admin-section-title text-[#b54740]">Xóa toàn bộ dữ liệu</h2>
+                <p id="purge-desc" class="admin-section-subtitle !mt-2"></p>
+            </div>
+            <button id="purge-close" type="button" class="admin-btn-secondary !h-10 !w-10 !px-0">
+                <span class="material-symbols-outlined text-[18px]">close</span>
+            </button>
+        </div>
+
+        <div class="mt-4 flex gap-3 rounded-[8px] bg-[#fff4f3] border border-[#f0c9c7] p-4 text-sm text-[#b54740]">
+            <span class="material-symbols-outlined shrink-0 text-[20px]">warning</span>
+            <div>
+                Hành động này sẽ xóa <strong>toàn bộ</strong> dữ liệu: điểm danh, minh chứng, đăng ký lớp, hóa đơn, thanh toán và tài khoản. Không thể hoàn tác.
+            </div>
+        </div>
+
+        <div class="mt-4">
+            <label class="text-sm font-medium text-[#42493d]">Nhập tên đăng nhập để xác nhận:</label>
+            <input id="purge-confirm-input" type="text" placeholder="username" autocomplete="off"
+                   class="admin-input mt-2 w-full" />
+        </div>
+
+        <form id="purge-form" asp-area="Admin" asp-controller="Users" asp-action="Purge" method="post" class="mt-6 flex justify-end gap-3">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="id" id="purge-user-id" />
+            <input type="hidden" name="confirmUsername" id="purge-confirm-username" />
+            <button type="button" id="purge-cancel" class="admin-btn-secondary">Hủy</button>
+            <button type="submit" id="purge-submit" class="admin-btn-danger" disabled>Xóa toàn bộ</button>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    (() => {
+        const modal   = document.getElementById('purge-modal');
+        const desc    = document.getElementById('purge-desc');
+        const input   = document.getElementById('purge-confirm-input');
+        const userId  = document.getElementById('purge-user-id');
+        const confirmHidden = document.getElementById('purge-confirm-username');
+        const submit  = document.getElementById('purge-submit');
+
+        let expectedUsername = '';
+
+        function openPurge(id, name, username) {
+            expectedUsername = username;
+            userId.value = id;
+            desc.textContent = `Bạn đang chuẩn bị xóa toàn bộ dữ liệu của "${name}" (${username}).`;
+            input.value = '';
+            submit.disabled = true;
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            setTimeout(() => input.focus(), 100);
+        }
+
+        function closePurge() {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        // Mở modal khi click nút trong panel
+        document.addEventListener('click', e => {
+            const btn = e.target.closest('[data-purge-id]');
+            if (!btn) return;
+            openPurge(
+                btn.dataset.purgeId,
+                btn.dataset.purgeName,
+                btn.dataset.purgeUsername
+            );
+        });
+
+        document.getElementById('purge-close').addEventListener('click', closePurge);
+        document.getElementById('purge-cancel').addEventListener('click', closePurge);
+        modal.addEventListener('click', e => { if (e.target === modal) closePurge(); });
+
+        // Enable nút xóa khi nhập đúng username
+        input.addEventListener('input', () => {
+            const match = input.value.trim().toLowerCase() === expectedUsername.toLowerCase();
+            submit.disabled = !match;
+            if (match) confirmHidden.value = input.value.trim();
+        });
+
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape' && !modal.classList.contains('hidden')) closePurge();
+        });
+    })();
+</script>
+}

@@ -86,7 +86,7 @@
                     <div class="news-related-grid">
                         @foreach (var article in Model.RelatedArticles)
                         {
-                            <a asp-controller="News" asp-action="Details" asp-route-slug="@article.Slug" class="news-related-card" style="text-decoration:none; color:inherit; display:block;">
+                            <a asp-controller="News" asp-action="Details" asp-route-id="@article.Slug" class="news-related-card" style="text-decoration:none; color:inherit; display:block;">
                                 <div class="news-related-image">
                                     <img src="@article.ImageUrl" alt="@article.Title" loading="lazy" />
                                 </div>
@@ -109,7 +109,7 @@
                     <div class="news-featured-list">
                         @foreach (var article in Model.FeaturedArticles)
                         {
-                            <a asp-controller="News" asp-action="Details" asp-route-slug="@article.Slug" class="news-featured-item" style="text-decoration:none; color:inherit; display:flex; gap:0.75rem; align-items:flex-start;">
+                            <a asp-controller="News" asp-action="Details" asp-route-id="@article.Slug" class="news-featured-item" style="text-decoration:none; color:inherit; display:flex; gap:0.75rem; align-items:flex-start;">
                                 <div class="news-featured-thumb">
                                     <img src="@article.ImageUrl" alt="@article.Title" loading="lazy" />
                                 </div>

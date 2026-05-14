@@ -141,11 +141,18 @@
                                                     <span class="material-symbols-outlined text-[18px]">edit</span>
                                                     <span>Cập nhật</span>
                                                 </a>
-                                                <form asp-area="Admin" asp-controller="Sessions" asp-action="Delete" asp-route-id="@item.Id" method="post" data-confirm-title="Xóa buổi học" data-confirm-message="Xóa buổi học này? Hành động này không thể hoàn tác." data-confirm-submit-text="Xóa buổi học">
+                                                <form asp-area="Admin" asp-controller="Sessions" asp-action="Delete" asp-route-id="@item.Id" method="post" data-confirm-title="Xóa buổi học" data-confirm-message="Xóa buổi học này nếu chưa có điểm danh. Nếu đã có dữ liệu dùng 'Xóa toàn bộ'." data-confirm-submit-text="Xóa buổi học">
                                                     @Html.AntiForgeryToken()
                                                     <button type="submit" class="admin-menu-item admin-menu-item--danger w-full text-left">
                                                         <span class="material-symbols-outlined text-[18px]">delete</span>
                                                         <span>Xóa</span>
+                                                    </button>
+                                                </form>
+                                                <form asp-area="Admin" asp-controller="Sessions" asp-action="Purge" asp-route-id="@item.Id" method="post" data-confirm-title="Xóa toàn bộ buổi học" data-confirm-message="Xóa toàn bộ: điểm danh, video AI và mượn thiết bị của buổi này. Không thể hoàn tác." data-confirm-submit-text="Xóa toàn bộ">
+                                                    @Html.AntiForgeryToken()
+                                                    <button type="submit" class="admin-menu-item admin-menu-item--danger w-full text-left">
+                                                        <span class="material-symbols-outlined text-[18px]">delete_forever</span>
+                                                        <span>Xóa toàn bộ</span>
                                                     </button>
                                                 </form>
                                             </div>

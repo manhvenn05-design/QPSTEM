@@ -61,7 +61,7 @@
 
                             <div class="news-card-body">
                                 <h2>
-                                    <a asp-controller="News" asp-action="Details" asp-route-slug="@article.Slug" style="color:inherit; text-decoration:none;">
+                                    <a asp-controller="News" asp-action="Details" asp-route-id="@article.Slug" style="color:inherit; text-decoration:none;">
                                         @article.Title
                                     </a>
                                 </h2>
@@ -86,7 +86,7 @@
                                     }
                                 </div>
 
-                                <a class="news-read-more" asp-controller="News" asp-action="Details" asp-route-slug="@article.Slug">
+                                <a class="news-read-more" asp-controller="News" asp-action="Details" asp-route-id="@article.Slug">
                                     Đọc thêm
                                     <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
                                 </a>
@@ -154,7 +154,7 @@
                     <div class="news-featured-list">
                         @foreach (var article in Model.FeaturedArticles)
                         {
-                            <a asp-controller="News" asp-action="Details" asp-route-slug="@article.Slug" class="news-featured-item" style="text-decoration:none; color:inherit; display:flex; gap:0.75rem; align-items:flex-start;">
+                            <a asp-controller="News" asp-action="Details" asp-route-id="@article.Slug" class="news-featured-item" style="text-decoration:none; color:inherit; display:flex; gap:0.75rem; align-items:flex-start;">
                                 <div class="news-featured-thumb">
                                     <img src="@article.ImageUrl" alt="@article.Title" loading="lazy" />
                                 </div>

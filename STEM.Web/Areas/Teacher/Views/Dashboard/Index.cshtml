@@ -1,4 +1,4 @@
-﻿@model STEM.Web.Areas.Teacher.Models.TeacherDashboardViewModel
+@model STEM.Web.Areas.Teacher.Models.TeacherDashboardViewModel
 
 @{
     ViewData["Title"] = "Bảng điều khiển";
@@ -24,44 +24,60 @@
 
     <div class="teacher-card">
         <div class="teacher-card-section">
-            <div class="teacher-toolbar">
+            <div class="flex items-start justify-between flex-wrap gap-4">
                 <div>
-                    <h2 class="teacher-section-title">@Model.TodayLabel</h2>
-                    <p class="teacher-section-subtitle">Tập trung vào các buổi học và việc còn dang dở.</p>
+                    <p class="text-xs font-bold uppercase tracking-wider text-[#73796b] mb-2">@Model.TodayLabel</p>
+                    <h2 class="text-2xl font-bold text-[#1a1c19] m-0">Xin chào, @User.Identity?.Name?.Split(' ').LastOrDefault() 👋</h2>
+                    <p class="text-sm text-[#42493d] mt-2">Tập trung vào các buổi học và việc còn dang dở.</p>
                 </div>
                 <div class="teacher-inline-list">
-                    <a asp-area="Teacher" asp-controller="Evidence" asp-action="Index" class="teacher-filter">Minh chứng</a>
-                    <a asp-area="Teacher" asp-controller="Equipment" asp-action="Index" class="teacher-filter">Thiết bị</a>
+                    <a asp-area="Teacher" asp-controller="Evidence" asp-action="Index" class="teacher-btn-secondary">Minh chứng</a>
+                    <a asp-area="Teacher" asp-controller="Equipment" asp-action="Index" class="teacher-btn-secondary">Thiết bị</a>
                 </div>
             </div>
 
             <div class="mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-                <div class="rounded-xl border border-[#e3e3de] bg-[#fafaf4] px-4 py-4">
-                    <p class="text-xs font-medium uppercase tracking-[0.06em] text-[#73796b]">Buổi hôm nay</p>
-                    <div class="mt-2 flex items-baseline gap-2">
-                        <span class="text-3xl font-bold text-[#1a1c19]">@Model.TodaySessionCount</span>
-                        <span class="text-sm text-[#5f6759]">buổi</span>
+                <div class="rounded-lg border border-[#e3e3de] bg-[#f8faf7] p-4 transition-colors hover:border-[#6a994e] hover:bg-[#f2f7f0]">
+                    <div class="mb-3 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-[18px] text-[#6a994e]">today</span>
+                        <p class="text-xs font-bold uppercase tracking-wider text-[#42493d]">Buổi hôm nay</p>
+                    </div>
+                    <div class="flex items-baseline gap-1.5">
+                        <span class="text-3xl font-bold leading-none text-[#1a1c19]">@Model.TodaySessionCount</span>
+                        <span class="text-sm text-[#73796b]">buổi</span>
                     </div>
                 </div>
-                <div class="rounded-xl border border-[#e3e3de] bg-[#fafaf4] px-4 py-4">
-                    <p class="text-xs font-medium uppercase tracking-[0.06em] text-[#73796b]">Chưa đủ điểm danh</p>
-                    <div class="mt-2 flex items-baseline gap-2">
-                        <span class="text-3xl font-bold text-[#1a1c19]">@Model.PendingAttendanceCount</span>
-                        <span class="text-sm text-[#5f6759]">buổi</span>
+
+                <div class="rounded-lg border border-[#e3e3de] bg-[#f8faf7] p-4 transition-colors hover:border-[#fb923c] hover:bg-[#fff7ed]">
+                    <div class="mb-3 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-[18px] text-[#fb923c]">pending_actions</span>
+                        <p class="text-xs font-bold uppercase tracking-wider text-[#42493d]">Chưa điểm danh</p>
+                    </div>
+                    <div class="flex items-baseline gap-1.5">
+                        <span class="text-3xl font-bold leading-none @(Model.PendingAttendanceCount > 0 ? "text-[#fb923c]" : "text-[#1a1c19]")">@Model.PendingAttendanceCount</span>
+                        <span class="text-sm text-[#73796b]">buổi</span>
                     </div>
                 </div>
-                <div class="rounded-xl border border-[#e3e3de] bg-[#fafaf4] px-4 py-4">
-                    <p class="text-xs font-medium uppercase tracking-[0.06em] text-[#73796b]">Sắp tới</p>
-                    <div class="mt-2 flex items-baseline gap-2">
-                        <span class="text-3xl font-bold text-[#1a1c19]">@Model.UpcomingSessionCount</span>
-                        <span class="text-sm text-[#5f6759]">buổi</span>
+
+                <div class="rounded-lg border border-[#e3e3de] bg-[#f8faf7] p-4 transition-colors hover:border-[#a78bfa] hover:bg-[#f5f3ff]">
+                    <div class="mb-3 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-[18px] text-[#a78bfa]">upcoming</span>
+                        <p class="text-xs font-bold uppercase tracking-wider text-[#42493d]">Sắp tới</p>
+                    </div>
+                    <div class="flex items-baseline gap-1.5">
+                        <span class="text-3xl font-bold leading-none text-[#1a1c19]">@Model.UpcomingSessionCount</span>
+                        <span class="text-sm text-[#73796b]">buổi</span>
                     </div>
                 </div>
-                <div class="rounded-xl border border-[#e3e3de] bg-[#fafaf4] px-4 py-4">
-                    <p class="text-xs font-medium uppercase tracking-[0.06em] text-[#73796b]">Thiết bị đang mượn</p>
-                    <div class="mt-2 flex items-baseline gap-2">
-                        <span class="text-3xl font-bold text-[#1a1c19]">@Model.ActiveBorrowCount</span>
-                        <span class="text-sm text-[#5f6759]">phiếu</span>
+
+                <div class="rounded-lg border border-[#e3e3de] bg-[#f8faf7] p-4 transition-colors hover:border-[#60a5fa] hover:bg-[#eff6ff]">
+                    <div class="mb-3 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-[18px] text-[#60a5fa]">inventory_2</span>
+                        <p class="text-xs font-bold uppercase tracking-wider text-[#42493d]">Đang mượn</p>
+                    </div>
+                    <div class="flex items-baseline gap-1.5">
+                        <span class="text-3xl font-bold leading-none @(Model.ActiveBorrowCount > 0 ? "text-[#60a5fa]" : "text-[#1a1c19]")">@Model.ActiveBorrowCount</span>
+                        <span class="text-sm text-[#73796b]">phiếu</span>
                     </div>
                 </div>
             </div>

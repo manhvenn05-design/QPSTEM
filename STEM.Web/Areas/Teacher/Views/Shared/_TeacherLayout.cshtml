@@ -1,4 +1,4 @@
-﻿@using System.Security.Claims
+@using System.Security.Claims
 @inject STEM.Web.Services.ITeacherShellService TeacherShellService
 
 <!DOCTYPE html>
@@ -11,9 +11,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
     <style>
         :root {
-            --teacher-bg: #fafaf4;
+            --teacher-bg: #f6f7f4;
             --teacher-surface: #ffffff;
-            --teacher-surface-soft: #f4f4ee;
+            --teacher-surface-soft: #f2f3ee;
             --teacher-border: #e3e3de;
             --teacher-border-strong: #c2c9b9;
             --teacher-text: #1a1c19;
@@ -21,7 +21,17 @@
             --teacher-text-soft: #73796b;
             --teacher-primary: #6a994e;
             --teacher-primary-strong: #3b6722;
-            --teacher-primary-soft: #f2f7f0;
+            --teacher-primary-soft: #edf5e6;
+            /* Sidebar light theme */
+            --sidebar-bg: #ffffff;
+            --sidebar-bg2: #fcfcfc;
+            --sidebar-text: #647461;
+            --sidebar-text-active: #141f12;
+            --sidebar-hover: rgba(106,153,78,0.05);
+            --sidebar-active: rgba(106,153,78,0.1);
+            --sidebar-active-border: #6a994e;
+            --sidebar-border: #e5e7e5;
+            --sidebar-accent: #3b6722;
         }
 
         .material-symbols-outlined {
@@ -36,19 +46,20 @@
 
         .teacher-shell {
             min-height: 100vh;
-            background: linear-gradient(180deg, #f8f8f1 0%, #fafaf4 100%);
+            background: var(--teacher-bg);
         }
 
         .teacher-sidebar {
-            background: rgba(255, 255, 255, 0.92);
-            border-right: 1px solid var(--teacher-border);
-            backdrop-filter: blur(12px);
+            background: linear-gradient(180deg, var(--sidebar-bg) 0%, var(--sidebar-bg2) 100%);
+            border-right: 1px solid var(--sidebar-border);
+            box-shadow: none;
+            backdrop-filter: none;
             transition: transform 0.22s ease, width 0.22s ease;
             width: 18rem;
         }
 
         .teacher-sidebar-backdrop {
-            background: rgba(26, 28, 25, 0.28);
+            background: rgba(0, 0, 0, 0.4);
             inset: 0;
             opacity: 0;
             pointer-events: none;
@@ -70,13 +81,19 @@
 
         .teacher-logo-mark {
             align-items: center;
-            background: var(--teacher-primary-strong);
-            border-radius: 12px;
+            background: linear-gradient(135deg, #6a994e 0%, #3b6722 100%);
+            border-radius: 50%;
+            box-shadow: 0 4px 12px rgba(106,153,78,0.25);
             color: #fff;
             display: inline-flex;
-            height: 52px;
+            height: 56px;
             justify-content: center;
-            width: 52px;
+            width: 56px;
+        }
+
+        .teacher-logo-mark .material-symbols-outlined {
+            font-size: 32px;
+            font-variation-settings: 'FILL' 1, 'wght' 700, 'GRAD' 0, 'opsz' 48;
         }
 
         .teacher-logo-wordmark {
@@ -99,34 +116,59 @@
         .teacher-nav-link {
             align-items: center;
             border-radius: 8px;
-            color: var(--teacher-text-muted);
+            color: var(--sidebar-text);
             display: flex;
             gap: 12px;
-            min-height: 48px;
-            padding: 12px 16px;
-            transition: background-color 0.2s ease, color 0.2s ease;
+            min-height: 44px;
+            padding: 10px 14px;
+            transition: background-color 0.18s ease, color 0.18s ease;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .teacher-nav-link .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+            transition: font-variation-settings 0.18s ease;
         }
 
         .teacher-nav-link:hover {
-            background: var(--teacher-surface-soft);
-            color: var(--teacher-primary-strong);
+            background: var(--sidebar-hover);
+            color: var(--sidebar-text-active);
+        }
+
+        .teacher-nav-link:hover .material-symbols-outlined {
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
         }
 
         .teacher-nav-link.is-active {
-            background: var(--teacher-primary-soft);
-            box-shadow: inset 3px 0 0 var(--teacher-primary);
-            color: var(--teacher-primary-strong);
+            background: var(--sidebar-active);
+            border-left: 3px solid var(--sidebar-active-border);
+            color: var(--sidebar-accent);
             font-weight: 600;
+            padding-left: 11px;
+        }
+
+        .teacher-nav-link.is-active .material-symbols-outlined {
+            font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 24;
+        }
+
+        .teacher-nav-caption {
+            color: rgba(0,0,0,0.3);
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            padding: 16px 14px 6px;
+            text-transform: uppercase;
         }
 
         .teacher-badge {
-            background: var(--teacher-primary-soft);
+            background: rgba(106,153,78,0.3);
             border-radius: 9999px;
-            color: var(--teacher-primary-strong);
-            font-size: 12px;
-            font-weight: 600;
+            color: var(--sidebar-accent);
+            font-size: 11px;
+            font-weight: 700;
             margin-left: auto;
-            padding: 6px 10px;
+            padding: 3px 9px;
         }
 
         .teacher-body {
@@ -136,21 +178,23 @@
         }
 
         .teacher-shell.sidebar-collapsed .teacher-sidebar {
-            width: 5.5rem;
+            width: 5rem;
         }
 
         .teacher-shell.sidebar-collapsed .teacher-body {
-            margin-left: 5.5rem;
+            margin-left: 5rem;
         }
 
         .teacher-shell.sidebar-collapsed .teacher-header {
-            width: calc(100% - 5.5rem) !important;
+            width: calc(100% - 5rem) !important;
         }
 
         .teacher-header {
-            background: rgba(255, 255, 255, 0.92);
-            border-bottom: 1px solid var(--teacher-border);
-            backdrop-filter: blur(12px);
+            background: rgba(255,255,255,0.88);
+            border-bottom: 1px solid rgba(0,0,0,0.06);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            box-shadow: 0 1px 0 rgba(0,0,0,0.04);
             transition: width 0.22s ease;
         }
 
@@ -226,7 +270,8 @@
         .teacher-shell.sidebar-collapsed .teacher-nav-link span:last-child,
         .teacher-shell.sidebar-collapsed .teacher-profile-meta,
         .teacher-shell.sidebar-collapsed .teacher-logo-copy,
-        .teacher-shell.sidebar-collapsed .teacher-nav-caption {
+        .teacher-shell.sidebar-collapsed .teacher-nav-caption,
+        .teacher-shell.sidebar-collapsed .teacher-badge {
             display: none;
         }
 
@@ -234,12 +279,13 @@
             justify-content: center;
             padding-left: 0;
             padding-right: 0;
+            border-left: none !important;
         }
 
         .teacher-shell.sidebar-collapsed .teacher-sidebar .px-6,
         .teacher-shell.sidebar-collapsed .teacher-sidebar .px-4 {
-            padding-left: 12px;
-            padding-right: 12px;
+            padding-left: 10px;
+            padding-right: 10px;
         }
 
         .teacher-shell.sidebar-collapsed .teacher-logo {
@@ -258,14 +304,21 @@
 
         .teacher-sidebar-toggle {
             align-items: center;
-            background: #fff;
-            border: 1px solid var(--teacher-border-strong);
+            background: var(--teacher-surface-soft);
+            border: 1px solid var(--teacher-border);
             border-radius: 8px;
-            color: var(--teacher-text-muted);
+            color: var(--teacher-text-soft);
             display: inline-flex;
-            height: 40px;
+            height: 36px;
             justify-content: center;
-            width: 40px;
+            transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease;
+            width: 36px;
+        }
+
+        .teacher-sidebar-toggle:hover {
+            background: var(--teacher-primary-soft);
+            border-color: var(--teacher-primary);
+            color: var(--teacher-primary-strong);
         }
 
         .teacher-header-title {
@@ -359,12 +412,24 @@
         .teacher-btn-primary {
             background: var(--teacher-primary);
             color: #fff;
+            transition: background 0.18s ease;
+        }
+
+        .teacher-btn-primary:hover {
+            background: var(--teacher-primary-strong);
         }
 
         .teacher-btn-secondary {
             background: #fff;
             border: 1px solid var(--teacher-border-strong);
             color: var(--teacher-text-muted);
+            transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease;
+        }
+
+        .teacher-btn-secondary:hover {
+            background: var(--teacher-primary-soft);
+            border-color: var(--teacher-primary);
+            color: var(--teacher-primary-strong);
         }
 
         .teacher-card,
@@ -408,28 +473,53 @@
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            min-height: 160px;
+            min-height: 148px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            cursor: default;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .teacher-stat-card:hover {
+            border-color: var(--teacher-primary);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+        }
+
+        .teacher-stat-icon {
+            align-items: center;
+            border-radius: 8px;
+            display: inline-flex;
+            height: 40px;
+            justify-content: center;
+            width: 40px;
+        }
+
+        .teacher-stat-icon .material-symbols-outlined {
+            font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 24;
+            font-size: 20px;
         }
 
         .teacher-stat-label {
             color: var(--teacher-text-soft);
-            font-size: 14px;
-            font-weight: 500;
-            line-height: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            line-height: 18px;
+            letter-spacing: 0.02em;
+            text-transform: uppercase;
         }
 
         .teacher-stat-value {
-            font-size: 32px;
-            font-weight: 600;
-            letter-spacing: -0.01em;
-            line-height: 40px;
-            margin-top: 24px;
+            font-size: 36px;
+            font-weight: 700;
+            letter-spacing: -0.03em;
+            line-height: 1;
+            margin-top: 12px;
         }
 
         .teacher-kicker {
             color: var(--teacher-text-soft);
-            font-size: 14px;
-            line-height: 20px;
+            font-size: 13px;
+            line-height: 18px;
             margin-top: 8px;
         }
 
@@ -814,6 +904,42 @@
         .teacher-modal-content {
             padding: 24px;
         }
+
+        /* ── Micro-animations & stat card accents ─────────────────── */
+        @@keyframes fadeSlideUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .teacher-page > * {
+            animation: fadeSlideUp 0.3s ease both;
+        }
+
+        .teacher-page > *:nth-child(2) { animation-delay: 0.05s; }
+        .teacher-page > *:nth-child(3) { animation-delay: 0.10s; }
+        .teacher-page > *:nth-child(4) { animation-delay: 0.15s; }
+
+        .teacher-avatar {
+            border: 2px solid rgba(106,153,78,0.4);
+            border-radius: 9999px;
+            height: 38px;
+            object-fit: cover;
+            width: 38px;
+        }
+
+        .teacher-avatar-fallback {
+            align-items: center;
+            background: rgba(106,153,78,0.25);
+            border: 2px solid rgba(106,153,78,0.4);
+            border-radius: 9999px;
+            color: var(--sidebar-accent);
+            display: inline-flex;
+            font-size: 14px;
+            font-weight: 700;
+            height: 38px;
+            justify-content: center;
+            width: 38px;
+        }
     </style>
 </head>
 <body class="teacher-shell" data-teacher-shell>
@@ -828,15 +954,11 @@
     <div class="teacher-sidebar-backdrop" data-teacher-sidebar-backdrop></div>
 
     <aside class="teacher-sidebar fixed left-0 top-0 flex h-screen flex-col py-6">
-        <div class="mb-8 px-6">
+        <div class="mb-6 flex items-center justify-between px-5 pt-2">
             <div class="teacher-logo">
                 <div class="teacher-logo-mark">
-                    <span class="material-symbols-outlined text-[24px]">school</span>
+                    <span class="material-symbols-outlined text-[22px]">school</span>
                 </div>
-                <!-- <div>
-                    <div class="teacher-logo-wordmark">QPSTEM</div>
-                    <div class="teacher-logo-subtitle">GIÁO VIÊN</div>
-                </div> -->
             </div>
         </div>
 
@@ -865,7 +987,7 @@
             </div>
         </nav>
 
-        <div class="mt-auto border-t border-[#e3e3de] px-4 pt-6">
+        <div class="mt-auto border-t px-4 pt-5" style="border-color: var(--sidebar-border)">
             <div class="teacher-sidebar-summary flex items-center gap-3 px-2">
                 @if (!string.IsNullOrWhiteSpace(currentTeacherAvatarUrl))
                 {
@@ -878,8 +1000,8 @@
                     </div>
                 }
                 <div class="teacher-profile-meta min-w-0">
-                    <p class="truncate text-sm font-semibold text-[#1a1c19]">@currentTeacherName</p>
-                    <p class="text-xs text-[#73796b]">Giáo viên</p>
+                    <p class="truncate text-sm font-semibold" style="color: var(--teacher-text)">@currentTeacherName</p>
+                    <p class="text-xs" style="color: var(--teacher-text-muted)">Giáo viên</p>
                 </div>
             </div>
         </div>
