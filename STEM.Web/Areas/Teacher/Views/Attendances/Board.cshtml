@@ -1,4 +1,4 @@
-@model STEM.Web.Areas.Teacher.Models.TeacherAttendanceBoardViewModel
+﻿@model STEM.Web.Areas.Teacher.Models.TeacherAttendanceBoardViewModel
 
 @{
     ViewData["Title"] = "Điểm danh";
@@ -139,7 +139,7 @@
                             <div class="teacher-board-fields">
                                 <div class="teacher-toggle flex flex-wrap gap-4">
                                     <label class="teacher-radio flex items-center gap-2 cursor-pointer">
-                                        <input type="radio" name="Rows[@i].AttendanceStatus" value="Present" class="accent-[#3b6722]" onchange="updateAttendanceStatus(@i, 'Present'); autoSaveBoard()" @(Model.Rows[i].IsPresent ? "checked" : "") />
+                                        <input type="radio" name="Rows[@i].AttendanceStatus" value="Present" class="accent-[#0f2347]" onchange="updateAttendanceStatus(@i, 'Present'); autoSaveBoard()" @(Model.Rows[i].IsPresent ? "checked" : "") />
                                         <span class="text-sm font-medium">Có mặt</span>
                                     </label>
                                     <label class="teacher-radio flex items-center gap-2 cursor-pointer">
@@ -161,7 +161,7 @@
                                             <button type="button" class="text-xs font-semibold text-[#1a73e8] flex items-center gap-1 hover:text-[#1557b0] transition-colors" onclick="toggleExpandTextarea('Rows_@(i)__TeacherRawNote', this)">
                                                 <span class="material-symbols-outlined text-[16px]">open_in_full</span> Phóng to
                                             </button>
-                                            <button type="button" class="text-xs font-semibold text-[#6a994e] flex items-center gap-1 hover:text-[#3b6722] transition-colors" onclick="openAITextModal('Rows_@(i)__TeacherRawNote')">
+                                            <button type="button" class="text-xs font-semibold text-[#1a3a6e] flex items-center gap-1 hover:text-[#0f2347] transition-colors" onclick="openAITextModal('Rows_@(i)__TeacherRawNote')">
                                                 <span class="material-symbols-outlined text-[16px]">auto_awesome</span> Nhờ AI viết lại
                                             </button>
                                         </div>
@@ -175,11 +175,11 @@
                                     <input type="hidden" asp-for="Rows[@i].ProductMediaUrls" id="Rows_@(i)__ProductMediaUrls" />
                                      <input type="hidden" asp-for="Rows[@i].AiEvaluation" id="Rows_@(i)__AiEvaluation" />
 
-                                    <div class="mt-2 flex cursor-pointer justify-center rounded-lg border-2 border-dashed border-[#c2c9b9] bg-[#f8faf7] px-6 py-6 transition-colors hover:border-[#3b6722] hover:bg-[#f2f7f0]" id="upload-area-@(i)" onclick="document.getElementById('file-upload-@(i)').click()" ondragover="handleUploadDragOver(event)" ondragleave="handleUploadDragLeave(event)" ondrop="handleUploadDrop(event, @(i))">
+                                    <div class="mt-2 flex cursor-pointer justify-center rounded-lg border-2 border-dashed border-[#c2c9b9] bg-[#f8faf7] px-6 py-6 transition-colors hover:border-[#0f2347] hover:bg-[#f2f7f0]" id="upload-area-@(i)" onclick="document.getElementById('file-upload-@(i)').click()" ondragover="handleUploadDragOver(event)" ondragleave="handleUploadDragLeave(event)" ondrop="handleUploadDrop(event, @(i))">
                                         <div class="text-center">
                                             <span class="material-symbols-outlined text-[36px] text-[#73796b]">cloud_upload</span>
                                             <div class="mt-2 flex justify-center text-sm leading-6 text-[#42493f]">
-                                                <label for="file-upload-@(i)" class="relative cursor-pointer rounded-md font-semibold text-[#3b6722] hover:text-[#2d4f19]" onclick="event.stopPropagation()">
+                                                <label for="file-upload-@(i)" class="relative cursor-pointer rounded-md font-semibold text-[#0f2347] hover:text-[#2d4f19]" onclick="event.stopPropagation()">
                                                     <span>Tải video từ máy</span>
                                                     <input id="file-upload-@(i)" name="file-upload-@(i)" type="file" class="sr-only" accept="video/*" onchange="uploadVideoAsync(this.files?.[0], @(i)); this.value='';">
                                                 </label>
@@ -198,9 +198,9 @@
                                                 <p class="truncate text-sm font-semibold text-[#1a1c19]" id="video-filename-@(i)">video.mp4</p>
                                                 <div class="mt-1 flex items-center gap-2">
                                                     <div class="h-1.5 w-24 overflow-hidden rounded-full bg-[#e3e3de]">
-                                                        <div id="video-progress-@(i)" class="h-full rounded-full bg-[#3b6722]" style="width: 0%"></div>
+                                                        <div id="video-progress-@(i)" class="h-full rounded-full bg-[#0f2347]" style="width: 0%"></div>
                                                     </div>
-                                                    <span id="video-status-@(i)" class="text-[10px] font-medium text-[#3b6722]">Đang chờ tải lên</span>
+                                                    <span id="video-status-@(i)" class="text-[10px] font-medium text-[#0f2347]">Đang chờ tải lên</span>
                                                 </div>
                                             </div>
                                         </div>
@@ -212,14 +212,14 @@
 
                                     <span asp-validation-for="Rows[@i].ProductMediaUrls" class="teacher-field-error"></span>
 
-                                    <button type="button" id="btn-ai-@(i)" class="mt-3 flex w-full items-center justify-center gap-2 rounded-lg bg-[#6a994e] px-4 py-2.5 text-sm font-bold text-white transition-all hover:bg-[#3b6722] active:scale-[0.98]" onclick="analyzeVideoInline(this, 'Rows_@(i)__ProductMediaUrls', 'ai-result-@(i)')">
+                                    <button type="button" id="btn-ai-@(i)" class="mt-3 flex w-full items-center justify-center gap-2 rounded-lg bg-[#1a3a6e] px-4 py-2.5 text-sm font-bold text-white transition-all hover:bg-[#0f2347] active:scale-[0.98]" onclick="analyzeVideoInline(this, 'Rows_@(i)__ProductMediaUrls', 'ai-result-@(i)')">
                                         <span class="material-symbols-outlined text-[20px] ai-action-icon">auto_awesome</span>
                                         <span class="ai-action-label">Đánh giá video (AI)</span>
                                     </button>
 
                                     <div id="ai-result-@(i)" class="mt-4 hidden overflow-hidden rounded-lg border border-[#e3e3de] bg-white shadow-sm">
                                         <div class="border-b border-[#e3e3de] bg-[#f2f7f0] px-4 py-3 flex justify-between items-center cursor-pointer select-none" onclick="toggleAiContent(@(i))">
-                                            <h4 class="flex items-center gap-2 text-sm font-bold text-[#3b6722]">
+                                            <h4 class="flex items-center gap-2 text-sm font-bold text-[#0f2347]">
                                                 <span class="material-symbols-outlined text-[18px]">analytics</span>
                                                 Kết quả đánh giá
                                             </h4>
@@ -227,7 +227,7 @@
                                         </div>
 
                                         <div class="ai-loading-state flex flex-col items-center justify-center py-8">
-                                            <div class="h-10 w-10 animate-spin rounded-full border-4 border-[#f2f7f0] border-t-[#6a994e]"></div>
+                                            <div class="h-10 w-10 animate-spin rounded-full border-4 border-[#f2f7f0] border-t-[#1a3a6e]"></div>
                                             <p class="mt-4 text-sm font-medium text-[#73796b]">Đang xử lý dữ liệu...</p>
                                         </div>
 
@@ -236,7 +236,7 @@
                                                 <span class="text-xs font-bold uppercase text-[#42493f]">Điểm đánh giá chung</span>
                                                 <div class="flex items-center gap-3">
                                                     <div class="h-2 w-32 overflow-hidden rounded-full bg-[#e3e3de]">
-                                                        <div id="ai-score-bar-@(i)" class="h-full w-[0%] rounded-full bg-[#3b6722]"></div>
+                                                        <div id="ai-score-bar-@(i)" class="h-full w-[0%] rounded-full bg-[#0f2347]"></div>
                                                     </div>
                                                     <span id="ai-score-@(i)" class="text-base font-black text-[#1a1c19]">--/100</span>
                                                 </div>
@@ -244,7 +244,7 @@
 
                                             <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                                                 <div class="rounded-lg border border-[#e3e3de] p-3 shadow-sm">
-                                                    <h5 class="mb-2 flex items-center gap-1 text-xs font-bold text-[#3b6722]">
+                                                    <h5 class="mb-2 flex items-center gap-1 text-xs font-bold text-[#0f2347]">
                                                         <span class="material-symbols-outlined text-[16px]">thumb_up</span> Điểm sáng
                                                     </h5>
                                                     <ul id="ai-strengths-@(i)" class="list-disc space-y-1 pl-5 text-sm text-[#42493f]"></ul>
@@ -294,13 +294,13 @@
             <button type="button" class="absolute right-4 top-4 text-[#73796b] hover:text-[#1a1c19]" onclick="closeAIModals()">
                 <span class="material-symbols-outlined">close</span>
             </button>
-            <div class="mb-4 flex items-center gap-2 text-[#6a994e]">
+            <div class="mb-4 flex items-center gap-2 text-[#1a3a6e]">
                 <span class="material-symbols-outlined">auto_awesome</span>
                 <h2 class="text-lg font-semibold text-[#1a1c19]">AI viết lại nhận xét</h2>
             </div>
 
             <div id="aiTextLoading" class="hidden py-8 text-center text-[#73796b]">
-                <span class="material-symbols-outlined mb-2 animate-spin text-[32px] text-[#6a994e]" style="animation: spin 1s linear infinite;">refresh</span>
+                <span class="material-symbols-outlined mb-2 animate-spin text-[32px] text-[#1a3a6e]" style="animation: spin 1s linear infinite;">refresh</span>
                 <p class="text-sm">Đang phân tích dữ liệu...</p>
                 <style>@@keyframes spin { 100% { transform: rotate(360deg); } }</style>
             </div>
@@ -374,7 +374,7 @@
             if (scoreBar) {
                 const numericScore = parseInt(rawScore) || 0;
                 scoreBar.style.width = `${numericScore}%`;
-                if (numericScore >= 80) scoreBar.style.backgroundColor = '#3b6722';
+                if (numericScore >= 80) scoreBar.style.backgroundColor = '#0f2347';
                 else if (numericScore >= 60) scoreBar.style.backgroundColor = '#b26a00';
                 else scoreBar.style.backgroundColor = '#ba1a1a';
             }
@@ -452,17 +452,17 @@
 
         function handleUploadDragOver(event) {
             event.preventDefault();
-            event.currentTarget.classList.add('border-[#3b6722]', 'bg-[#f2f7f0]');
+            event.currentTarget.classList.add('border-[#0f2347]', 'bg-[#f2f7f0]');
         }
 
         function handleUploadDragLeave(event) {
             event.preventDefault();
-            event.currentTarget.classList.remove('border-[#3b6722]', 'bg-[#f2f7f0]');
+            event.currentTarget.classList.remove('border-[#0f2347]', 'bg-[#f2f7f0]');
         }
 
         function handleUploadDrop(event, index) {
             event.preventDefault();
-            event.currentTarget.classList.remove('border-[#3b6722]', 'bg-[#f2f7f0]');
+            event.currentTarget.classList.remove('border-[#0f2347]', 'bg-[#f2f7f0]');
             const file = event.dataTransfer?.files?.[0];
             if (file) {
                 uploadVideoAsync(file, index);
@@ -474,12 +474,12 @@
             const originalText = document.getElementById(targetId)?.value;
 
             if (!originalText || originalText.trim() === '') {
-                Swal.fire({ icon: 'warning', title: 'Thiếu thông tin', text: 'Hãy gõ vài dòng ghi chú thô của bạn trước để AI có thể viết lại.', confirmButtonColor: '#6a994e' });
+                Swal.fire({ icon: 'warning', title: 'Thiếu thông tin', text: 'Hãy gõ vài dòng ghi chú thô của bạn trước để AI có thể viết lại.', confirmButtonColor: '#1a3a6e' });
                 return;
             }
 
             if (originalText.trim().length < 10) {
-                Swal.fire({ icon: 'warning', title: 'Ghi chú quá ngắn', text: 'Vui lòng nhập chi tiết hơn để AI có cơ sở viết lại.', confirmButtonColor: '#6a994e' });
+                Swal.fire({ icon: 'warning', title: 'Ghi chú quá ngắn', text: 'Vui lòng nhập chi tiết hơn để AI có cơ sở viết lại.', confirmButtonColor: '#1a3a6e' });
                 return;
             }
 
@@ -516,12 +516,12 @@
                     document.getElementById('aiTextResult')?.classList.remove('hidden');
                     setTextContent('aiTextSuggestion', currentSuggestion);
                 } else {
-                    Swal.fire({ icon: 'error', title: 'Có lỗi xảy ra', text: data.message || 'Lỗi khi gọi AI. Vui lòng thử lại.', confirmButtonColor: '#6a994e' });
+                    Swal.fire({ icon: 'error', title: 'Có lỗi xảy ra', text: data.message || 'Lỗi khi gọi AI. Vui lòng thử lại.', confirmButtonColor: '#1a3a6e' });
                     closeAIModals();
                 }
             } catch (error) {
                 console.error('Error calling AI API:', error);
-                Swal.fire({ icon: 'error', title: 'Mất kết nối', text: 'Không thể kết nối đến máy chủ AI. Vui lòng thử lại sau.', confirmButtonColor: '#6a994e' });
+                Swal.fire({ icon: 'error', title: 'Mất kết nối', text: 'Không thể kết nối đến máy chủ AI. Vui lòng thử lại sau.', confirmButtonColor: '#1a3a6e' });
                 closeAIModals();
             }
         }
@@ -552,7 +552,7 @@
             }
 
             if (file.size > 50 * 1024 * 1024) {
-                Swal.fire({ icon: 'error', title: 'File quá lớn', text: 'Vui lòng chọn video dưới 50MB.', confirmButtonColor: '#6a994e' });
+                Swal.fire({ icon: 'error', title: 'File quá lớn', text: 'Vui lòng chọn video dưới 50MB.', confirmButtonColor: '#1a3a6e' });
                 return;
             }
 
@@ -591,13 +591,13 @@
                     throw new Error(result.message || 'Lỗi khi tải video lên server.');
                 } catch (error) {
                     console.error('Upload failed:', error);
-                    Swal.fire({ icon: 'error', title: 'Upload thất bại', text: error.message || 'Lỗi khi tải video lên server.', confirmButtonColor: '#6a994e' });
+                    Swal.fire({ icon: 'error', title: 'Upload thất bại', text: error.message || 'Lỗi khi tải video lên server.', confirmButtonColor: '#1a3a6e' });
                     removeVideo(index);
                 }
             };
 
             xhr.onerror = () => {
-                Swal.fire({ icon: 'error', title: 'Upload thất bại', text: 'Không thể tải video lên server.', confirmButtonColor: '#6a994e' });
+                Swal.fire({ icon: 'error', title: 'Upload thất bại', text: 'Không thể tải video lên server.', confirmButtonColor: '#1a3a6e' });
                 removeVideo(index);
             };
 

@@ -1,10 +1,10 @@
-@model STEM.Web.Areas.Admin.Models.ConvertLeadViewModel
+﻿@model STEM.Web.Areas.Admin.Models.ConvertLeadViewModel
 @{
     ViewData["Title"] = "Chốt đăng ký & Tạo tài khoản";
 }
 
 <div class="mb-6">
-    <a asp-action="Index" class="inline-flex items-center gap-1 text-sm font-medium text-[#73796b] hover:text-[#3b6722]">
+    <a asp-action="Index" class="inline-flex items-center gap-1 text-sm font-medium text-[#73796b] hover:text-[#0f2347]">
         <span class="material-symbols-outlined text-[18px]">arrow_back</span>
         Quay lại danh sách
     </a>
@@ -34,7 +34,7 @@
                     </div>
                     <div>
                         <p class="text-[#73796b]">Số điện thoại:</p>
-                        <p class="font-medium text-[#3b6722]">@Model.Phone</p>
+                        <p class="font-medium text-[#0f2347]">@Model.Phone</p>
                     </div>
                     @if (!string.IsNullOrEmpty(Model.Email))
                     {
@@ -53,21 +53,21 @@
                 <div class="grid gap-5">
                     <div class="flex flex-col gap-1.5">
                         <label asp-for="StudentName" class="text-sm font-medium text-[#42493f]"></label>
-                        <input asp-for="StudentName" class="h-10 w-full rounded-md border border-[#c2c9b9] bg-white px-3 text-sm outline-none focus:border-[#3b6722] focus:ring-1 focus:ring-[#3b6722]" placeholder="Nhập họ tên đầy đủ của học sinh..." />
+                        <input asp-for="StudentName" class="h-10 w-full rounded-md border border-[#c2c9b9] bg-white px-3 text-sm outline-none focus:border-[#0f2347] focus:ring-1 focus:ring-[#0f2347]" placeholder="Nhập họ tên đầy đủ của học sinh..." />
                         <span asp-validation-for="StudentName" class="text-xs text-[#ba1a1a]"></span>
                     </div>
 
                     <div class="grid grid-cols-2 gap-4">
                         <div class="flex flex-col gap-1.5">
                             <label asp-for="Username" class="text-sm font-medium text-[#42493f]"></label>
-                            <input asp-for="Username" class="h-10 w-full rounded-md border border-[#c2c9b9] bg-[#f2f7f0] px-3 text-sm font-medium text-[#1a1c19] outline-none focus:border-[#3b6722] focus:ring-1 focus:ring-[#3b6722]" />
+                            <input asp-for="Username" class="h-10 w-full rounded-md border border-[#c2c9b9] bg-[#f2f7f0] px-3 text-sm font-medium text-[#1a1c19] outline-none focus:border-[#0f2347] focus:ring-1 focus:ring-[#0f2347]" />
                             <span asp-validation-for="Username" class="text-xs text-[#ba1a1a]"></span>
                             <p class="text-xs text-[#73796b]">Username được tự động tạo theo cú pháp hs_số_điện_thoại.</p>
                         </div>
 
                         <div class="flex flex-col gap-1.5">
                             <label asp-for="Password" class="text-sm font-medium text-[#42493f]"></label>
-                            <input asp-for="Password" type="text" class="h-10 w-full rounded-md border border-[#c2c9b9] bg-white px-3 text-sm outline-none focus:border-[#3b6722] focus:ring-1 focus:ring-[#3b6722]" />
+                            <input asp-for="Password" type="text" class="h-10 w-full rounded-md border border-[#c2c9b9] bg-white px-3 text-sm outline-none focus:border-[#0f2347] focus:ring-1 focus:ring-[#0f2347]" />
                             <span asp-validation-for="Password" class="text-xs text-[#ba1a1a]"></span>
                         </div>
                     </div>
@@ -76,7 +76,7 @@
 
                     <div class="flex flex-col gap-1.5">
                         <label asp-for="SelectedClassId" class="text-sm font-medium text-[#42493f]"></label>
-                        <select asp-for="SelectedClassId" asp-items="ViewBag.Classes" class="h-10 w-full rounded-md border border-[#c2c9b9] bg-white px-3 text-sm outline-none focus:border-[#3b6722] focus:ring-1 focus:ring-[#3b6722]">
+                        <select asp-for="SelectedClassId" asp-items="ViewBag.Classes" class="h-10 w-full rounded-md border border-[#c2c9b9] bg-white px-3 text-sm outline-none focus:border-[#0f2347] focus:ring-1 focus:ring-[#0f2347]">
                             <option value="">-- Chỉ tạo tài khoản, chưa xếp lớp --</option>
                         </select>
                         <p class="text-xs text-[#73796b]">Danh sách các lớp đang mở thuộc khóa học mà khách quan tâm. Bạn có thể chọn để ghi danh ngay.</p>

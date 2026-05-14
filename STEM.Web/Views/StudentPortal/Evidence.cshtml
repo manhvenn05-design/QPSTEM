@@ -1,4 +1,4 @@
-@model STEM.Web.Models.StudentViewModels.StudentEvidencePageViewModel
+﻿@model STEM.Web.Models.StudentViewModels.StudentEvidencePageViewModel
 
 @{
     ViewData["Title"] = "Nhận xét & Minh chứng";
@@ -21,14 +21,14 @@
             <span class="text-sm font-medium text-[#73796b]">Lọc theo lớp:</span>
             <a asp-action="Evidence"
                class="inline-flex items-center rounded-lg px-3 h-9 text-sm font-semibold transition-colors
-                      @(Model.SelectedClass == null ? "bg-[#3b6722] text-white" : "bg-white border border-[#c2c9b9] text-[#42493d] hover:bg-[#f2f7f0]")">
+                      @(Model.SelectedClass == null ? "bg-[#0f2347] text-white" : "bg-white border border-[#c2c9b9] text-[#42493d] hover:bg-[#f2f7f0]")">
                 Tất cả
             </a>
             @foreach (var cls in Model.AvailableClasses)
             {
                 <a asp-action="Evidence" asp-route-classCode="@cls"
                    class="inline-flex items-center rounded-lg px-3 h-9 text-sm font-semibold transition-colors
-                          @(Model.SelectedClass == cls ? "bg-[#3b6722] text-white" : "bg-white border border-[#c2c9b9] text-[#42493d] hover:bg-[#f2f7f0]")">
+                          @(Model.SelectedClass == cls ? "bg-[#0f2347] text-white" : "bg-white border border-[#c2c9b9] text-[#42493d] hover:bg-[#f2f7f0]")">
                     @cls
                 </a>
             }
@@ -61,7 +61,7 @@
             {
                 @* id để scroll đến khi deep-link từ Schedule *@
                 <article id="evidence-session-@item.SessionId"
-                         class="student-card transition-shadow @(item.IsHighlighted ? "ring-2 ring-[#6a994e] ring-offset-2" : "")">
+                         class="student-card transition-shadow @(item.IsHighlighted ? "ring-2 ring-[#1a3a6e] ring-offset-2" : "")">
                     @* Header *@
                     <div class="flex items-center justify-between gap-4 border-b border-[#e3e3de] px-6 py-4">
                         <div>
@@ -80,7 +80,7 @@
                             }
                             @if (item.MediaCount > 0)
                             {
-                                <span class="inline-flex items-center gap-1.5 rounded-full bg-[#f2f7f0] px-3 py-1 text-xs font-semibold text-[#3b6722]">
+                                <span class="inline-flex items-center gap-1.5 rounded-full bg-[#f2f7f0] px-3 py-1 text-xs font-semibold text-[#0f2347]">
                                     <span class="material-symbols-outlined text-[14px]">perm_media</span>
                                     @item.MediaCount minh chứng
                                 </span>
@@ -98,10 +98,10 @@
                                     <div class="flex flex-col overflow-hidden rounded-xl border border-[#c8e0b8] bg-[#f5fbf3]">
                                         <div class="flex items-center justify-between border-b border-[#c8e0b8]/50 bg-[#edf7e8] px-4 py-2.5">
                                             <div class="flex items-center gap-1.5">
-                                                <span class="material-symbols-outlined text-[18px] text-[#3b6722]">auto_awesome</span>
-                                                <span class="text-xs font-bold uppercase tracking-wide text-[#3b6722]">Nhận xét tổng hợp từ AI</span>
+                                                <span class="material-symbols-outlined text-[18px] text-[#0f2347]">auto_awesome</span>
+                                                <span class="text-xs font-bold uppercase tracking-wide text-[#0f2347]">Nhận xét tổng hợp từ AI</span>
                                             </div>
-                                            <button type="button" class="inline-flex h-7 w-7 items-center justify-center rounded-md text-[#3b6722] hover:bg-[#c8e0b8] transition-colors js-zoom-text" data-title="Nhận xét tổng hợp từ AI" data-content="@item.AiEvaluation" title="Phóng to">
+                                            <button type="button" class="inline-flex h-7 w-7 items-center justify-center rounded-md text-[#0f2347] hover:bg-[#c8e0b8] transition-colors js-zoom-text" data-title="Nhận xét tổng hợp từ AI" data-content="@item.AiEvaluation" title="Phóng to">
                                                 <span class="material-symbols-outlined text-[16px]">zoom_out_map</span>
                                             </button>
                                         </div>
@@ -228,7 +228,7 @@
                                     @foreach (var extUrl in item.ExternalUrls)
                                     {
                                         <a href="@extUrl" target="_blank" rel="noopener noreferrer"
-                                           class="flex items-center gap-2 rounded-lg border border-[#e3e3de] px-4 py-2.5 text-sm text-[#3b6722] hover:bg-[#f2f7f0] transition-colors">
+                                           class="flex items-center gap-2 rounded-lg border border-[#e3e3de] px-4 py-2.5 text-sm text-[#0f2347] hover:bg-[#f2f7f0] transition-colors">
                                             <span class="material-symbols-outlined text-[16px]">open_in_new</span>
                                             <span class="truncate">@extUrl</span>
                                         </a>
@@ -289,7 +289,7 @@
             <p class="text-[16px] leading-8 text-[#2c3625] whitespace-pre-line" id="text-zoom-content"></p>
         </div>
         <div class="border-t border-[#e3e3de] bg-[#fafaf4] px-6 py-4 text-right">
-            <button type="button" class="inline-flex h-10 items-center justify-center rounded-lg bg-[#3b6722] px-6 text-sm font-semibold text-white hover:bg-[#2d5019] transition-colors js-close-zoom">
+            <button type="button" class="inline-flex h-10 items-center justify-center rounded-lg bg-[#0f2347] px-6 text-sm font-semibold text-white hover:bg-[#2d5019] transition-colors js-close-zoom">
                 Đóng
             </button>
         </div>

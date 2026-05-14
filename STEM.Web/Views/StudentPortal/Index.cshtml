@@ -1,4 +1,4 @@
-@model STEM.Web.Models.StudentViewModels.StudentDashboardViewModel
+﻿@model STEM.Web.Models.StudentViewModels.StudentDashboardViewModel
 
 @{
     ViewData["Title"] = "Cổng Học sinh & Phụ huynh";
@@ -81,7 +81,7 @@
                             <h2 class="student-section-title">Thư viện sản phẩm gần đây</h2>
                             <p class="student-section-subtitle">Hình ảnh và video thuyết trình của bé do giáo viên tải lên.</p>
                         </div>
-                        <a asp-action="Evidence" class="text-sm font-semibold text-[#3b6722] hover:underline shrink-0">Xem tất cả</a>
+                        <a asp-action="Evidence" class="text-sm font-semibold text-[#0f2347] hover:underline shrink-0">Xem tất cả</a>
                     </div>
 
                     <div class="student-media-grid">
@@ -133,7 +133,7 @@
                                                  alt="Minh chứng buổi học"
                                                  class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                                                  loading="lazy"
-                                                 onerror="this.parentElement.innerHTML='<div class=\'h-full flex items-center justify-center bg-[#dfead7]\'>\n<span class=\'material-symbols-outlined text-[36px] text-[#3b6722]\'>photo_camera</span></div>'" />
+                                                 onerror="this.parentElement.innerHTML='<div class=\'h-full flex items-center justify-center bg-[#dfead7]\'>\n<span class=\'material-symbols-outlined text-[36px] text-[#0f2347]\'>photo_camera</span></div>'" />
                                             @if (videoCount > 0)
                                             {
                                                 <div class="absolute inset-0 flex items-center justify-center bg-black/20">
@@ -196,7 +196,7 @@
                                         <span>@invoice.ProgressPercent%</span>
                                     </div>
                                     <div class="student-progress">
-                                        <div class="student-progress-bar @(invoice.RemainingAmount == 0 ? "bg-[#6a994e]" : "")" style="width:@invoice.ProgressPercent%;"></div>
+                                        <div class="student-progress-bar @(invoice.RemainingAmount == 0 ? "bg-[#1a3a6e]" : "")" style="width:@invoice.ProgressPercent%;"></div>
                                     </div>
                                     <p class="mt-2 text-sm text-[#73796b]">
                                         Đã thanh toán @invoice.PaidAmount.ToString("N0")đ / @invoice.TotalAmount.ToString("N0")đ
@@ -249,13 +249,13 @@
                             @foreach (var feedback in Model.RecentFeedbacks)
                             {
                                 <a asp-action="Evidence" asp-route-sessionId="@feedback.SessionId" class="student-list-item block hover:bg-[#f5fbf3]/30 transition-colors cursor-pointer group">
-                                    <p class="text-sm font-semibold text-[#1a1c19] group-hover:text-[#3b6722] transition-colors">@feedback.CourseName · @feedback.SessionLabel</p>
+                                    <p class="text-sm font-semibold text-[#1a1c19] group-hover:text-[#0f2347] transition-colors">@feedback.CourseName · @feedback.SessionLabel</p>
                                     <p class="text-xs text-[#73796b] mt-1">Ngày học: @feedback.Date.ToString("dd/MM/yyyy")</p>
                                     
                                     @if (!string.IsNullOrWhiteSpace(feedback.AiEvaluation))
                                     {
-                                        <div class="mt-3 rounded-xl bg-[#f5fbf3] p-4 border border-[#c8e0b8] transition-colors hover:border-[#3b6722]/40">
-                                            <div class="flex items-center gap-1.5 mb-2 text-[#3b6722] font-bold text-xs uppercase tracking-wide">
+                                        <div class="mt-3 rounded-xl bg-[#f5fbf3] p-4 border border-[#c8e0b8] transition-colors hover:border-[#0f2347]/40">
+                                            <div class="flex items-center gap-1.5 mb-2 text-[#0f2347] font-bold text-xs uppercase tracking-wide">
                                                 <span class="material-symbols-outlined text-[16px]">auto_awesome</span> Nhận xét tổng hợp từ AI
                                             </div>
                                             <p class="text-[14px] leading-relaxed text-[#2c3625] whitespace-pre-line">@feedback.AiEvaluation</p>

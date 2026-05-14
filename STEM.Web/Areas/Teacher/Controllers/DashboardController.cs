@@ -1,4 +1,4 @@
-﻿using System.Globalization;
+using System.Globalization;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -117,9 +117,16 @@ public class DashboardController : Controller
             x.Class.Enrollments.Count > 0 &&
             x.Attendances.Count < x.Class.Enrollments.Count);
 
+        var teacherFullName = await _context.Users
+            .AsNoTracking()
+            .Where(x => x.Id == teacherId.Value)
+            .Select(x => x.FullName)
+            .FirstOrDefaultAsync() ?? User.Identity?.Name ?? "Giáo viên";
+
         var model = new TeacherDashboardViewModel
         {
             TodayLabel = $"Hôm nay · {DateTime.Today.ToString("dddd, dd/MM/yyyy", vietnameseCulture)}",
+            TeacherName = teacherFullName,
             ActiveClassCount = await _context.Classes.CountAsync(x =>
                 x.TeacherId == teacherId.Value &&
                 x.StartDate <= today &&

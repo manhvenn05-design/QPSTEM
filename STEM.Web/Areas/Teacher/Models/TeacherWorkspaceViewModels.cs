@@ -6,6 +6,7 @@ namespace STEM.Web.Areas.Teacher.Models;
 public class TeacherDashboardViewModel
 {
     public string TodayLabel { get; set; } = string.Empty;
+    public string TeacherName { get; set; } = string.Empty;
     public int ActiveClassCount { get; set; }
     public int TotalStudentCount { get; set; }
     public int TodaySessionCount { get; set; }

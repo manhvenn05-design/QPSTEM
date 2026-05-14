@@ -1,4 +1,4 @@
-@model STEM.Web.Areas.Admin.Models.ClassDetailsViewModel
+﻿@model STEM.Web.Areas.Admin.Models.ClassDetailsViewModel
 
 @{
     ViewData["Title"] = "Chi tiết lớp học";
@@ -97,7 +97,7 @@
                             <div class="flex flex-wrap items-center justify-between gap-3">
                                 <p class="text-sm text-[#73796b]">@Model.AvailableStudentCount học viên đang hiển thị</p>
                                 <label class="inline-flex items-center gap-2 text-sm font-medium text-[#42493d]">
-                                    <input type="checkbox" data-select-all-students class="h-4 w-4 rounded border-[#c2c9b9] text-[#6a994e] focus:ring-[#6a994e]" />
+                                    <input type="checkbox" data-select-all-students class="h-4 w-4 rounded border-[#c2c9b9] text-[#1a3a6e] focus:ring-[#1a3a6e]" />
                                     <span>Chọn tất cả</span>
                                 </label>
                             </div>
@@ -122,7 +122,7 @@
                                                                name="studentIds"
                                                                value="@student.StudentId"
                                                                data-student-checkbox
-                                                               class="h-4 w-4 rounded border-[#c2c9b9] text-[#6a994e] focus:ring-[#6a994e]" />
+                                                               class="h-4 w-4 rounded border-[#c2c9b9] text-[#1a3a6e] focus:ring-[#1a3a6e]" />
                                                     </td>
                                                     <td><strong>@student.FullName</strong></td>
                                                     <td>@student.Username</td>
@@ -253,7 +253,7 @@
                     <h2 class="admin-section-title">Trạng thái</h2>
                     <div class="mt-5">
                         <span class="inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-semibold @Model.StatusBadgeClass">
-                            <span class="h-2 w-2 rounded-full @(Model.StatusLabel == "Đang mở" ? "bg-[#6a994e]" : Model.StatusLabel == "Sắp khai giảng" ? "bg-[#9b682f]" : "bg-[#73796b]")"></span>
+                            <span class="h-2 w-2 rounded-full @(Model.StatusLabel == "Đang mở" ? "bg-[#1a3a6e]" : Model.StatusLabel == "Sắp khai giảng" ? "bg-[#9b682f]" : "bg-[#73796b]")"></span>
                             @Model.StatusLabel
                         </span>
                     </div>

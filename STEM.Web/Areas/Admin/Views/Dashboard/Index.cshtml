@@ -10,7 +10,7 @@
         {
             <article class="admin-stat-card">
                 <div class="admin-stat-card-icon">
-                    <span class="material-symbols-outlined text-[20px] text-[#6a994e]" style="font-variation-settings:'FILL' 1;">@metric.Icon</span>
+                    <span class="material-symbols-outlined text-[20px] text-[#f97316]" style="font-variation-settings:'FILL' 1;">@metric.Icon</span>
                 </div>
                 <div class="admin-stat-card-body">
                     <span class="admin-stat-label">@metric.Label</span>
@@ -33,7 +33,7 @@
                 <div class="px-6 pb-6">
                     @if (Model.TodaySessions.Count == 0)
                     {
-                        <div class="admin-empty rounded-[12px] border border-dashed border-[#c2c9b9] bg-[#fafaf4] !py-10">Hôm nay chưa có buổi học.</div>
+                        <div class="admin-empty rounded-[12px] border border-dashed border-[#b0c4de] bg-[#f5f7fb] !py-10">Hôm nay chưa có buổi học.</div>
                     }
                     else
                     {
@@ -55,8 +55,8 @@
                                                 <span class="text-[#42493d]">@session.AttendanceCount/@session.EnrollmentCount đã ghi</span>
                                                 <span class="font-medium text-[#1a1c19]">@session.AttendancePercent%</span>
                                             </div>
-                                            <div class="h-2 rounded-full bg-[#e8ebe4]">
-                                                <div class="h-2 rounded-full bg-[#6a994e]" style="width:@session.AttendancePercent%;"></div>
+                                            <div class="h-2 rounded-full bg-[#dce6f5]">
+                                                <div class="h-2 rounded-full bg-[#1a3a6e]" style="width:@session.AttendancePercent%;"></div>
                                             </div>
                                         </div>
                                     </div>
@@ -78,8 +78,8 @@
                         @foreach (var point in Model.RevenueSeries)
                         {
                             <div class="flex flex-col items-center gap-2">
-                                <div class="flex h-48 w-full items-end rounded-[12px] border border-[#e3e3de] bg-[#fafaf4] p-2">
-                                    <div class="w-full rounded-[8px] bg-[#6a994e]" style="height:@(point.HeightPercent)% ;" title="@point.AmountText"></div>
+                                <div class="flex h-48 w-full items-end rounded-[12px] border border-[#dce6f5] bg-[#f5f7fb] p-2">
+                                    <div class="w-full rounded-[8px] bg-gradient-to-t from-[#1a3a6e] to-[#2d5fa8]" style="height:@(point.HeightPercent)%;min-height:4px;" title="@point.AmountText"></div>
                                 </div>
                                 <p class="text-xs font-medium text-[#42493d]">@point.Label</p>
                             </div>

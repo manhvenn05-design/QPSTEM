@@ -1,4 +1,4 @@
-@model STEM.Web.Areas.Admin.Models.UserDetailsViewModel
+﻿@model STEM.Web.Areas.Admin.Models.UserDetailsViewModel
 
 @{
     ViewData["Title"] = "Chi tiết người dùng";
@@ -90,7 +90,7 @@
                     <h2 class="admin-section-title">Trạng thái</h2>
                     <div class="mt-5">
                         <span class="inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-semibold @Model.StatusBadgeClass">
-                            <span class="h-2 w-2 rounded-full @(Model.IsActive ? "bg-[#6a994e]" : "bg-[#ba1a1a]")"></span>
+                            <span class="h-2 w-2 rounded-full @(Model.IsActive ? "bg-[#1a3a6e]" : "bg-[#ba1a1a]")"></span>
                             @Model.StatusLabel
                         </span>
                     </div>

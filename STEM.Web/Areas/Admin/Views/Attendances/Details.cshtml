@@ -1,4 +1,4 @@
-@model STEM.Web.Areas.Admin.Models.AttendanceDetailsViewModel
+﻿@model STEM.Web.Areas.Admin.Models.AttendanceDetailsViewModel
 
 @{
     ViewData["Title"] = "Chi tiết điểm danh";
@@ -30,7 +30,7 @@
                         }
                         else
                         {
-                            <div class="flex h-14 w-14 items-center justify-center rounded-full border border-[#e3e3de] bg-[#f2f7f0] text-base font-semibold text-[#3b6722]">
+                            <div class="flex h-14 w-14 items-center justify-center rounded-full border border-[#e3e3de] bg-[#f2f7f0] text-base font-semibold text-[#0f2347]">
                                 @Model.StudentName.Trim()[0].ToString().ToUpperInvariant()
                             </div>
                         }

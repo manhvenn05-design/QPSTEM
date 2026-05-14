@@ -1,4 +1,4 @@
-@model IEnumerable<STEM.Web.Models.Lead>
+﻿@model IEnumerable<STEM.Web.Models.Lead>
 
 @{
     ViewData["Title"] = "Khách tư vấn";
@@ -51,7 +51,7 @@
                                     <div class="font-semibold text-[#1a1c19]">@item.ParentName</div>
                                 </td>
                                 <td>
-                                    <div class="font-medium text-[#3b6722]">@item.Phone</div>
+                                    <div class="font-medium text-[#0f2347]">@item.Phone</div>
                                     @if (!string.IsNullOrEmpty(item.Email))
                                     {
                                         <div class="mt-1 text-xs text-[#73796b]">@item.Email</div>
@@ -92,7 +92,7 @@
                                         }
                                         else if (item.Status == 2)
                                         {
-                                            <span class="inline-flex items-center gap-1 text-xs font-semibold text-[#3b6722]">
+                                            <span class="inline-flex items-center gap-1 text-xs font-semibold text-[#0f2347]">
                                                 <span class="material-symbols-outlined text-[14px]">check_circle</span>
                                                 Đã tạo tài khoản
                                             </span>

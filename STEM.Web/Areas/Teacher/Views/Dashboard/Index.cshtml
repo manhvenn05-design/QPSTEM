@@ -1,4 +1,4 @@
-@model STEM.Web.Areas.Teacher.Models.TeacherDashboardViewModel
+﻿@model STEM.Web.Areas.Teacher.Models.TeacherDashboardViewModel
 
 @{
     ViewData["Title"] = "Bảng điều khiển";
@@ -24,11 +24,15 @@
 
     <div class="teacher-card">
         <div class="teacher-card-section">
-            <div class="flex items-start justify-between flex-wrap gap-4">
-                <div>
-                    <p class="text-xs font-bold uppercase tracking-wider text-[#73796b] mb-2">@Model.TodayLabel</p>
-                    <h2 class="text-2xl font-bold text-[#1a1c19] m-0">Xin chào, @User.Identity?.Name?.Split(' ').LastOrDefault() 👋</h2>
-                    <p class="text-sm text-[#42493d] mt-2">Tập trung vào các buổi học và việc còn dang dở.</p>
+            <div class="flex items-center justify-between flex-wrap gap-4">
+                <div class="flex items-center gap-3">
+                    <div style="width:40px;height:40px;border-radius:50%;overflow:hidden;flex-shrink:0;box-shadow:0 2px 8px rgba(249,115,22,0.25);">
+                        <img src="/images/team/TIPY.jpg" alt="TIPY" style="width:100%;height:100%;object-fit:cover;" />
+                    </div>
+                    <div>
+                        <p class="text-[11px] font-bold uppercase tracking-widest text-[#6b7c99] mb-0.5">@Model.TodayLabel</p>
+                        <h2 class="text-lg font-bold text-[#0f1e38] m-0">Xin chào, @Model.TeacherName! 👋</h2>
+                    </div>
                 </div>
                 <div class="teacher-inline-list">
                     <a asp-area="Teacher" asp-controller="Evidence" asp-action="Index" class="teacher-btn-secondary">Minh chứng</a>
@@ -36,49 +40,31 @@
                 </div>
             </div>
 
-            <div class="mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-                <div class="rounded-lg border border-[#e3e3de] bg-[#f8faf7] p-4 transition-colors hover:border-[#6a994e] hover:bg-[#f2f7f0]">
-                    <div class="mb-3 flex items-center gap-2">
-                        <span class="material-symbols-outlined text-[18px] text-[#6a994e]">today</span>
-                        <p class="text-xs font-bold uppercase tracking-wider text-[#42493d]">Buổi hôm nay</p>
-                    </div>
-                    <div class="flex items-baseline gap-1.5">
-                        <span class="text-3xl font-bold leading-none text-[#1a1c19]">@Model.TodaySessionCount</span>
-                        <span class="text-sm text-[#73796b]">buổi</span>
-                    </div>
+            <!-- Stat strip compact -->
+            <div class="mt-4 flex flex-wrap gap-2">
+                <div class="flex items-center gap-2 rounded-lg border border-[#dce6f5] bg-[#f5f7fb] px-4 py-2.5 hover:border-[#1a3a6e] transition-colors">
+                    <span class="material-symbols-outlined text-[16px] text-[#1a3a6e]" style="font-variation-settings:'FILL' 1;">today</span>
+                    <span class="text-xs text-[#3a4f6e] font-medium">Hôm nay</span>
+                    <span class="text-base font-bold text-[#0f1e38] ml-1">@Model.TodaySessionCount</span>
+                    <span class="text-xs text-[#6b7c99]">buổi</span>
                 </div>
-
-                <div class="rounded-lg border border-[#e3e3de] bg-[#f8faf7] p-4 transition-colors hover:border-[#fb923c] hover:bg-[#fff7ed]">
-                    <div class="mb-3 flex items-center gap-2">
-                        <span class="material-symbols-outlined text-[18px] text-[#fb923c]">pending_actions</span>
-                        <p class="text-xs font-bold uppercase tracking-wider text-[#42493d]">Chưa điểm danh</p>
-                    </div>
-                    <div class="flex items-baseline gap-1.5">
-                        <span class="text-3xl font-bold leading-none @(Model.PendingAttendanceCount > 0 ? "text-[#fb923c]" : "text-[#1a1c19]")">@Model.PendingAttendanceCount</span>
-                        <span class="text-sm text-[#73796b]">buổi</span>
-                    </div>
+                <div class="flex items-center gap-2 rounded-lg border @(Model.PendingAttendanceCount > 0 ? "border-[#fed7aa] bg-[#fff7ed]" : "border-[#dce6f5] bg-[#f5f7fb]") px-4 py-2.5 hover:border-[#f97316] transition-colors">
+                    <span class="material-symbols-outlined text-[16px] @(Model.PendingAttendanceCount > 0 ? "text-[#f97316]" : "text-[#6b7c99]")" style="font-variation-settings:'FILL' 1;">pending_actions</span>
+                    <span class="text-xs text-[#3a4f6e] font-medium">Chưa điểm danh</span>
+                    <span class="text-base font-bold @(Model.PendingAttendanceCount > 0 ? "text-[#f97316]" : "text-[#0f1e38]") ml-1">@Model.PendingAttendanceCount</span>
+                    <span class="text-xs text-[#6b7c99]">buổi</span>
                 </div>
-
-                <div class="rounded-lg border border-[#e3e3de] bg-[#f8faf7] p-4 transition-colors hover:border-[#a78bfa] hover:bg-[#f5f3ff]">
-                    <div class="mb-3 flex items-center gap-2">
-                        <span class="material-symbols-outlined text-[18px] text-[#a78bfa]">upcoming</span>
-                        <p class="text-xs font-bold uppercase tracking-wider text-[#42493d]">Sắp tới</p>
-                    </div>
-                    <div class="flex items-baseline gap-1.5">
-                        <span class="text-3xl font-bold leading-none text-[#1a1c19]">@Model.UpcomingSessionCount</span>
-                        <span class="text-sm text-[#73796b]">buổi</span>
-                    </div>
+                <div class="flex items-center gap-2 rounded-lg border border-[#dce6f5] bg-[#f5f7fb] px-4 py-2.5 hover:border-[#a78bfa] transition-colors">
+                    <span class="material-symbols-outlined text-[16px] text-[#a78bfa]" style="font-variation-settings:'FILL' 1;">upcoming</span>
+                    <span class="text-xs text-[#3a4f6e] font-medium">Sắp tới</span>
+                    <span class="text-base font-bold text-[#0f1e38] ml-1">@Model.UpcomingSessionCount</span>
+                    <span class="text-xs text-[#6b7c99]">buổi</span>
                 </div>
-
-                <div class="rounded-lg border border-[#e3e3de] bg-[#f8faf7] p-4 transition-colors hover:border-[#60a5fa] hover:bg-[#eff6ff]">
-                    <div class="mb-3 flex items-center gap-2">
-                        <span class="material-symbols-outlined text-[18px] text-[#60a5fa]">inventory_2</span>
-                        <p class="text-xs font-bold uppercase tracking-wider text-[#42493d]">Đang mượn</p>
-                    </div>
-                    <div class="flex items-baseline gap-1.5">
-                        <span class="text-3xl font-bold leading-none @(Model.ActiveBorrowCount > 0 ? "text-[#60a5fa]" : "text-[#1a1c19]")">@Model.ActiveBorrowCount</span>
-                        <span class="text-sm text-[#73796b]">phiếu</span>
-                    </div>
+                <div class="flex items-center gap-2 rounded-lg border @(Model.ActiveBorrowCount > 0 ? "border-[#bfdbfe] bg-[#eff6ff]" : "border-[#dce6f5] bg-[#f5f7fb]") px-4 py-2.5 hover:border-[#60a5fa] transition-colors">
+                    <span class="material-symbols-outlined text-[16px] @(Model.ActiveBorrowCount > 0 ? "text-[#60a5fa]" : "text-[#6b7c99]")" style="font-variation-settings:'FILL' 1;">inventory_2</span>
+                    <span class="text-xs text-[#3a4f6e] font-medium">Đang mượn</span>
+                    <span class="text-base font-bold @(Model.ActiveBorrowCount > 0 ? "text-[#60a5fa]" : "text-[#0f1e38]") ml-1">@Model.ActiveBorrowCount</span>
+                    <span class="text-xs text-[#6b7c99]">phiếu</span>
                 </div>
             </div>
         </div>
@@ -241,7 +227,7 @@
                                         }
                                         else
                                         {
-                                            <div class="flex h-14 w-14 items-center justify-center rounded-xl border border-[#e3e3de] bg-[#f2f7f0] text-[#3b6722]">
+                                            <div class="flex h-14 w-14 items-center justify-center rounded-xl border border-[#e3e3de] bg-[#f2f7f0] text-[#0f2347]">
                                                 <span class="material-symbols-outlined text-[22px]">inventory_2</span>
                                             </div>
                                         }

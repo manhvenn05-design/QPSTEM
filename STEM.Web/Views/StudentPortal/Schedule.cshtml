@@ -1,4 +1,4 @@
-@using System.Text.Json
+﻿@using System.Text.Json
 @model STEM.Web.Models.StudentViewModels.StudentSchedulePageViewModel
 
 @{
@@ -77,7 +77,7 @@
     .schedule-loading .schedule-main-body, .schedule-loading .schedule-sidebar-body { opacity: .55; }
     .schedule-sidebar-head, .schedule-main-head { border-bottom: 1px solid #e3e3de; padding: 16px 18px; }
     .schedule-main-head { align-items: center; display: flex; gap: 16px; justify-content: space-between; }
-    .schedule-month-chip { align-items: center; background: #3b6722; border-radius: 8px; color: #fff; display: inline-flex; font-size: 14px; font-weight: 700; height: 40px; padding: 0 14px; }
+    .schedule-month-chip { align-items: center; background: #0f2347; border-radius: 8px; color: #fff; display: inline-flex; font-size: 14px; font-weight: 700; height: 40px; padding: 0 14px; }
     .schedule-nav-btn { align-items: center; background: #fff; border: 1px solid #d6d6d0; border-radius: 8px; color: #42493d; display: inline-flex; height: 36px; justify-content: center; transition: background-color .2s ease, color .2s ease; width: 36px; }
     .schedule-nav-btn:hover { background: #f4f4ee; color: #1a1c19; }
     .schedule-main-title { color: #1a1c19; font-size: 18px; font-weight: 700; margin: 0; }
@@ -87,10 +87,10 @@
     .schedule-mini-head { align-items: center; color: #73796b; display: flex; font-size: 11px; font-weight: 700; height: 34px; justify-content: center; text-transform: uppercase; }
     .schedule-mini-day { align-items: center; background: none; border: none; border-radius: 9999px; color: #5d6557; display: flex; font-size: 14px; height: 38px; justify-content: center; position: relative; transition: background-color .2s ease, color .2s ease; width: 38px; }
     .schedule-mini-day--other { color: #c2c9b9; }
-    .schedule-mini-day--selected { background: #6a994e; color: #fff; font-weight: 700; }
-    .schedule-mini-day--today:not(.schedule-mini-day--selected) { background: #edf7e8; color: #3b6722; font-weight: 700; }
-    .schedule-mini-day--has-session::after { background: #6a994e; border-radius: 9999px; content: ""; height: 5px; position: absolute; right: 4px; top: 4px; width: 5px; }
-    .schedule-selected-date { background: #3b6722; color: #fff; font-size: 15px; font-weight: 700; padding: 12px 16px; }
+    .schedule-mini-day--selected { background: #1a3a6e; color: #fff; font-weight: 700; }
+    .schedule-mini-day--today:not(.schedule-mini-day--selected) { background: #edf7e8; color: #0f2347; font-weight: 700; }
+    .schedule-mini-day--has-session::after { background: #1a3a6e; border-radius: 9999px; content: ""; height: 5px; position: absolute; right: 4px; top: 4px; width: 5px; }
+    .schedule-selected-date { background: #0f2347; color: #fff; font-size: 15px; font-weight: 700; padding: 12px 16px; }
     .schedule-selected-body { display: grid; gap: 12px; padding: 16px; }
     .schedule-selected-meta { color: #73796b; font-size: 13px; line-height: 20px; }
     .schedule-selected-list { display: grid; gap: 10px; }
@@ -116,7 +116,7 @@
     .schedule-event { background: #f6f6f1; border: 1px solid transparent; border-radius: 8px; box-sizing: border-box; display: block; font-size: 12px; max-width: 100%; min-width: 0; overflow: hidden; padding: 7px 8px; text-align: left; transition: transform .15s ease, box-shadow .15s ease; width: 100%; }
     .schedule-event:hover { box-shadow: 0 8px 18px rgba(26,28,25,.08); transform: translateY(-1px); }
     .schedule-event--upcoming { background: #fff6eb; border-color: #ffd8a8; color: #9b682f; }
-    .schedule-event--today { background: #edf7e8; border-color: #c8e0b8; color: #3b6722; }
+    .schedule-event--today { background: #edf7e8; border-color: #c8e0b8; color: #0f2347; }
     .schedule-event--present { background: #edf7e8; border-color: #c8e0b8; color: #456c3f; }
     .schedule-event--absent { background: #ffefed; border-color: #ffc9c2; color: #ba1a1a; }
     .schedule-event--past { background: #f4f4ee; border-color: #d6d6d0; color: #5d6557; }
@@ -140,8 +140,8 @@
     .schedule-pill--past { background: #eeeee9; color: #42493d; }
     .schedule-pill--absent { background: #ffdad6; color: #ba1a1a; }
     .schedule-link-btn { align-items: center; border-radius: 8px; display: inline-flex; font-size: 13px; font-weight: 700; gap: 8px; height: 40px; justify-content: center; padding: 0 16px; }
-    .schedule-link-btn--primary { background: #3b6722; color: #fff; }
-    .schedule-link-btn--secondary { background: #f2f7f0; color: #3b6722; }
+    .schedule-link-btn--primary { background: #0f2347; color: #fff; }
+    .schedule-link-btn--secondary { background: #f2f7f0; color: #0f2347; }
     .schedule-list-group { display: grid; gap: 14px; }
     .schedule-list-card { background: #fff; border: 1px solid #e3e3de; border-radius: 8px; padding: 18px; }
     @@media (max-width: 1279px) { .schedule-layout { grid-template-columns: 1fr; } }
@@ -161,12 +161,12 @@
         </div>
         <div class="flex items-center gap-2 shrink-0">
             <a asp-action="Schedule" asp-route-view="calendar" asp-route-month="@calMonth" asp-route-year="@calYear"
-               class="inline-flex items-center gap-2 rounded-lg px-4 h-10 text-sm font-semibold border transition-colors @(Model.ViewMode == "calendar" ? "bg-[#3b6722] text-white border-[#3b6722]" : "bg-white border-[#c2c9b9] text-[#42493d] hover:bg-[#f2f7f0]")">
+               class="inline-flex items-center gap-2 rounded-lg px-4 h-10 text-sm font-semibold border transition-colors @(Model.ViewMode == "calendar" ? "bg-[#0f2347] text-white border-[#0f2347]" : "bg-white border-[#c2c9b9] text-[#42493d] hover:bg-[#f2f7f0]")">
                 <span class="material-symbols-outlined text-[18px]">calendar_month</span>
                 <span>Lịch tháng</span>
             </a>
             <a asp-action="Schedule" asp-route-view="list" asp-route-filter="upcoming"
-               class="inline-flex items-center gap-2 rounded-lg px-4 h-10 text-sm font-semibold border transition-colors @(Model.ViewMode == "list" ? "bg-[#3b6722] text-white border-[#3b6722]" : "bg-white border-[#c2c9b9] text-[#42493d] hover:bg-[#f2f7f0]")">
+               class="inline-flex items-center gap-2 rounded-lg px-4 h-10 text-sm font-semibold border transition-colors @(Model.ViewMode == "list" ? "bg-[#0f2347] text-white border-[#0f2347]" : "bg-white border-[#c2c9b9] text-[#42493d] hover:bg-[#f2f7f0]")">
                 <span class="material-symbols-outlined text-[18px]">view_list</span>
                 <span>Danh sách</span>
             </a>
@@ -182,7 +182,7 @@
             {
                 var isActive = Model.Filter == filterItem.Key;
                 <a asp-action="Schedule" asp-route-view="list" asp-route-filter="@filterItem.Key"
-                   class="inline-flex items-center gap-2 rounded-lg px-4 h-10 text-sm font-semibold transition-colors @(isActive ? "bg-[#3b6722] text-white" : "bg-white border border-[#c2c9b9] text-[#42493d] hover:bg-[#f2f7f0]")">
+                   class="inline-flex items-center gap-2 rounded-lg px-4 h-10 text-sm font-semibold transition-colors @(isActive ? "bg-[#0f2347] text-white" : "bg-white border border-[#c2c9b9] text-[#42493d] hover:bg-[#f2f7f0]")">
                     <span>@filterItem.Label</span>
                     @if (isActive)
                     {
@@ -212,7 +212,7 @@
                     var isTodayGroup = group.Key == today;
                     <div>
                         <div class="mb-3 flex items-center gap-3">
-                            <span class="text-sm font-bold @(isTodayGroup ? "text-[#3b6722]" : "text-[#42493d]")">@GetDayLabel(group.Key.DayOfWeek), @group.Key.ToString("dd/MM/yyyy")</span>
+                            <span class="text-sm font-bold @(isTodayGroup ? "text-[#0f2347]" : "text-[#42493d]")">@GetDayLabel(group.Key.DayOfWeek), @group.Key.ToString("dd/MM/yyyy")</span>
                             @if (isTodayGroup)
                             {
                                 <span class="schedule-pill schedule-pill--today">Hôm nay</span>

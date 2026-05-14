@@ -60,14 +60,14 @@
                         var isToday = currentDate.Date == DateTime.Today;
                         var dayName = i == 6 ? "Chủ nhật" : $"Thứ {i + 2}";
                         var borderClass = i == 6 ? string.Empty : "border-r border-[#e3e3de]";
-                        var textClass = isToday ? "text-[#3b6722]" : i == 6 ? "text-[#ba1a1a]" : "text-[#42493f]";
-                        var dateClass = isToday ? "text-[#3b6722]" : i == 6 ? "text-[#ba1a1a]" : "text-[#1a1c19]";
+                        var textClass = isToday ? "text-[#0f2347]" : i == 6 ? "text-[#ba1a1a]" : "text-[#42493f]";
+                        var dateClass = isToday ? "text-[#0f2347]" : i == 6 ? "text-[#ba1a1a]" : "text-[#1a1c19]";
                         var bgClass = isToday ? "bg-[#edf7e8]" : string.Empty;
 
                         <div class="@borderClass @bgClass py-3">
                             <div class="text-[11px] font-bold uppercase tracking-wider @textClass">@dayName</div>
                             <div class="mt-1 text-lg font-bold @dateClass">@currentDate.Day</div>
-                            <div class="mt-1 text-[10px] font-medium @(isToday ? "text-[#3b6722]" : "text-transparent")">@(isToday ? "• Hôm nay" : "•")</div>
+                            <div class="mt-1 text-[10px] font-medium @(isToday ? "text-[#0f2347]" : "text-transparent")">@(isToday ? "• Hôm nay" : "•")</div>
                         </div>
                     }
                 </div>
@@ -110,7 +110,7 @@
                             var gridRowStart = Math.Floor(safeStartOffsetMinutes / (double)slotMinutes) + 1;
                             var gridRowEnd = Math.Ceiling(safeEndOffsetMinutes / (double)slotMinutes) + 1;
                             var colStart = dayOffset + 2;
-                            var bgBlock = sessionDate < DateTime.Today ? "bg-[#8a9985] hover:bg-[#7a8975]" : "bg-[#6a994e] hover:bg-[#5b8742]";
+                            var bgBlock = sessionDate < DateTime.Today ? "bg-[#8a9985] hover:bg-[#7a8975]" : "bg-[#1a3a6e] hover:bg-[#5b8742]";
 
                             <article class="pointer-events-auto z-10 mx-1 my-[3px] flex min-h-0 flex-col overflow-hidden rounded-lg @bgBlock p-3 text-white shadow transition-colors"
                                      style="grid-column: @colStart; grid-row: @(gridRowStart) / @(gridRowEnd);">
@@ -140,7 +140,7 @@
 
         <div class="mt-4 flex items-center justify-between text-sm text-[#42493f]">
             <div class="flex items-center gap-4">
-                <div class="flex items-center gap-1.5"><div class="h-3 w-3 rounded bg-[#6a994e]"></div> Buổi sắp dạy hoặc trong tuần hiện tại</div>
+                <div class="flex items-center gap-1.5"><div class="h-3 w-3 rounded bg-[#1a3a6e]"></div> Buổi sắp dạy hoặc trong tuần hiện tại</div>
                 <div class="flex items-center gap-1.5"><div class="h-3 w-3 rounded bg-[#8a9985]"></div> Buổi đã dạy</div>
             </div>
             <div class="flex items-center gap-2 rounded-lg bg-[#e8f0e5] px-4 py-2 font-medium text-[#2d4f19]">

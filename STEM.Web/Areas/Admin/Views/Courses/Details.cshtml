@@ -1,4 +1,4 @@
-@model STEM.Web.Areas.Admin.Models.CourseDetailsViewModel
+﻿@model STEM.Web.Areas.Admin.Models.CourseDetailsViewModel
 
 @{
     ViewData["Title"] = "Chi tiết khóa học";
@@ -112,7 +112,7 @@
                     <h2 class="admin-section-title">Trạng thái</h2>
                     <div class="mt-5">
                         <span class="inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-semibold @Model.StatusBadgeClass">
-                            <span class="h-2 w-2 rounded-full @(Model.StatusLabel == "Đang diễn ra" ? "bg-[#6a994e]" : Model.StatusLabel == "Sắp khai giảng" ? "bg-[#9b682f]" : Model.StatusLabel == "Đã kết thúc" ? "bg-[#73796b]" : "bg-[#c2c9b9]")"></span>
+                            <span class="h-2 w-2 rounded-full @(Model.StatusLabel == "Đang diễn ra" ? "bg-[#1a3a6e]" : Model.StatusLabel == "Sắp khai giảng" ? "bg-[#9b682f]" : Model.StatusLabel == "Đã kết thúc" ? "bg-[#73796b]" : "bg-[#c2c9b9]")"></span>
                             @Model.StatusLabel
                         </span>
                     </div>

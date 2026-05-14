@@ -1,4 +1,4 @@
-@model STEM.Web.Areas.Admin.Models.EquipmentDetailsViewModel
+﻿@model STEM.Web.Areas.Admin.Models.EquipmentDetailsViewModel
 
 @{
     ViewData["Title"] = "Chi tiết thiết bị";
@@ -38,7 +38,7 @@
                         }
                         else
                         {
-                            <div class="flex h-24 w-24 items-center justify-center rounded-[12px] border border-[#e3e3de] bg-[#f2f7f0] text-2xl font-semibold text-[#3b6722]">
+                            <div class="flex h-24 w-24 items-center justify-center rounded-[12px] border border-[#e3e3de] bg-[#f2f7f0] text-2xl font-semibold text-[#0f2347]">
                                 @Model.SerialNumber.Trim()[0].ToString().ToUpperInvariant()
                             </div>
                         }

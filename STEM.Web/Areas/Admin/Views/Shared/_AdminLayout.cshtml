@@ -6,40 +6,40 @@
 <head>
     <meta charset="utf-8" />
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
-    <title>@ViewData["Title"] - QPSTEM Admin</title>
+    <title>@ViewData["Title"] - TIPY STEM Admin</title>
     <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
     <style>
         :root {
-            --admin-bg: #f5f6f3;
+            --admin-bg: #f5f7fb;
             --admin-surface: #ffffff;
-            --admin-surface-soft: #f1f2ee;
-            --admin-surface-muted: #eaeae5;
-            --admin-border: #e2e3de;
-            --admin-border-strong: #c2c9b9;
-            --admin-text: #1a1c19;
-            --admin-text-muted: #42493d;
-            --admin-text-soft: #73796b;
-            --admin-primary: #6a994e;
-            --admin-primary-strong: #3b6722;
-            --admin-primary-soft: #edf5e6;
+            --admin-surface-soft: #eef2f8;
+            --admin-surface-muted: #e4ecf7;
+            --admin-border: #dce6f5;
+            --admin-border-strong: #b0c4de;
+            --admin-text: #0f1e38;
+            --admin-text-muted: #3a4f6e;
+            --admin-text-soft: #6b7c99;
+            --admin-primary: #1a3a6e;
+            --admin-primary-strong: #0f2347;
+            --admin-primary-soft: #e8f0fb;
             --admin-danger: #ba1a1a;
             --admin-danger-soft: #ffdad6;
             --admin-warning: #9b682f;
             --admin-warning-soft: #fff4e8;
-            --admin-success: #456c3f;
-            --admin-success-soft: #edf7e8;
-            --admin-shadow: 0 20px 40px rgba(26, 28, 25, 0.08);
+            --admin-success: #1a3a6e;
+            --admin-success-soft: #e8f0fb;
+            --admin-shadow: 0 20px 40px rgba(15, 30, 56, 0.08);
             /* Sidebar light theme */
             --sidebar-bg: #ffffff;
-            --sidebar-bg2: #fcfcfc;
-            --sidebar-text: #647461;
-            --sidebar-text-active: #141f12;
-            --sidebar-hover: rgba(106,153,78,0.05);
-            --sidebar-active: rgba(106,153,78,0.1);
-            --sidebar-active-border: #6a994e;
-            --sidebar-border: #e5e7e5;
-            --sidebar-accent: #3b6722;
+            --sidebar-bg2: #f8fafd;
+            --sidebar-text: #4a5e7a;
+            --sidebar-text-active: #0f1e38;
+            --sidebar-hover: rgba(26,58,110,0.05);
+            --sidebar-active: rgba(26,58,110,0.1);
+            --sidebar-active-border: #f97316;
+            --sidebar-border: #dce6f5;
+            --sidebar-accent: #f97316;
         }
 
         .material-symbols-outlined {
@@ -84,19 +84,19 @@
 
         .admin-logo-mark {
             align-items: center;
-            background: linear-gradient(135deg, #5c8b3e 0%, #2f5419 100%);
             border-radius: 50%;
-            box-shadow: 0 4px 12px rgba(106,153,78,0.25);
-            color: #fff;
+            box-shadow: 0 4px 16px rgba(249,115,22,0.3);
             display: inline-flex;
-            height: 56px;
+            height: 48px;
             justify-content: center;
-            width: 56px;
+            overflow: hidden;
+            width: 48px;
         }
 
-        .admin-logo-mark .material-symbols-outlined {
-            font-size: 32px;
-            font-variation-settings: 'FILL' 1, 'wght' 700, 'GRAD' 0, 'opsz' 48;
+        .admin-logo-mark img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
 
         .admin-nav-link {
@@ -1149,9 +1149,12 @@
 
     <aside class="admin-sidebar fixed left-0 top-0 flex h-screen flex-col py-6">
         <div class="mb-6 flex items-center justify-between px-5 pt-2">
-            <div class="admin-logo !gap-0">
-                <div class="admin-logo-mark !h-11 !w-11">
-                    <span class="material-symbols-outlined text-[24px]">school</span>
+            <div class="admin-logo">
+                <div class="admin-logo-mark">
+                    <img src="/images/team/TIPY.jpg" alt="TIPY STEM" />
+                </div>
+                <div>
+                    <div style="color:#1a3a6e;font-size:1rem;font-weight:700;letter-spacing:-0.02em;">TIPY STEM</div>
                 </div>
             </div>
         </div>
@@ -1307,35 +1310,35 @@
                     </div>
                 </details>
 
-                <details class="relative">
+                <details class="relative" id="admin-help-details">
                     <summary class="admin-icon-button list-none cursor-pointer" title="Trợ giúp">
                         <span class="material-symbols-outlined text-[20px]">help</span>
                     </summary>
-                    <div class="admin-popover absolute right-0 top-[calc(100%+12px)] z-30">
+                    <div class="admin-popover absolute right-0 top-[calc(100%+12px)] z-[200]" style="min-width:280px;">
                         <div class="admin-popover-header">
-                            <p class="text-sm font-semibold text-[#1a1c19]">Trợ giúp nhanh</p>
-                            <p class="mt-1 text-xs text-[#73796b]">Mở nhanh các khu vực thường dùng.</p>
+                            <p class="text-sm font-semibold text-[#0f1e38]">Trợ giúp nhanh</p>
+                            <p class="mt-1 text-xs text-[#6b7c99]">Mở nhanh các khu vực thường dùng.</p>
                         </div>
                         <div class="admin-popover-body">
                             <a asp-area="Admin" asp-controller="Users" asp-action="Index" class="admin-popover-item">
                                 <span class="material-symbols-outlined text-[20px]">group</span>
                                 <span>
-                                    <span class="block text-sm font-medium text-[#1a1c19]">Người dùng</span>
-                                    <span class="mt-1 block text-xs text-[#73796b]">Tài khoản, vai trò và trạng thái</span>
+                                    <span class="block text-sm font-medium text-[#0f1e38]">Người dùng</span>
+                                    <span class="mt-1 block text-xs text-[#6b7c99]">Tài khoản, vai trò và trạng thái</span>
                                 </span>
                             </a>
                             <a asp-area="Admin" asp-controller="Classes" asp-action="Index" class="admin-popover-item">
                                 <span class="material-symbols-outlined text-[20px]">class</span>
                                 <span>
-                                    <span class="block text-sm font-medium text-[#1a1c19]">Lớp học</span>
-                                    <span class="mt-1 block text-xs text-[#73796b]">Lịch khai giảng và giáo viên</span>
+                                    <span class="block text-sm font-medium text-[#0f1e38]">Lớp học</span>
+                                    <span class="mt-1 block text-xs text-[#6b7c99]">Lịch khai giảng và giáo viên</span>
                                 </span>
                             </a>
                             <a asp-area="Admin" asp-controller="Settings" asp-action="Index" class="admin-popover-item">
                                 <span class="material-symbols-outlined text-[20px]">settings</span>
                                 <span>
-                                    <span class="block text-sm font-medium text-[#1a1c19]">Điều hành</span>
-                                    <span class="mt-1 block text-xs text-[#73796b]">Đi đến trung tâm điều hành quản trị</span>
+                                    <span class="block text-sm font-medium text-[#0f1e38]">Điều hành</span>
+                                    <span class="mt-1 block text-xs text-[#6b7c99]">Đi đến trung tâm điều hành quản trị</span>
                                 </span>
                             </a>
                         </div>
@@ -1584,6 +1587,16 @@
                 const panel = document.getElementById('table-action-panel');
                 if (!panel || panel.style.display === 'none') return;
                 // Cho phép click bên trong panel hoạt động bình thường
+            });
+
+            // Generic script to close all open <details> (popovers, dropdowns) when clicking outside
+            document.addEventListener('click', (e) => {
+                const openDetails = document.querySelectorAll('details[open]');
+                openDetails.forEach((details) => {
+                    if (!details.contains(e.target) && !details.hasAttribute('data-table-action')) {
+                        details.removeAttribute('open');
+                    }
+                });
             });
         })();
     </script>

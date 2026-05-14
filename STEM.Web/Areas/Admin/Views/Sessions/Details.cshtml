@@ -1,4 +1,4 @@
-@model STEM.Web.Areas.Admin.Models.SessionDetailsViewModel
+﻿@model STEM.Web.Areas.Admin.Models.SessionDetailsViewModel
 
 @{
     ViewData["Title"] = "Chi tiết buổi học";
@@ -62,7 +62,7 @@
                                 }
                                 else
                                 {
-                                    <a href="@Model.TeachingMaterialUrl" target="_blank" rel="noreferrer" class="text-[#3b6722] underline underline-offset-4">@Model.TeachingMaterialUrl</a>
+                                    <a href="@Model.TeachingMaterialUrl" target="_blank" rel="noreferrer" class="text-[#0f2347] underline underline-offset-4">@Model.TeachingMaterialUrl</a>
                                 }
                             </dd>
                         </div>
@@ -168,7 +168,7 @@
                     <h2 class="admin-section-title">Trạng thái</h2>
                     <div class="mt-5">
                         <span class="inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-semibold @Model.StatusBadgeClass">
-                            <span class="h-2 w-2 rounded-full @(Model.StatusLabel == "Hôm nay" ? "bg-[#6a994e]" : Model.StatusLabel == "Sắp tới" ? "bg-[#9b682f]" : "bg-[#73796b]")"></span>
+                            <span class="h-2 w-2 rounded-full @(Model.StatusLabel == "Hôm nay" ? "bg-[#1a3a6e]" : Model.StatusLabel == "Sắp tới" ? "bg-[#9b682f]" : "bg-[#73796b]")"></span>
                             @Model.StatusLabel
                         </span>
                     </div>

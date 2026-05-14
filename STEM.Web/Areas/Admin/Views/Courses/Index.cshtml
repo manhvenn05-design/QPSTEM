@@ -1,4 +1,4 @@
-@model STEM.Web.Areas.Admin.Models.CourseManagementViewModel
+﻿@model STEM.Web.Areas.Admin.Models.CourseManagementViewModel
 
 @{
     ViewData["Title"] = "Khóa học";
@@ -91,7 +91,7 @@
                                         }
                                         else
                                         {
-                                            <div class="flex h-12 w-12 items-center justify-center rounded-[8px] bg-[#f2f7f0] text-[#3b6722]">
+                                            <div class="flex h-12 w-12 items-center justify-center rounded-[8px] bg-[#f2f7f0] text-[#0f2347]">
                                                 <span class="material-symbols-outlined">school</span>
                                             </div>
                                         }
@@ -107,7 +107,7 @@
                                 <td>@course.ClassCount lớp · @course.EnrollmentCount học viên</td>
                                 <td>
                                     <span class="inline-flex items-center gap-2 rounded-full px-3 py-2 text-xs font-semibold @course.StatusBadgeClass">
-                                        <span class="h-2 w-2 rounded-full @(course.StatusLabel == "Đang diễn ra" ? "bg-[#6a994e]" : course.StatusLabel == "Sắp khai giảng" ? "bg-[#9b682f]" : course.StatusLabel == "Đã kết thúc" ? "bg-[#73796b]" : "bg-[#c2c9b9]")"></span>
+                                        <span class="h-2 w-2 rounded-full @(course.StatusLabel == "Đang diễn ra" ? "bg-[#1a3a6e]" : course.StatusLabel == "Sắp khai giảng" ? "bg-[#9b682f]" : course.StatusLabel == "Đã kết thúc" ? "bg-[#73796b]" : "bg-[#c2c9b9]")"></span>
                                         @course.StatusLabel
                                     </span>
                                 </td>

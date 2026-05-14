@@ -1,4 +1,4 @@
-@model STEM.Web.Areas.Admin.Models.EditUserViewModel
+﻿@model STEM.Web.Areas.Admin.Models.EditUserViewModel
 
 @{
     ViewData["Title"] = "Cập nhật người dùng";
@@ -43,11 +43,11 @@
                         @if (Model.SuggestedUsernames.Count > 0)
                         {
                             <div class="admin-card-soft mt-3 p-4">
-                                <p class="text-sm font-semibold text-[#3b6722]">Gợi ý tên đăng nhập khả dụng</p>
+                                <p class="text-sm font-semibold text-[#0f2347]">Gợi ý tên đăng nhập khả dụng</p>
                                 <div class="mt-3 flex flex-wrap gap-2">
                                     @foreach (var suggestion in Model.SuggestedUsernames)
                                     {
-                                        <button type="button" class="admin-chip is-active !h-9 !bg-white !text-[#3b6722] !border !border-[#c2c9b9]" data-username-suggestion="@suggestion">
+                                        <button type="button" class="admin-chip is-active !h-9 !bg-white !text-[#0f2347] !border !border-[#c2c9b9]" data-username-suggestion="@suggestion">
                                             @suggestion
                                         </button>
                                     }

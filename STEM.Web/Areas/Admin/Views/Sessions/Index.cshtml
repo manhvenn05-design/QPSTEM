@@ -1,4 +1,4 @@
-@model STEM.Web.Areas.Admin.Models.SessionManagementViewModel
+﻿@model STEM.Web.Areas.Admin.Models.SessionManagementViewModel
 
 @{
     ViewData["Title"] = "Buổi học";
@@ -122,7 +122,7 @@
                                 </td>
                                 <td>
                                     <span class="inline-flex items-center gap-2 rounded-full px-3 py-2 text-xs font-semibold @item.StatusBadgeClass">
-                                        <span class="h-2 w-2 rounded-full @(item.StatusLabel == "Hôm nay" ? "bg-[#6a994e]" : item.StatusLabel == "Sắp tới" ? "bg-[#9b682f]" : "bg-[#73796b]")"></span>
+                                        <span class="h-2 w-2 rounded-full @(item.StatusLabel == "Hôm nay" ? "bg-[#1a3a6e]" : item.StatusLabel == "Sắp tới" ? "bg-[#9b682f]" : "bg-[#73796b]")"></span>
                                         @item.StatusLabel
                                     </span>
                                 </td>
