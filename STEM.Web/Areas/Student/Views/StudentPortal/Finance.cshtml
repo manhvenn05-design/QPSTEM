@@ -1,4 +1,4 @@
-﻿@model STEM.Web.Models.StudentViewModels.StudentFinancePageViewModel
+@model STEM.Web.Models.StudentViewModels.StudentFinancePageViewModel
 
 @{
     ViewData["Title"] = "Học phí";
@@ -21,7 +21,7 @@
                 <span class="material-symbols-outlined text-[20px] text-[#1a3a6e]">receipt_long</span>
             </div>
             <div>
-                <div class="student-stat-value text-2xl">@Model.TotalBilled.ToString("N0")₫</div>
+                <div class="student-stat-value">@Model.TotalBilled.ToString("N0")₫</div>
                 <p class="student-kicker">Tổng các khoản học phí đã được lập hóa đơn.</p>
             </div>
         </article>
@@ -32,7 +32,7 @@
                 <span class="material-symbols-outlined text-[20px] text-[#456c3f]">payments</span>
             </div>
             <div>
-                <div class="student-stat-value text-2xl text-[#456c3f]">@Model.TotalPaid.ToString("N0")₫</div>
+                <div class="student-stat-value">@Model.TotalPaid.ToString("N0")₫</div>
                 <p class="student-kicker">Tổng số tiền đã nộp.</p>
             </div>
         </article>
@@ -45,7 +45,7 @@
                 </span>
             </div>
             <div>
-                <div class="student-stat-value text-2xl @(Model.TotalRemaining > 0 ? "text-[#ba1a1a]" : "text-[#456c3f]")">
+                <div class="student-stat-value @(Model.TotalRemaining > 0 ? "text-[#ba1a1a]" : "")">
                     @Model.TotalRemaining.ToString("N0")₫
                 </div>
                 <p class="student-kicker">

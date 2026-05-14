@@ -38,7 +38,7 @@ public class StudentPortalController : Controller
 
         var studentId = GetCurrentStudentId();
         if (!studentId.HasValue)
-            return RedirectToAction("Login", "Account");
+            return RedirectToAction("Login", "Account", new { area = "" });
 
         // Lấy thông tin cá nhân
         var userInfo = await _context.Users
@@ -218,7 +218,7 @@ public class StudentPortalController : Controller
 
         var studentId = GetCurrentStudentId();
         if (!studentId.HasValue)
-            return RedirectToAction("Login", "Account");
+            return RedirectToAction("Login", "Account", new { area = "" });
 
         // Validate params
         view   = view is "list" or "calendar" ? view : "calendar";
@@ -323,7 +323,7 @@ public class StudentPortalController : Controller
 
         var studentId = GetCurrentStudentId();
         if (!studentId.HasValue)
-            return RedirectToAction("Login", "Account");
+            return RedirectToAction("Login", "Account", new { area = "" });
 
         const int pageSize = 10;
         page = Math.Max(1, page);
@@ -423,7 +423,7 @@ public class StudentPortalController : Controller
 
         var studentId = GetCurrentStudentId();
         if (!studentId.HasValue)
-            return RedirectToAction("Login", "Account");
+            return RedirectToAction("Login", "Account", new { area = "" });
 
         var invoices = await _context.Invoices
             .AsNoTracking()
@@ -493,7 +493,7 @@ public class StudentPortalController : Controller
 
         var studentId = GetCurrentStudentId();
         if (!studentId.HasValue)
-            return RedirectToAction("Login", "Account");
+            return RedirectToAction("Login", "Account", new { area = "" });
 
         var today = DateOnly.FromDateTime(DateTime.Today);
 
@@ -530,7 +530,7 @@ public class StudentPortalController : Controller
             .FirstOrDefaultAsync();
 
         if (user == null)
-            return RedirectToAction("Login", "Account");
+            return RedirectToAction("Login", "Account", new { area = "" });
 
         var model = new StudentProfileViewModel
         {
@@ -589,7 +589,7 @@ public class StudentPortalController : Controller
     {
         var studentId = GetCurrentStudentId();
         if (!studentId.HasValue)
-            return RedirectToAction("Login", "Account");
+            return RedirectToAction("Login", "Account", new { area = "" });
 
         if (string.IsNullOrWhiteSpace(model.CurrentPassword) ||
             string.IsNullOrWhiteSpace(model.NewPassword) ||
@@ -613,7 +613,7 @@ public class StudentPortalController : Controller
 
         var user = await _context.Users.FirstOrDefaultAsync(x => x.Id == studentId.Value);
         if (user == null)
-            return RedirectToAction("Login", "Account");
+            return RedirectToAction("Login", "Account", new { area = "" });
 
         if (!BCrypt.Net.BCrypt.Verify(model.CurrentPassword, user.PasswordHash))
         {

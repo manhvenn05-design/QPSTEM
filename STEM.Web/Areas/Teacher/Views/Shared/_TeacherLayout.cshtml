@@ -439,14 +439,13 @@
             border-radius: 8px;
         }
 
-        .teacher-card-section,
-        .teacher-stat-card {
+        .teacher-card-section {
             padding: 24px;
         }
 
         .teacher-stat-grid {
             display: grid;
-            gap: 24px;
+            gap: 12px;
         }
 
         @@media (min-width: 768px) {
@@ -470,21 +469,23 @@
         }
 
         .teacher-stat-card {
+            border-left: 4px solid var(--teacher-primary);
             display: flex;
             flex-direction: column;
-            justify-content: flex-start;
-            gap: 6px;
-            min-height: 110px;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            gap: 0;
+            padding: 16px 18px;
+            transition: transform 0.18s ease, box-shadow 0.18s ease;
             cursor: default;
             position: relative;
             overflow: hidden;
         }
 
         .teacher-stat-card:hover {
-            border-color: var(--teacher-primary);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.07);
         }
+
+        .teacher-stat-card-body { display: contents; }
 
         .teacher-stat-icon {
             align-items: center;
@@ -502,27 +503,27 @@
 
         .teacher-stat-label {
             color: var(--teacher-text-soft);
-            font-size: 11px;
-            font-weight: 600;
-            line-height: 16px;
-            letter-spacing: 0.04em;
+            font-size: 10px;
+            font-weight: 700;
+            line-height: 14px;
+            letter-spacing: 0.06em;
             text-transform: uppercase;
             white-space: normal;
-            word-break: break-word;
         }
 
         .teacher-stat-value {
-            font-size: 32px;
+            font-size: 22px;
             font-weight: 700;
-            letter-spacing: -0.03em;
-            line-height: 1;
+            letter-spacing: -0.02em;
+            line-height: 1.1;
+            color: var(--teacher-primary-strong);
             margin-top: 4px;
         }
 
         .teacher-kicker {
             color: var(--teacher-text-soft);
-            font-size: 12px;
-            line-height: 16px;
+            font-size: 11px;
+            line-height: 15px;
             margin-top: 4px;
         }
 

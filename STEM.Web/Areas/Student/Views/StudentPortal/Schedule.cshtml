@@ -1,4 +1,4 @@
-﻿@using System.Text.Json
+@using System.Text.Json
 @model STEM.Web.Models.StudentViewModels.StudentSchedulePageViewModel
 
 @{
@@ -223,7 +223,7 @@
                             @foreach (var session in group)
                             {
                                 var evidenceUrl = session.IsPast && session.HasAttendance && session.WasPresent == true
-                                    ? $"/StudentPortal/Evidence?sessionId={session.SessionId}#evidence-session-{session.SessionId}"
+                                    ? $"/Student/StudentPortal/Evidence?sessionId={session.SessionId}#evidence-session-{session.SessionId}"
                                     : null;
                                 <article class="schedule-list-card">
                                     <div class="flex items-start justify-between gap-4">

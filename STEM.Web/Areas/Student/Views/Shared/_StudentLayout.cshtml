@@ -253,34 +253,44 @@
         .student-stat-card {
             background: var(--student-surface);
             border: 1px solid var(--student-border);
+            border-left: 4px solid var(--student-primary);
             border-radius: 8px;
             display: flex;
             flex-direction: column;
-            justify-content: space-between;
-            min-height: 160px;
-            padding: 24px;
+            gap: 0;
+            padding: 16px 18px;
+            transition: transform 0.18s ease, box-shadow 0.18s ease;
+            cursor: default;
+        }
+
+        .student-stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(15,30,56,0.08);
         }
 
         .student-stat-label {
             color: var(--student-text-soft);
-            font-size: 14px;
-            font-weight: 500;
-            line-height: 20px;
+            font-size: 10px;
+            font-weight: 700;
+            line-height: 14px;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
         }
 
         .student-stat-value {
-            font-size: 32px;
-            font-weight: 600;
-            letter-spacing: -0.01em;
-            line-height: 40px;
-            margin-top: 24px;
+            font-size: 22px;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            line-height: 1.1;
+            color: var(--student-primary);
+            margin-top: 4px;
         }
 
         .student-kicker {
             color: var(--student-text-soft);
-            font-size: 14px;
-            line-height: 20px;
-            margin-top: 8px;
+            font-size: 11px;
+            line-height: 15px;
+            margin-top: 4px;
         }
 
         .student-grid-two {
@@ -539,11 +549,11 @@
             </div>
 
             <div class="flex items-center gap-5">
-                <form asp-controller="Account" asp-action="Logout" method="post">
-                    <button type="submit" class="text-[#73796b] transition hover:text-[#ba1a1a]" title="Đăng xuất">
-                        <span class="material-symbols-outlined text-[22px]">logout</span>
-                    </button>
-                </form>
+                <button type="button" id="student-logout-btn"
+                        class="text-[#73796b] transition hover:text-[#ba1a1a]"
+                        title="Đăng xuất">
+                    <span class="material-symbols-outlined text-[22px]">logout</span>
+                </button>
             </div>
         </header>
 
@@ -554,8 +564,67 @@
 
     @await RenderSectionAsync("Scripts", required: false)
 
+    <%-- Logout Confirmation Modal --%>
+    <div id="student-logout-modal"
+         style="display:none; position:fixed; inset:0; z-index:100; align-items:center; justify-content:center; background:rgba(15,30,56,0.45); backdrop-filter:blur(4px);">
+        <div style="background:#fff; border-radius:12px; box-shadow:0 24px 48px rgba(15,30,56,0.18); max-width:400px; width:calc(100% - 32px); padding:28px 28px 24px; animation:student-modal-in 0.18s ease;">
+            <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
+                <span class="material-symbols-outlined" style="color:#ba1a1a; font-size:28px;">logout</span>
+                <h3 style="margin:0; font-size:18px; font-weight:700; color:#0f1e38;">Đăng xuất</h3>
+            </div>
+            <p style="margin:0 0 24px; font-size:14px; color:#3a4f6e; line-height:1.6;">Bạn có chắc muốn đăng xuất khỏi cổng học sinh không?</p>
+            <div style="display:flex; justify-content:flex-end; gap:12px;">
+                <button type="button" id="student-logout-cancel"
+                        style="height:40px; padding:0 20px; border-radius:8px; border:1px solid #b0c4de; background:#fff; color:#3a4f6e; font-size:14px; font-weight:600; cursor:pointer; transition:background 0.2s;"
+                        onmouseover="this.style.background='#eef2f8'" onmouseout="this.style.background='#fff'">
+                    Ở lại
+                </button>
+                <form asp-area="" asp-controller="Account" asp-action="Logout" method="post" style="margin:0;">
+                    @Html.AntiForgeryToken()
+                    <button type="submit"
+                            style="height:40px; padding:0 20px; border-radius:8px; border:none; background:#ba1a1a; color:#fff; font-size:14px; font-weight:600; cursor:pointer; transition:background 0.2s;"
+                            onmouseover="this.style.background='#9b1515'" onmouseout="this.style.background='#ba1a1a'">
+                        Đăng xuất
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <style>
+        @@keyframes student-modal-in {
+            from { opacity: 0; transform: scale(0.95) translateY(8px); }
+            to   { opacity: 1; transform: scale(1) translateY(0); }
+        }
+    </style>
+
     <script>
-        // Mobile sidebar toggle
+        // ── Logout modal ──────────────────────────────────────────
+        const logoutModal  = document.getElementById('student-logout-modal');
+        const logoutBtn    = document.getElementById('student-logout-btn');
+        const logoutCancel = document.getElementById('student-logout-cancel');
+
+        logoutBtn.addEventListener('click', () => {
+            logoutModal.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+        });
+        logoutCancel.addEventListener('click', () => {
+            logoutModal.style.display = 'none';
+            document.body.style.overflow = '';
+        });
+        logoutModal.addEventListener('click', (e) => {
+            if (e.target === logoutModal) {
+                logoutModal.style.display = 'none';
+                document.body.style.overflow = '';
+            }
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && logoutModal.style.display === 'flex') {
+                logoutModal.style.display = 'none';
+                document.body.style.overflow = '';
+            }
+        });
+
+        // ── Mobile sidebar toggle ────────────────────────────────
         const sidebar  = document.getElementById('student-sidebar');
         const overlay  = document.getElementById('sidebar-overlay');
         const header   = document.getElementById('student-header');

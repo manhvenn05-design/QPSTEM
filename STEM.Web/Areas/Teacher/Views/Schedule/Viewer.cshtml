@@ -3,112 +3,418 @@
     string materialUrl = ViewBag.MaterialUrl as string ?? "";
     string sessionLabel = ViewBag.SessionLabel as string ?? "Giáo án";
     string topic = ViewBag.Topic as string ?? "";
-}
 
+    bool isLocalPdf = materialUrl.StartsWith("/uploads/") || materialUrl.ToLower().EndsWith(".pdf");
+    bool isGoogleSlides = materialUrl.Contains("docs.google.com/presentation");
+
+    string iframeUrl = materialUrl;
+    if (isGoogleSlides)
+    {
+        var cleanUrl = materialUrl.Split('?')[0].TrimEnd('/');
+        if (cleanUrl.EndsWith("/edit") || cleanUrl.EndsWith("/view") || cleanUrl.EndsWith("/pub"))
+            cleanUrl = cleanUrl[..cleanUrl.LastIndexOf('/')];
+        iframeUrl = cleanUrl + "/embed?start=false&loop=false&delayms=0&rm=minimal";
+    }
+}
 <!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Trình chiếu @sessionLabel - TIPY STEM</title>
-    <link rel="stylesheet" href="~/assets/css/site.css" asp-append-version="true" />
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Material+Symbols+Outlined:wght,FILL@400,0&display=swap" rel="stylesheet" />
     <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
         html, body {
-            margin: 0;
-            padding: 0;
-            height: 100%;
-            overflow: hidden;
-            background-color: #1a1c19;
+            height: 100%; overflow: hidden;
+            background: #0d1117;
             font-family: 'Inter', sans-serif;
+            color: #fff;
         }
-        .viewer-header {
-            height: 64px;
-            background-color: #1a3a6e;
-            color: white;
-            display: flex;
-            align-items: center;
+
+        /* ── Header ── */
+        #viewer-header {
+            height: 56px;
+            background: linear-gradient(90deg, #0f2347 0%, #1a3a6e 100%);
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            display: flex; align-items: center;
             justify-content: space-between;
-            padding: 0 24px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            padding: 0 20px; gap: 16px;
+            box-shadow: 0 2px 16px rgba(0,0,0,0.4);
+            position: relative; z-index: 20;
+        }
+
+        .hdr-left { display: flex; align-items: center; gap: 12px; min-width: 0; }
+        .hdr-icon {
+            width: 36px; height: 36px; border-radius: 8px;
+            background: rgba(249,115,22,0.18); border: 1px solid rgba(249,115,22,0.3);
+            display: flex; align-items: center; justify-content: center;
+            color: #f97316; flex-shrink: 0;
+        }
+        .hdr-title { font-size: 14px; font-weight: 700; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 260px; }
+        .hdr-topic { font-size: 12px; color: rgba(255,255,255,0.55); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 220px; }
+
+        .hdr-center { display: flex; align-items: center; gap: 8px; }
+
+        .nav-btn {
+            width: 36px; height: 36px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15);
+            background: rgba(255,255,255,0.07); color: #fff; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: background 0.18s, border-color 0.18s;
+        }
+        .nav-btn:hover:not(:disabled) { background: rgba(249,115,22,0.25); border-color: rgba(249,115,22,0.6); }
+        .nav-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+        .slide-counter {
+            min-width: 88px; text-align: center;
+            font-size: 13px; font-weight: 600; color: #fff;
+            background: rgba(255,255,255,0.08); border-radius: 8px;
+            padding: 6px 12px; border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .hdr-right { display: flex; align-items: center; gap: 8px; }
+
+        .ctrl-btn {
+            height: 36px; padding: 0 14px; border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.15);
+            background: rgba(255,255,255,0.07); color: #fff;
+            cursor: pointer; font-size: 13px; font-weight: 600;
+            display: flex; align-items: center; gap: 6px;
+            transition: background 0.18s;
+        }
+        .ctrl-btn:hover { background: rgba(255,255,255,0.14); }
+        .ctrl-btn--orange { background: #f97316; border-color: #f97316; }
+        .ctrl-btn--orange:hover { background: #ea580c; border-color: #ea580c; }
+
+        /* ── Stage ── */
+        #viewer-stage {
+            height: calc(100vh - 56px);
+            display: flex; align-items: center; justify-content: center;
+            position: relative; overflow: hidden;
+            background: radial-gradient(ellipse at 50% 30%, #1a2744 0%, #0d1117 70%);
+        }
+
+        /* Prev/Next arrow buttons */
+        .stage-nav {
+            position: absolute; top: 50%; transform: translateY(-50%);
+            width: 48px; height: 48px; border-radius: 50%;
+            background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12);
+            color: #fff; cursor: pointer; z-index: 10;
+            display: flex; align-items: center; justify-content: center;
+            transition: background 0.18s, transform 0.18s;
+            opacity: 0;
+        }
+        #viewer-stage:hover .stage-nav { opacity: 1; }
+        .stage-nav:hover:not(:disabled) { background: rgba(249,115,22,0.3); transform: translateY(-50%) scale(1.1); }
+        .stage-nav:disabled { opacity: 0 !important; }
+        #stage-prev { left: 16px; }
+        #stage-next { right: 16px; }
+
+        /* Slide viewport */
+        #slide-viewport {
+            width: 100%; max-width: 1400px;
+            max-height: calc(100vh - 56px - 64px);
+            aspect-ratio: 16/9;
             position: relative;
-            z-index: 10;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 32px 80px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.06);
+            border-radius: 4px; overflow: hidden;
+            background: #fff;
         }
-        .viewer-content {
-            height: calc(100vh - 64px);
-            width: 100%;
-            background-color: #2d3748; /* Darker backdrop for PDF */
+
+        #slide-canvas {
+            width: 100%; height: 100%;
+            display: block;
+            transition: opacity 0.15s ease;
         }
-        iframe {
-            width: 100%;
-            height: 100%;
-            border: none;
+
+        #slide-iframe {
+            width: 100%; height: 100%;
+            border: none; display: block;
         }
+
+        /* Loading overlay */
+        #slide-loader {
+            position: absolute; inset: 0;
+            background: #1e293b;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center; gap: 16px;
+            z-index: 5;
+        }
+        .loader-spinner {
+            width: 44px; height: 44px;
+            border: 3px solid rgba(249,115,22,0.2);
+            border-top-color: #f97316;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        .loader-text { font-size: 13px; color: rgba(255,255,255,0.5); }
+        @@keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Bottom pagination dots */
+        #slide-dots {
+            position: absolute; bottom: 14px; left: 0; right: 0;
+            display: flex; align-items: center; justify-content: center; gap: 6px;
+            pointer-events: none;
+        }
+        .dot {
+            width: 7px; height: 7px; border-radius: 50%;
+            background: rgba(255,255,255,0.25);
+            transition: background 0.2s, transform 0.2s;
+        }
+        .dot.is-active {
+            background: #f97316; transform: scale(1.4);
+        }
+
+        /* Keyboard hint */
+        #key-hint {
+            position: absolute; bottom: 14px; right: 20px;
+            font-size: 11px; color: rgba(255,255,255,0.3);
+            display: flex; gap: 10px;
+        }
+        .key-chip {
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 4px; padding: 2px 7px;
+            font-size: 11px;
+        }
+
+        /* Slide transition */
+        .slide-fade-out { opacity: 0; }
     </style>
 </head>
 <body>
-    <div class="viewer-header">
-        <div class="flex items-center gap-4">
-            <div class="h-10 w-10 rounded-lg bg-white/10 flex items-center justify-center text-white font-bold">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                    <line x1="3" y1="9" x2="21" y2="9"></line>
-                    <line x1="9" y1="21" x2="9" y2="9"></line>
-                </svg>
+    <!-- ── Header ── -->
+    <header id="viewer-header">
+        <div class="hdr-left">
+            <div class="hdr-icon">
+                <span class="material-symbols-outlined" style="font-size:20px;">slideshow</span>
             </div>
-            <div>
-                <h1 class="text-base font-semibold m-0 leading-tight">@sessionLabel</h1>
-                <p class="text-[13px] text-white/70 m-0 mt-0.5">@topic</p>
+            <div style="min-width:0;">
+                <div class="hdr-title">@sessionLabel</div>
+                @if (!string.IsNullOrWhiteSpace(topic))
+                {
+                    <div class="hdr-topic">@topic</div>
+                }
             </div>
         </div>
-        <div class="flex gap-3">
-            <button onclick="toggleFullScreen()" class="px-5 py-2 bg-[#f97316] text-white rounded-md text-sm font-medium hover:bg-[#ea580c] transition-colors flex items-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <polyline points="15 3 21 3 21 9"></polyline>
-                    <polyline points="9 21 3 21 3 15"></polyline>
-                    <line x1="21" y1="3" x2="14" y2="10"></line>
-                    <line x1="3" y1="21" x2="10" y2="14"></line>
-                </svg>
-                Toàn màn hình
+
+        <div class="hdr-center">
+            <button class="nav-btn" id="hdr-prev" title="Slide trước (←)" disabled>
+                <span class="material-symbols-outlined" style="font-size:18px;">chevron_left</span>
             </button>
-            <a href="javascript:history.back()" class="px-5 py-2 bg-white/10 text-white rounded-md text-sm font-medium hover:bg-white/20 transition-colors flex items-center gap-2">
-                Đóng
+            <div class="slide-counter" id="slide-counter">–</div>
+            <button class="nav-btn" id="hdr-next" title="Slide tiếp (→)" disabled>
+                <span class="material-symbols-outlined" style="font-size:18px;">chevron_right</span>
+            </button>
+        </div>
+
+        <div class="hdr-right">
+            <button class="ctrl-btn ctrl-btn--orange" id="btn-fullscreen" onclick="toggleFullscreen()">
+                <span class="material-symbols-outlined" style="font-size:17px;">fullscreen</span>
+                <span>Toàn màn hình</span>
+            </button>
+            <a href="javascript:history.back()" class="ctrl-btn">
+                <span class="material-symbols-outlined" style="font-size:17px;">close</span>
+                <span>Đóng</span>
             </a>
         </div>
-    </div>
-    
-    <div class="viewer-content" id="viewer-container">
-        @if (materialUrl.StartsWith("/uploads/"))
-        {
-            <iframe src="@materialUrl#toolbar=0&navpanes=0&scrollbar=0" id="slide-iframe" allowfullscreen></iframe>
-        }
-        else
-        {
-            <iframe src="@materialUrl" id="slide-iframe" allowfullscreen></iframe>
-        }
+    </header>
+
+    <!-- ── Stage ── -->
+    <div id="viewer-stage">
+        <button class="stage-nav" id="stage-prev" title="Slide trước" disabled>
+            <span class="material-symbols-outlined" style="font-size:28px;">chevron_left</span>
+        </button>
+
+        <div id="slide-viewport">
+            <div id="slide-loader">
+                <div class="loader-spinner"></div>
+                <div class="loader-text">Đang tải tài liệu…</div>
+            </div>
+
+            @if (isLocalPdf)
+            {
+                <canvas id="slide-canvas"></canvas>
+            }
+            else
+            {
+                <iframe id="slide-iframe" src="@iframeUrl" allowfullscreen></iframe>
+            }
+        </div>
+
+        <button class="stage-nav" id="stage-next" title="Slide tiếp" disabled>
+            <span class="material-symbols-outlined" style="font-size:28px;">chevron_right</span>
+        </button>
+
+        <!-- Dots (hiện khi ≤ 30 trang) -->
+        <div id="slide-dots"></div>
+
+        <!-- Key hint -->
+        <div id="key-hint">
+            <span class="key-chip">← →</span> Điều hướng
+            <span class="key-chip">F</span> Toàn màn hình
+            <span class="key-chip">Esc</span> Thoát
+        </div>
     </div>
 
+    @if (isLocalPdf)
+    {
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+        <script>
+            pdfjsLib.GlobalWorkerOptions.workerSrc =
+                'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+            const PDF_URL = '@materialUrl';
+            let pdfDoc = null;
+            let currentPage = 1;
+            let totalPages = 0;
+            let isRendering = false;
+            let pendingPage = null;
+
+            const canvas      = document.getElementById('slide-canvas');
+            const ctx         = canvas.getContext('2d');
+            const loader      = document.getElementById('slide-loader');
+            const counter     = document.getElementById('slide-counter');
+            const dotsEl      = document.getElementById('slide-dots');
+            const hdrPrev     = document.getElementById('hdr-prev');
+            const hdrNext     = document.getElementById('hdr-next');
+            const stagePrev   = document.getElementById('stage-prev');
+            const stageNext   = document.getElementById('stage-next');
+
+            function updateNav() {
+                const atFirst = currentPage <= 1;
+                const atLast  = currentPage >= totalPages;
+                hdrPrev.disabled   = atFirst;
+                stagePrev.disabled = atFirst;
+                hdrNext.disabled   = atLast;
+                stageNext.disabled = atLast;
+                counter.textContent = `${currentPage} / ${totalPages}`;
+                if (dotsEl.children.length > 0) {
+                    [...dotsEl.children].forEach((d, i) =>
+                        d.classList.toggle('is-active', i + 1 === currentPage));
+                }
+            }
+
+            async function renderPage(num) {
+                if (isRendering) { pendingPage = num; return; }
+                isRendering = true;
+
+                const page     = await pdfDoc.getPage(num);
+                const viewport_raw = page.getViewport({ scale: 1 });
+                // Scale to fit slide-viewport
+                const viewport_el  = document.getElementById('slide-viewport');
+                const scaleW = viewport_el.clientWidth  / viewport_raw.width;
+                const scaleH = viewport_el.clientHeight / viewport_raw.height;
+                const scale  = Math.min(scaleW, scaleH) * window.devicePixelRatio;
+                const viewport = page.getViewport({ scale });
+
+                canvas.width  = viewport.width;
+                canvas.height = viewport.height;
+                canvas.style.opacity = '0';
+
+                await page.render({ canvasContext: ctx, viewport }).promise;
+
+                canvas.style.transition = 'opacity 0.2s ease';
+                canvas.style.opacity = '1';
+                isRendering = false;
+
+                if (pendingPage !== null) {
+                    const next = pendingPage;
+                    pendingPage = null;
+                    currentPage = next;
+                    updateNav();
+                    await renderPage(next);
+                }
+            }
+
+            async function goTo(num) {
+                if (num < 1 || num > totalPages) return;
+                currentPage = num;
+                updateNav();
+                await renderPage(num);
+            }
+
+            function buildDots(count) {
+                if (count > 30) return;
+                dotsEl.innerHTML = '';
+                for (let i = 1; i <= count; i++) {
+                    const d = document.createElement('button');
+                    d.className = 'dot';
+                    d.title = `Slide ${i}`;
+                    d.style.cursor = 'pointer';
+                    d.style.pointerEvents = 'auto';
+                    d.addEventListener('click', () => goTo(i));
+                    dotsEl.appendChild(d);
+                }
+            }
+
+            // Load PDF
+            pdfjsLib.getDocument(PDF_URL).promise.then(doc => {
+                pdfDoc     = doc;
+                totalPages = doc.numPages;
+                buildDots(totalPages);
+                hdrNext.disabled   = false;
+                stageNext.disabled = false;
+                updateNav();
+                loader.style.display = 'none';
+                return renderPage(1);
+            }).catch(err => {
+                loader.innerHTML = `<span class="material-symbols-outlined" style="font-size:48px;color:#f97316;">error</span><div class="loader-text" style="color:#f97316;">Không thể tải tài liệu</div><div class="loader-text">${err.message}</div>`;
+            });
+
+            // Navigation handlers
+            hdrPrev.addEventListener('click',   () => goTo(currentPage - 1));
+            hdrNext.addEventListener('click',   () => goTo(currentPage + 1));
+            stagePrev.addEventListener('click', () => goTo(currentPage - 1));
+            stageNext.addEventListener('click', () => goTo(currentPage + 1));
+
+            // Keyboard
+            document.addEventListener('keydown', e => {
+                if (e.key === 'ArrowLeft'  || e.key === 'PageUp')   { e.preventDefault(); goTo(currentPage - 1); }
+                if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { e.preventDefault(); goTo(currentPage + 1); }
+                if (e.key === 'Home') goTo(1);
+                if (e.key === 'End')  goTo(totalPages);
+                if (e.key === 'f' || e.key === 'F') toggleFullscreen();
+            });
+
+            // Resize → re-render
+            window.addEventListener('resize', () => { if (pdfDoc) renderPage(currentPage); });
+        </script>
+    }
+    else
+    {
+        <script>
+            // Hide loader when iframe is ready
+            document.getElementById('slide-iframe').addEventListener('load', () => {
+                document.getElementById('slide-loader').style.display = 'none';
+                document.getElementById('slide-counter').textContent = 'Slides';
+                document.getElementById('key-hint').style.display = 'none';
+            });
+        </script>
+    }
+
     <script>
-        function toggleFullScreen() {
-            var elem = document.getElementById("viewer-container");
+        function toggleFullscreen() {
+            const stage = document.getElementById('viewer-stage');
             if (!document.fullscreenElement) {
-                elem.requestFullscreen().catch(err => {
-                    console.error(`Error attempting to enable full-screen mode: ${err.message}`);
-                });
+                stage.requestFullscreen().catch(() => {});
             } else {
                 document.exitFullscreen();
             }
         }
-        
-        // Cập nhật giao diện khi đổi chế độ fullscreen (ẩn header)
-        document.addEventListener('fullscreenchange', (event) => {
-            var iframe = document.getElementById("slide-iframe");
-            var content = document.getElementById("viewer-container");
+
+        document.addEventListener('fullscreenchange', () => {
+            const btn  = document.getElementById('btn-fullscreen');
+            const icon = btn.querySelector('.material-symbols-outlined');
+            const text = btn.querySelector('span:last-child');
             if (document.fullscreenElement) {
-                content.style.height = "100vh";
+                icon.textContent = 'fullscreen_exit';
+                text.textContent = 'Thoát toàn màn hình';
             } else {
-                content.style.height = "calc(100vh - 64px)";
+                icon.textContent = 'fullscreen';
+                text.textContent = 'Toàn màn hình';
             }
         });
     </script>
