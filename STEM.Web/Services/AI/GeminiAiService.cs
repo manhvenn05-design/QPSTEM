@@ -9,8 +9,8 @@ namespace STEM.Web.Services.AI;
 
 /// <summary>
 /// Dịch vụ gọi Google Gemini AI.
-/// Chiến lược retry: KHÔNG retry khi 429 (quá tải) – trả lỗi ngay để người dùng biết.
-/// Retry tối đa 1 lần với exponential backoff CHỈ cho lỗi mạng tạm thời (5xx, timeout).
+/// Chiến lược retry: KHÔNG retry khi 429 – trả lỗi ngay để người dùng biết.
+/// Retry tối đa 1 lần với exponential backoff CHỈ cho lỗi mạng tạm thời (5xx).
 /// Cache kết quả để tránh gọi API lặp lại cho cùng đầu vào.
 /// </summary>
 public class GeminiAiService : IAIService
@@ -22,6 +22,21 @@ public class GeminiAiService : IAIService
 
     private const string GeminiBaseUrl = "https://generativelanguage.googleapis.com";
 
+    // Poll config: chờ 6s đầu, poll mỗi 6s, tối đa 10 lần → tổng ~66s
+    private const int PollInitialDelayMs = 6_000;
+    private const int PollIntervalMs = 6_000;
+    private const int PollMaxAttempts = 10;
+
+    private static readonly Dictionary<string, string> KnownMimeTypes = new(StringComparer.OrdinalIgnoreCase)
+    {
+        { ".mp4",  "video/mp4" },
+        { ".m4v",  "video/mp4" },
+        { ".mov",  "video/quicktime" },
+        { ".avi",  "video/x-msvideo" },
+        { ".webm", "video/webm" },
+        { ".mkv",  "video/x-matroska" },
+    };
+
     public GeminiAiService(
         HttpClient httpClient,
         IOptions<GoogleAiOptions> options,
@@ -32,19 +47,20 @@ public class GeminiAiService : IAIService
         _options = options.Value;
         _logger = logger;
         _cache = cache;
-        _httpClient.Timeout = TimeSpan.FromSeconds(
-            _options.RequestTimeoutSeconds > 0 ? _options.RequestTimeoutSeconds : 120);
+
+        // Timeout tổng: đủ cho upload + poll + analysis (180s)
+        _httpClient.Timeout = TimeSpan.FromSeconds(180);
     }
 
     // ─────────────────────────────────────────────────────────────────────────
     // [1] Làm mượt ghi chú thô của giáo viên thành nhận xét chuyên nghiệp
     // ─────────────────────────────────────────────────────────────────────────
-    public async Task<AIRequestResult<RefineNoteResult>> RefineTeacherNoteAsync(string rawNote)
+    public async Task<AIRequestResult<RefineNoteResult>> RefineTeacherNoteAsync(
+        string rawNote, CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(_options.ApiKey))
             return AIRequestResult<RefineNoteResult>.Fail("Hệ thống chưa cấu hình API Key.");
 
-        // Cache theo hash nội dung để tránh gọi API nhiều lần cho cùng ghi chú
         var cacheKey = $"ai:refine:{ComputeHash(rawNote)}";
         if (_cache.TryGetValue(cacheKey, out RefineNoteResult? cached) && cached != null)
             return AIRequestResult<RefineNoteResult>.Ok(cached);
@@ -68,7 +84,7 @@ public class GeminiAiService : IAIService
 
         try
         {
-            var json = await CallWithRetryAsync(url, payload);
+            var json = await CallWithRetryAsync(url, payload, ct);
             var text = ExtractTextFromResponse(json);
             if (text == null)
                 return AIRequestResult<RefineNoteResult>.Fail("Không thể phân tích phản hồi từ AI.");
@@ -77,18 +93,22 @@ public class GeminiAiService : IAIService
             _cache.Set(cacheKey, result, TimeSpan.FromHours(2));
             return AIRequestResult<RefineNoteResult>.Ok(result);
         }
-        catch (GeminiRateLimitException)
+        catch (GeminiRateLimitException ex)
         {
-            return AIRequestResult<RefineNoteResult>.Fail("AI đang bận, vui lòng thử lại sau ít phút.");
+            return AIRequestResult<RefineNoteResult>.Fail(ex.UserMessage());
+        }
+        catch (OperationCanceledException)
+        {
+            return AIRequestResult<RefineNoteResult>.Fail("Yêu cầu bị hủy.");
         }
         catch (HttpRequestException ex)
         {
-            _logger.LogError(ex, "Lỗi HTTP khi gọi AI RefineNote.");
+            _logger.LogError(ex, "[AI:RefineNote] Lỗi HTTP. Status={Status}", ex.StatusCode);
             return AIRequestResult<RefineNoteResult>.Fail(MapHttpError(ex));
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Lỗi hệ thống khi gọi AI RefineNote.");
+            _logger.LogError(ex, "[AI:RefineNote] Lỗi hệ thống không xác định.");
             return AIRequestResult<RefineNoteResult>.Fail("Có lỗi xảy ra, vui lòng thử lại sau.");
         }
     }
@@ -97,7 +117,7 @@ public class GeminiAiService : IAIService
     // [2] Phân tích video thuyết trình của học sinh
     // ─────────────────────────────────────────────────────────────────────────
     public async Task<AIRequestResult<VideoAnalysisResult>> AnalyzePresentationVideoAsync(
-        string absoluteFilePath, string mimeType)
+        string absoluteFilePath, string mimeType, CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(_options.ApiKey))
             return AIRequestResult<VideoAnalysisResult>.Fail("Hệ thống chưa cấu hình API Key.");
@@ -105,42 +125,62 @@ public class GeminiAiService : IAIService
         if (!File.Exists(absoluteFilePath))
             return AIRequestResult<VideoAnalysisResult>.Fail("Không tìm thấy file video.");
 
-        // Cache theo tên file + kích thước để nhận diện file đã xử lý
+        // Ghi đè mimeType bằng detection chính xác theo extension
+        var ext = Path.GetExtension(absoluteFilePath);
+        if (KnownMimeTypes.TryGetValue(ext, out var detectedMime))
+            mimeType = detectedMime;
+
         var fileInfo = new FileInfo(absoluteFilePath);
         var cacheKey = $"ai:video:{fileInfo.Name}:{fileInfo.Length}";
         if (_cache.TryGetValue(cacheKey, out VideoAnalysisResult? cached) && cached != null)
             return AIRequestResult<VideoAnalysisResult>.Ok(cached);
 
+        _logger.LogInformation("[AI:Video] Bắt đầu phân tích: {File} ({Size}KB, {Mime})",
+            fileInfo.Name, fileInfo.Length / 1024, mimeType);
+
         try
         {
             // BƯỚC 1: Upload file lên Google Files API
-            var (fileUri, fileName) = await UploadVideoAsync(absoluteFilePath, mimeType);
+            var (fileUri, fileName) = await UploadVideoAsync(absoluteFilePath, mimeType, ct);
+            _logger.LogInformation("[AI:Video] Upload thành công → {FileName}", fileName);
 
             // BƯỚC 2: Poll cho đến khi file sẵn sàng (ACTIVE)
-            var ready = await WaitForFileReadyAsync(fileName);
+            var ready = await WaitForFileReadyAsync(fileName, ct);
             if (!ready)
                 return AIRequestResult<VideoAnalysisResult>.Fail("AI xử lý video quá lâu. Vui lòng thử lại.");
 
+            _logger.LogInformation("[AI:Video] File ACTIVE, bắt đầu phân tích nội dung.");
+
             // BƯỚC 3: Gọi generateContent để phân tích
-            var result = await AnalyzeVideoContentAsync(fileUri, mimeType);
+            var result = await AnalyzeVideoContentAsync(fileUri, mimeType, ct);
             if (result.Success && result.Data != null)
                 _cache.Set(cacheKey, result.Data, TimeSpan.FromHours(12));
 
             return result;
         }
-        catch (GeminiRateLimitException)
+        catch (GeminiRateLimitException ex)
         {
+            return AIRequestResult<VideoAnalysisResult>.Fail(ex.UserMessage());
+        }
+        catch (TaskCanceledException ex) when (!ct.IsCancellationRequested)
+        {
+            // HttpClient timeout (không phải user cancel)
+            _logger.LogError(ex, "[AI:Video] HttpClient timeout khi xử lý video.");
             return AIRequestResult<VideoAnalysisResult>.Fail(
-                "AI đang bận (quá tải). Vui lòng chờ 1-2 phút rồi thử lại.");
+                "Quá thời gian chờ AI xử lý video. Vui lòng thử lại với video ngắn hơn.");
+        }
+        catch (OperationCanceledException)
+        {
+            return AIRequestResult<VideoAnalysisResult>.Fail("Yêu cầu bị hủy.");
         }
         catch (HttpRequestException ex)
         {
-            _logger.LogError(ex, "Lỗi HTTP khi phân tích video.");
+            _logger.LogError(ex, "[AI:Video] Lỗi HTTP. Status={Status}", ex.StatusCode);
             return AIRequestResult<VideoAnalysisResult>.Fail(MapHttpError(ex));
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Lỗi hệ thống khi phân tích video.");
+            _logger.LogError(ex, "[AI:Video] Lỗi hệ thống: {Msg}", ex.Message);
             return AIRequestResult<VideoAnalysisResult>.Fail($"Lỗi hệ thống: {ex.Message}");
         }
     }
@@ -150,10 +190,10 @@ public class GeminiAiService : IAIService
     // ─────────────────────────────────────────────────────────────────────────
 
     private async Task<(string fileUri, string fileName)> UploadVideoAsync(
-        string filePath, string mimeType)
+        string filePath, string mimeType, CancellationToken ct)
     {
         var uploadUrl = $"{GeminiBaseUrl}/upload/v1beta/files?uploadType=media&key={_options.ApiKey}";
-        var fileBytes = await File.ReadAllBytesAsync(filePath);
+        var fileBytes = await File.ReadAllBytesAsync(filePath, ct);
 
         var fileContent = new ByteArrayContent(fileBytes);
         fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(mimeType);
@@ -161,13 +201,14 @@ public class GeminiAiService : IAIService
         var request = new HttpRequestMessage(HttpMethod.Post, uploadUrl) { Content = fileContent };
         request.Headers.Add("X-Goog-Upload-File-Name", Path.GetFileName(filePath));
 
-        var response = await _httpClient.SendAsync(request);
-        var body = await response.Content.ReadAsStringAsync();
+        var response = await _httpClient.SendAsync(request, ct);
+        var body = await response.Content.ReadAsStringAsync(ct);
 
         if (!response.IsSuccessStatusCode)
         {
-            _logger.LogError("Upload video thất bại ({Status}): {Body}", response.StatusCode, body);
-            throw new InvalidOperationException($"Upload thất bại: {response.StatusCode}");
+            _logger.LogError("[AI:Upload] Thất bại ({Status}): {Body}", response.StatusCode,
+                body.Length > 500 ? body[..500] : body);
+            throw new HttpRequestException($"Upload thất bại: {response.StatusCode}", null, response.StatusCode);
         }
 
         using var doc = JsonDocument.Parse(body);
@@ -178,33 +219,36 @@ public class GeminiAiService : IAIService
         );
     }
 
-    private async Task<bool> WaitForFileReadyAsync(string fileName)
+    private async Task<bool> WaitForFileReadyAsync(string fileName, CancellationToken ct)
     {
-        // Chờ 8s trước, sau đó poll mỗi 5s, tối đa 15 lần (~83s tổng)
-        await Task.Delay(8000);
+        await Task.Delay(PollInitialDelayMs, ct);
 
-        for (int i = 0; i < 15; i++)
+        for (int i = 0; i < PollMaxAttempts; i++)
         {
+            ct.ThrowIfCancellationRequested();
+
             var checkUrl = $"{GeminiBaseUrl}/v1beta/{fileName}?key={_options.ApiKey}";
-            var resp = await _httpClient.GetAsync(checkUrl);
-            var body = await resp.Content.ReadAsStringAsync();
+            var resp = await _httpClient.GetAsync(checkUrl, ct);
+            var body = await resp.Content.ReadAsStringAsync(ct);
 
             using var doc = JsonDocument.Parse(body);
             var state = doc.RootElement.TryGetProperty("state", out var sp)
                 ? sp.GetString() : null;
 
+            _logger.LogDebug("[AI:Poll] attempt={I}, state={State}", i + 1, state);
+
             if (state == "ACTIVE") return true;
             if (state == "FAILED")
                 throw new InvalidOperationException("Google Files API báo FAILED khi xử lý video.");
 
-            await Task.Delay(5000);
+            await Task.Delay(PollIntervalMs, ct);
         }
 
         return false;
     }
 
     private async Task<AIRequestResult<VideoAnalysisResult>> AnalyzeVideoContentAsync(
-        string fileUri, string mimeType)
+        string fileUri, string mimeType, CancellationToken ct)
     {
         var prompt = """
             Bạn là chuyên gia giáo dục STEM đang xem xét video được tải lên bởi giáo viên.
@@ -241,16 +285,28 @@ public class GeminiAiService : IAIService
         };
 
         var url = BuildGenerateUrl();
-        var responseJson = await CallWithRetryAsync(url, payload);
+        var responseJson = await CallWithRetryAsync(url, payload, ct);
 
-        // Parse candidates
         using var doc = JsonDocument.Parse(responseJson);
         var root = doc.RootElement;
 
         if (!root.TryGetProperty("candidates", out var candidates) || candidates.GetArrayLength() == 0)
             return AIRequestResult<VideoAnalysisResult>.Fail("AI không trả về kết quả. Vui lòng thử lại.");
 
-        var textRaw = candidates[0]
+        var candidate = candidates[0];
+
+        // Kiểm tra finishReason để phát hiện lỗi content filter, etc.
+        if (candidate.TryGetProperty("finishReason", out var finishReason))
+        {
+            var reason = finishReason.GetString();
+            if (reason is "SAFETY" or "RECITATION" or "OTHER")
+            {
+                _logger.LogWarning("[AI:Video] finishReason={Reason}", reason);
+                return AIRequestResult<VideoAnalysisResult>.Fail("AI không thể phân tích video này.");
+            }
+        }
+
+        var textRaw = candidate
             .GetProperty("content")
             .GetProperty("parts")[0]
             .GetProperty("text")
@@ -264,18 +320,26 @@ public class GeminiAiService : IAIService
             if (textRaw.EndsWith("```")) textRaw = textRaw[..^3].Trim();
         }
 
-        using var resultDoc = JsonDocument.Parse(textRaw);
-        var resultRoot = resultDoc.RootElement;
-
-        // Kiểm tra is_valid
-        if (resultRoot.TryGetProperty("is_valid", out var isValidProp) && !isValidProp.GetBoolean())
+        try
         {
-            var reason = resultRoot.TryGetProperty("reason", out var r)
-                ? r.GetString() : "Video không phải thuyết trình của học sinh.";
-            return AIRequestResult<VideoAnalysisResult>.Fail($"Video không hợp lệ: {reason}");
-        }
+            using var resultDoc = JsonDocument.Parse(textRaw);
+            var resultRoot = resultDoc.RootElement;
 
-        return AIRequestResult<VideoAnalysisResult>.Ok(VideoAnalysisResult.FromJson(resultRoot));
+            if (resultRoot.TryGetProperty("is_valid", out var isValidProp) && !isValidProp.GetBoolean())
+            {
+                var reason = resultRoot.TryGetProperty("reason", out var r)
+                    ? r.GetString() : "Video không phải thuyết trình của học sinh.";
+                return AIRequestResult<VideoAnalysisResult>.Fail($"Video không hợp lệ: {reason}");
+            }
+
+            return AIRequestResult<VideoAnalysisResult>.Ok(VideoAnalysisResult.FromJson(resultRoot));
+        }
+        catch (JsonException ex)
+        {
+            _logger.LogError(ex, "[AI:Video] Không parse được JSON response: {Raw}",
+                textRaw.Length > 200 ? textRaw[..200] : textRaw);
+            return AIRequestResult<VideoAnalysisResult>.Fail("AI trả về định dạng không hợp lệ. Vui lòng thử lại.");
+        }
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -283,62 +347,112 @@ public class GeminiAiService : IAIService
     // ─────────────────────────────────────────────────────────────────────────
 
     /// <summary>
-    /// Gọi API với 1 lần retry cho lỗi mạng/server (5xx).
-    /// KHÔNG retry khi 429 – ném GeminiRateLimitException để caller báo ngay cho user.
+    /// Retry tối đa 1 lần cho lỗi 5xx.
+    /// 429 → throw GeminiRateLimitException ngay (không retry).
+    /// Lần cuối (attempt=1) → để exception tự nhiên propagate.
     /// </summary>
-    private async Task<string> CallWithRetryAsync(string url, object payload)
+    private async Task<string> CallWithRetryAsync(string url, object payload, CancellationToken ct)
     {
+        HttpRequestException? lastEx = null;
+
         for (int attempt = 0; attempt <= 1; attempt++)
         {
             try
             {
-                return await PostJsonAsync(url, payload);
+                return await PostJsonAsync(url, payload, ct);
+            }
+            catch (GeminiRateLimitException)
+            {
+                throw; // Không retry 429
             }
             catch (HttpRequestException ex) when (
-                attempt == 0 && ex.StatusCode != null &&
+                attempt == 0 &&
+                ex.StatusCode != null &&
                 (int)ex.StatusCode.Value >= 500)
             {
                 // Server error tạm thời → thử lại 1 lần sau 3s
-                _logger.LogWarning("Gemini trả về {Status}, thử lại sau 3s...", ex.StatusCode);
-                await Task.Delay(3000);
-            }
-            catch (HttpRequestException ex) when (
-                ex.StatusCode == HttpStatusCode.TooManyRequests)
-            {
-                // 429 → KHÔNG retry, throw ngay
-                _logger.LogWarning("Gemini 429 – Rate limit exceeded.");
-                throw new GeminiRateLimitException();
+                lastEx = ex;
+                _logger.LogWarning("[AI:Retry] Gemini {Status}, thử lại sau 3s...", ex.StatusCode);
+                await Task.Delay(3000, ct);
             }
         }
 
-        // Lần thử cuối không được bắt exception
-        return await PostJsonAsync(url, payload);
+        // Lần thử cuối – không catch, để exception propagate tự nhiên
+        try { return await PostJsonAsync(url, payload, ct); }
+        catch (HttpRequestException ex)
+        {
+            _logger.LogError(ex, "[AI:Retry] Thất bại sau {Attempts} lần thử.", 2);
+            throw;
+        }
     }
 
-    private async Task<string> PostJsonAsync(string url, object payload)
+    private async Task<string> PostJsonAsync(string url, object payload, CancellationToken ct)
     {
         var body = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
-        var response = await _httpClient.PostAsync(url, body);
-        var responseText = await response.Content.ReadAsStringAsync();
+        var response = await _httpClient.PostAsync(url, body, ct);
+        var responseText = await response.Content.ReadAsStringAsync(ct);
+
+        if (response.StatusCode == HttpStatusCode.TooManyRequests)
+        {
+            // Parse thời gian retry từ message của Gemini: "Please retry in 37.87s"
+            int? retrySeconds = TryParseRetrySeconds(responseText);
+            bool isQuotaExhausted = responseText.Contains("limit: 0");
+
+            _logger.LogWarning("[AI] 429 – {Kind}. RetryAfter={Retry}s",
+                isQuotaExhausted ? "Quota exhausted" : "Rate limited", retrySeconds);
+
+            throw new GeminiRateLimitException(retrySeconds, isQuotaExhausted);
+        }
 
         if (!response.IsSuccessStatusCode)
+        {
+            _logger.LogError("[AI] HTTP {Status}: {Body}", (int)response.StatusCode,
+                responseText.Length > 300 ? responseText[..300] : responseText);
             throw new HttpRequestException(
                 $"HTTP {(int)response.StatusCode}: {responseText}", null, response.StatusCode);
+        }
 
         return responseText;
     }
 
+    /// <summary>Tìm "Please retry in X.XXs" trong body Gemini 429.</summary>
+    private static int? TryParseRetrySeconds(string body)
+    {
+        const string marker = "Please retry in ";
+        var idx = body.IndexOf(marker, StringComparison.OrdinalIgnoreCase);
+        if (idx < 0) return null;
+        var after = body[(idx + marker.Length)..];
+        var end = after.IndexOfAny(['s', ' ', '"', '\n']);
+        if (end <= 0) return null;
+        if (double.TryParse(after[..end],
+            System.Globalization.NumberStyles.Float,
+            System.Globalization.CultureInfo.InvariantCulture,
+            out var secs))
+        {
+            return (int)Math.Ceiling(secs);
+        }
+        return null;
+    }
+
     private string? ExtractTextFromResponse(string json)
     {
-        using var doc = JsonDocument.Parse(json);
-        var root = doc.RootElement;
-        if (!root.TryGetProperty("candidates", out var candidates) || candidates.GetArrayLength() == 0)
+        try
+        {
+            using var doc = JsonDocument.Parse(json);
+            var root = doc.RootElement;
+            if (!root.TryGetProperty("candidates", out var candidates) || candidates.GetArrayLength() == 0)
+                return null;
+            return candidates[0]
+                .GetProperty("content")
+                .GetProperty("parts")[0]
+                .GetProperty("text")
+                .GetString()?.Trim();
+        }
+        catch (JsonException ex)
+        {
+            _logger.LogError(ex, "[AI] Không parse được response JSON.");
             return null;
-        return candidates[0]
-            .GetProperty("content")
-            .GetProperty("parts")[0]
-            .GetProperty("text")
-            .GetString()?.Trim();
+        }
     }
 
     private static object BuildTextPayload(string prompt, double temperature = 0.7) => new
@@ -352,7 +466,8 @@ public class GeminiAiService : IAIService
 
     private static string MapHttpError(HttpRequestException ex) => ex.StatusCode switch
     {
-        HttpStatusCode.Forbidden => "API Key không hợp lệ hoặc đã bị chặn.",
+        HttpStatusCode.Unauthorized => "API Key không hợp lệ hoặc hết hạn.",
+        HttpStatusCode.Forbidden => "API Key bị chặn hoặc không có quyền truy cập.",
         HttpStatusCode.TooManyRequests => "AI đang bận. Vui lòng thử lại sau ít phút.",
         null => "Không thể kết nối đến AI (lỗi mạng).",
         _ => $"Lỗi từ AI ({(int)ex.StatusCode!})."
@@ -364,5 +479,26 @@ public class GeminiAiService : IAIService
         return Convert.ToHexString(bytes).ToLowerInvariant();
     }
 
-    private sealed class GeminiRateLimitException : Exception { }
+    private sealed class GeminiRateLimitException : Exception
+    {
+        public int? RetrySeconds { get; }
+        public bool IsQuotaExhausted { get; }
+
+        public GeminiRateLimitException(int? retrySeconds = null, bool isQuotaExhausted = false)
+        {
+            RetrySeconds = retrySeconds;
+            IsQuotaExhausted = isQuotaExhausted;
+        }
+
+        public string UserMessage()
+        {
+            if (IsQuotaExhausted)
+                return "Hệ thống AI đã hết hạn mức sử dụng miễn phí trong ngày hôm nay. Vui lòng thử lại vào ngày mai.";
+
+            if (RetrySeconds.HasValue)
+                return $"AI đang bận, vui lòng thử lại sau {RetrySeconds} giây.";
+
+            return "AI đang bận, vui lòng thử lại sau ít phút.";
+        }
+    }
 }
