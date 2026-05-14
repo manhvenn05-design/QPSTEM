@@ -68,7 +68,7 @@ public class UsersController : Controller
                 Role = NormalizeRoleLabel(x.Role.Name),
                 RoleBadgeClass = GetRoleBadgeClass(x.Role.Name),
                 Status = x.IsActive ? "Hoạt động" : "Bị khóa",
-                StatusBadgeClass = x.IsActive ? "bg-[#edf7e8] text-[#5b8d3f]" : "bg-[#fdeaea] text-[#c94d48]",
+                StatusBadgeClass = x.IsActive ? "bg-[#e6eef9] text-[#1a3a6e]" : "bg-[#fdeaea] text-[#ba1a1a]",
                 JoinedAt = x.CreatedAt.HasValue ? x.CreatedAt.Value.ToString("dd/MM/yyyy") : "Chưa có dữ liệu",
                 AvatarText = GetAvatarText(x.FullName),
                 AvatarClass = GetAvatarClass(x.Role.Name),
@@ -115,7 +115,7 @@ public class UsersController : Controller
             RoleName = NormalizeRoleLabel(user.Role.Name),
             IsActive = user.IsActive,
             StatusLabel = user.IsActive ? "Hoạt động" : "Bị khóa",
-            StatusBadgeClass = user.IsActive ? "bg-[#edf7e8] text-[#5b8d3f]" : "bg-[#fdeaea] text-[#c94d48]",
+            StatusBadgeClass = user.IsActive ? "bg-[#e6eef9] text-[#1a3a6e]" : "bg-[#fdeaea] text-[#ba1a1a]",
             CurrentSchool = user.StudentProfile?.CurrentSchool,
             GuardianName = user.StudentProfile?.GuardianName,
             GuardianPhone = user.StudentProfile?.GuardianPhone,
@@ -679,8 +679,8 @@ public class UsersController : Controller
     {
         return roleName switch
         {
-            "Admin" => "bg-[#eaf3e4] text-[#5a7f48]",
-            "Teacher" or "Giáo viên" => "bg-[#f0f2eb] text-[#677063]",
+            "Admin" => "bg-[#e6eef9] text-[#1a3a6e]",
+            "Teacher" or "Giáo viên" => "bg-[#fef1e8] text-[#f97316]",
             "Student" or "Học sinh" => "bg-[#eef1f4] text-[#5f7383]",
             _ => "bg-[#f0f2eb] text-[#677063]"
         };
@@ -695,8 +695,8 @@ public class UsersController : Controller
     {
         return roleName switch
         {
-            "Admin" => "bg-[#dce9d4] text-[#547144]",
-            "Teacher" or "Giáo viên" => "bg-[#bde5a8] text-[#5e8b4a]",
+            "Admin" => "bg-[#d1def0] text-[#1a3a6e]",
+            "Teacher" or "Giáo viên" => "bg-[#fed8b8] text-[#d05c0d]",
             "Student" or "Học sinh" => "bg-[#dbe6ef] text-[#567187]",
             _ => "bg-[#ecece7] text-[#7a7f75]"
         };
