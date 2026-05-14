@@ -41,32 +41,31 @@
         <div asp-validation-summary="ModelOnly" class="teacher-alert teacher-alert--error"></div>
     }
 
-    <div class="teacher-stat-grid teacher-stat-grid--5">
-        <article class="teacher-stat-card">
-            <span class="teacher-stat-label">Sĩ số lớp</span>
-            <div class="teacher-stat-value">@Model.StudentCount</div>
-            <p class="teacher-kicker">Tổng số học viên của buổi học này.</p>
-        </article>
-        <article class="teacher-stat-card">
-            <span class="teacher-stat-label">Đã ghi nhận</span>
-            <div class="teacher-stat-value">@Model.AttendanceCount</div>
-            <p class="teacher-kicker">Số học viên đã có dữ liệu điểm danh.</p>
-        </article>
-        <article class="teacher-stat-card">
-            <span class="teacher-stat-label">Chưa ghi nhận</span>
-            <div class="teacher-stat-value">@Model.MissingCount</div>
-            <p class="teacher-kicker">Các học viên chưa có bản ghi cho buổi học.</p>
-        </article>
-        <article class="teacher-stat-card">
-            <span class="teacher-stat-label">Có mặt</span>
-            <div class="teacher-stat-value">@Model.PresentCount</div>
-            <p class="teacher-kicker">Số học viên được đánh dấu có mặt.</p>
-        </article>
-        <article class="teacher-stat-card">
-            <span class="teacher-stat-label">Vắng</span>
-            <div class="teacher-stat-value">@Model.AbsentCount</div>
-            <p class="teacher-kicker">Số học viên được đánh dấu vắng.</p>
-        </article>
+    <div class="teacher-board-stat-bar">
+        <div class="teacher-board-stat-item">
+            <span class="teacher-board-stat-value">@Model.StudentCount</span>
+            <span class="teacher-board-stat-label">Sĩ số lớp</span>
+        </div>
+        <div class="teacher-board-stat-divider"></div>
+        <div class="teacher-board-stat-item">
+            <span class="teacher-board-stat-value">@Model.AttendanceCount</span>
+            <span class="teacher-board-stat-label">Đã ghi nhận</span>
+        </div>
+        <div class="teacher-board-stat-divider"></div>
+        <div class="teacher-board-stat-item teacher-board-stat-item--warn">
+            <span class="teacher-board-stat-value">@Model.MissingCount</span>
+            <span class="teacher-board-stat-label">Chưa ghi nhận</span>
+        </div>
+        <div class="teacher-board-stat-divider"></div>
+        <div class="teacher-board-stat-item teacher-board-stat-item--present">
+            <span class="teacher-board-stat-value">@Model.PresentCount</span>
+            <span class="teacher-board-stat-label">Có mặt</span>
+        </div>
+        <div class="teacher-board-stat-divider"></div>
+        <div class="teacher-board-stat-item teacher-board-stat-item--absent">
+            <span class="teacher-board-stat-value">@Model.AbsentCount</span>
+            <span class="teacher-board-stat-label">Vắng</span>
+        </div>
     </div>
 
     @if (!Model.HasStudents)
