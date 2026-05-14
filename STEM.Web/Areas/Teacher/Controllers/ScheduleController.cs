@@ -195,6 +195,7 @@ public class ScheduleController : Controller
                 Topic = string.IsNullOrWhiteSpace(x.Topic) ? "Chưa cập nhật chủ đề" : x.Topic,
                 TeachingMaterialUrl = x.TeachingMaterialUrl ?? string.Empty,
                 AssistantNote = x.AssistantNote,
+                ClassMediaUrls = x.ClassMediaUrls,
                 StudentCount = x.Class.Enrollments.Count,
                 AttendanceCount = x.Attendances.Count,
                 EquipmentBorrowCount = x.EquipmentBorrows.Count,
@@ -252,6 +253,34 @@ public class ScheduleController : Controller
         ViewBag.Topic = session.Topic;
         
         return View();
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> UpdateNotes(TeacherUpdateSessionNotesViewModel model)
+    {
+        var teacherId = GetCurrentTeacherId();
+        if (!teacherId.HasValue)
+        {
+            return Challenge();
+        }
+
+        var session = await _context.Sessions
+            .Where(x => x.Id == model.SessionId && x.Class.TeacherId == teacherId.Value)
+            .FirstOrDefaultAsync();
+
+        if (session == null)
+        {
+            return NotFound();
+        }
+
+        session.ClassMediaUrls = model.ClassMediaUrls;
+        session.AssistantNote = model.AssistantNote;
+        
+        await _context.SaveChangesAsync();
+
+        TempData["SuccessMessage"] = "Đã lưu ghi chú và media thành công.";
+        return RedirectToAction(nameof(Details), new { id = model.SessionId });
     }
 
     private int? GetCurrentTeacherId()

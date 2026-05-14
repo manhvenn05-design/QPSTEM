@@ -108,11 +108,23 @@ public class TeacherScheduleDetailsViewModel
     public string Topic { get; set; } = string.Empty;
     public string TeachingMaterialUrl { get; set; } = string.Empty;
     public string? AssistantNote { get; set; }
+    public string? ClassMediaUrls { get; set; }
     public int StudentCount { get; set; }
     public int AttendanceCount { get; set; }
     public int EquipmentBorrowCount { get; set; }
     public IReadOnlyList<TeacherScheduleStudentItemViewModel> Students { get; set; } = [];
     public IReadOnlyList<TeacherScheduleEquipmentItemViewModel> Equipments { get; set; } = [];
+}
+
+public class TeacherUpdateSessionNotesViewModel
+{
+    public int SessionId { get; set; }
+    
+    [Display(Name = "Media cả lớp (Dán URL ảnh/video)")]
+    public string? ClassMediaUrls { get; set; }
+    
+    [Display(Name = "Ghi chú trợ giảng")]
+    public string? AssistantNote { get; set; }
 }
 
 public class TeacherScheduleStudentItemViewModel

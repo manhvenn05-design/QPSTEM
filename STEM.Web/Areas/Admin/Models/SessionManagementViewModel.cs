@@ -73,12 +73,6 @@ public class CreateSessionViewModel : IValidatableObject
     [Display(Name = "File giáo án (PDF)")]
     public IFormFile? MaterialFile { get; set; }
 
-    [Display(Name = "Media cả lớp")]
-    public string? ClassMediaUrls { get; set; }
-
-    [Display(Name = "Ghi chú trợ giảng")]
-    public string? AssistantNote { get; set; }
-
     public IReadOnlyList<SelectListItem> ClassOptions { get; set; } = [];
 
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)

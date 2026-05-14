@@ -50,13 +50,37 @@
                         </dl>
                     </div>
 
-                    @if (!string.IsNullOrWhiteSpace(Model.AssistantNote))
-                    {
-                        <div class="teacher-divider mt-6 pt-6">
-                            <h3 class="text-sm font-semibold text-[#1a1c19]">Ghi chú trợ giảng</h3>
-                            <p class="teacher-list-note mt-3">@Model.AssistantNote</p>
+                </div>
+            </div>
+
+            <div class="teacher-card">
+                <div class="teacher-card-section">
+                    <h2 class="teacher-section-title">Cập nhật sau buổi học</h2>
+                    <p class="teacher-section-subtitle mt-1">Lưu lại hình ảnh/video của lớp và ghi chú về buổi học, trợ giảng.</p>
+                    
+                    <form asp-area="Teacher" asp-controller="Schedule" asp-action="UpdateNotes" method="post" class="mt-6">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="SessionId" value="@Model.SessionId" />
+                        
+                        <div class="space-y-4">
+                            <div>
+                                <label for="ClassMediaUrls" class="block text-sm font-medium text-[#1a1c19] mb-1">Media cả lớp</label>
+                                <textarea id="ClassMediaUrls" name="ClassMediaUrls" class="w-full rounded-md border border-[#c2c9b9] bg-white px-3 py-2 text-sm text-[#1a1c19] outline-none transition-colors focus:border-[#f97316] focus:ring-1 focus:ring-[#f97316]" rows="3" placeholder="Dán URL ảnh hoặc video của học sinh/lớp học...">@Model.ClassMediaUrls</textarea>
+                            </div>
+                            
+                            <div>
+                                <label for="AssistantNote" class="block text-sm font-medium text-[#1a1c19] mb-1">Ghi chú trợ giảng (Nếu có)</label>
+                                <textarea id="AssistantNote" name="AssistantNote" class="w-full rounded-md border border-[#c2c9b9] bg-white px-3 py-2 text-sm text-[#1a1c19] outline-none transition-colors focus:border-[#f97316] focus:ring-1 focus:ring-[#f97316]" rows="3" placeholder="Nhận xét trợ giảng, ghi chú lưu ý buổi học...">@Model.AssistantNote</textarea>
+                            </div>
                         </div>
-                    }
+                        
+                        <div class="mt-4 flex justify-end">
+                            <button type="submit" class="teacher-btn-primary">
+                                <span class="material-symbols-outlined text-[18px]">save</span>
+                                <span>Lưu cập nhật</span>
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </div>
 

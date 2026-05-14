@@ -210,9 +210,7 @@ public class SessionsController : Controller
             StartTime = model.StartTime!.Value,
             EndTime = model.EndTime!.Value,
             Topic = NormalizeText(model.Topic),
-            TeachingMaterialUrl = teachingMaterialUrl,
-            ClassMediaUrls = NormalizeText(model.ClassMediaUrls),
-            AssistantNote = NormalizeText(model.AssistantNote)
+            TeachingMaterialUrl = teachingMaterialUrl
         };
 
         _context.Sessions.Add(entity);
@@ -243,9 +241,7 @@ public class SessionsController : Controller
             StartTime = entity.StartTime,
             EndTime = entity.EndTime,
             Topic = entity.Topic,
-            TeachingMaterialUrl = entity.TeachingMaterialUrl,
-            ClassMediaUrls = entity.ClassMediaUrls,
-            AssistantNote = entity.AssistantNote
+            TeachingMaterialUrl = entity.TeachingMaterialUrl
         };
 
         await PopulateOptionsAsync(model);
@@ -300,8 +296,6 @@ public class SessionsController : Controller
         entity.EndTime = model.EndTime!.Value;
         entity.Topic = NormalizeText(model.Topic);
         entity.TeachingMaterialUrl = teachingMaterialUrl;
-        entity.ClassMediaUrls = NormalizeText(model.ClassMediaUrls);
-        entity.AssistantNote = NormalizeText(model.AssistantNote);
 
         await _context.SaveChangesAsync();
 
