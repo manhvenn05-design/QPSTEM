@@ -80,6 +80,9 @@ public class CreateSessionViewModel : IValidatableObject
     public IReadOnlyList<SelectListItem> ClassOptions { get; set; } = [];
     public IReadOnlyList<SelectListItem> RoomOptions { get; set; } = [];
 
+    /// <summary>Hint hiển thị trạng thái lớp: số buổi đã học, số học viên...</summary>
+    public string? ClassHint { get; set; }
+
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {
         if (StartTime.HasValue && EndTime.HasValue && EndTime.Value <= StartTime.Value)

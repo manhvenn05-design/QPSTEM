@@ -175,7 +175,60 @@ public class SessionsController : Controller
             ClassId = classId
         };
         await PopulateOptionsAsync(model);
+
+        // Tự động tính số buổi tiếp theo nếu đã biết lớp
+        if (classId.HasValue)
+        {
+            var nextNo = await _context.Sessions
+                .Where(s => s.ClassId == classId.Value)
+                .Select(s => (int?)s.SessionNo)
+                .MaxAsync() ?? 0;
+            model.SessionNo = nextNo + 1;
+
+            // Thông tin lớp để hiển thị hint
+            var classInfo = await _context.Classes
+                .AsNoTracking()
+                .Where(c => c.Id == classId.Value)
+                .Select(c => new
+                {
+                    c.ClassCode,
+                    CourseName = c.Course.Name,
+                    c.Course.TotalSessions,
+                    c.Course.MinStudents,
+                    EnrollmentCount = c.Enrollments.Count
+                })
+                .FirstOrDefaultAsync();
+
+            if (classInfo != null)
+            {
+                model.ClassHint = $"Lớp {classInfo.ClassCode} — {classInfo.CourseName} | Đã học {nextNo}/{classInfo.TotalSessions} buổi | {classInfo.EnrollmentCount} học viên (Tối thiểu: {classInfo.MinStudents})";
+            }
+        }
+
         return View(model);
+    }
+
+    /// <summary>AJAX endpoint: trả về thông tin lớp để form tự động điền SessionNo</summary>
+    [HttpGet]
+    public async Task<IActionResult> GetClassInfo(int classId)
+    {
+        var classInfo = await _context.Classes
+            .AsNoTracking()
+            .Where(c => c.Id == classId)
+            .Select(c => new
+            {
+                c.ClassCode,
+                CourseName = c.Course.Name,
+                TotalSessions = c.Course.TotalSessions,
+                MinStudents = c.Course.MinStudents,
+                EnrollmentCount = c.Enrollments.Count,
+                NextSessionNo = c.Sessions.Count == 0 ? 1 : c.Sessions.Max(s => s.SessionNo) + 1,
+                CurrentSessionCount = c.Sessions.Count
+            })
+            .FirstOrDefaultAsync();
+
+        if (classInfo == null) return NotFound();
+        return Json(classInfo);
     }
 
     [HttpPost]
@@ -416,9 +469,18 @@ public class SessionsController : Controller
                 x.StartDate,
                 x.EndDate,
                 x.TeacherId,
-                TotalSessions = x.Course.TotalSessions
+                TotalSessions = x.Course.TotalSessions,
+                MinStudents = x.Course.MinStudents,
+                EnrollmentCount = x.Enrollments.Count
             })
             .FirstAsync();
+
+        // Kiểm tra số học sinh tối thiểu
+        if (classInfo.MinStudents > 0 && classInfo.EnrollmentCount < classInfo.MinStudents)
+        {
+            ModelState.AddModelError(nameof(model.ClassId),
+                $"Lớp này chỉ có {classInfo.EnrollmentCount} học viên, chưa đủ {classInfo.MinStudents} học viên tối thiểu để mở buổi học.");
+        }
 
         if (model.SessionNo > classInfo.TotalSessions)
         {

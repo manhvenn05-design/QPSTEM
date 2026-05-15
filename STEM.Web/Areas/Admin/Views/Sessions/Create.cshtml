@@ -9,7 +9,6 @@
         <div>
             <h1 class="admin-page-title">Thêm buổi học mới</h1>
         </div>
-
         <div class="admin-actions">
             <a asp-area="Admin" asp-controller="Sessions" asp-action="Index" class="admin-btn-secondary">Quay lại danh sách</a>
         </div>
@@ -27,13 +26,24 @@
                 </div>
 
                 <div class="admin-field-grid two-col">
+
+
                     <div class="md:col-span-1">
                         <label asp-for="ClassId" class="admin-label"></label>
-                        <select asp-for="ClassId" asp-items="Model.ClassOptions" class="admin-select">
+                        <select asp-for="ClassId" asp-items="Model.ClassOptions" class="admin-select" id="ClassId">
                             <option value="">Chọn lớp học</option>
                         </select>
                         <span asp-validation-for="ClassId" class="admin-validation"></span>
+
+                        @* Info strip — hiển thị sau khi chọn lớp *@
+                        <div id="class-info-strip" class="mt-2" style="display:@(string.IsNullOrEmpty(Model.ClassHint) ? "none" : "block")">
+                            <p id="class-info-text" class="text-sm text-[#3a4f6e] leading-relaxed">@Model.ClassHint</p>
+                        </div>
+                        <div id="class-warning-strip" class="mt-2 hidden">
+                            <p id="class-warning-text" class="text-sm font-medium text-[#9b682f]"></p>
+                        </div>
                     </div>
+
 
                     <div class="md:col-span-1">
                         <label asp-for="RoomId" class="admin-label"></label>
@@ -43,12 +53,23 @@
                         <span asp-validation-for="RoomId" class="admin-validation"></span>
                     </div>
 
+
                     <div>
                         <label asp-for="SessionNo" class="admin-label"></label>
-                        <input asp-for="SessionNo" class="admin-input" placeholder="Ví dụ: 1, 2, 3..." />
-                        <p class="mt-2 text-sm text-[#73796b]">Đây là thứ tự của buổi học trong lớp, không phải tổng số buổi của khóa.</p>
+                        <input asp-for="SessionNo" class="admin-input" id="SessionNo" placeholder="Ví dụ: 1, 2, 3..." />
+                        <p id="session-no-hint" class="mt-1.5 text-sm text-[#6b7c99]">
+                            @if (Model.SessionNo > 0)
+                            {
+                                <span>Đề xuất <strong>Buổi @Model.SessionNo</strong> — chỉnh sửa nếu cần.</span>
+                            }
+                            else
+                            {
+                                <span>Chọn lớp để hệ thống tự điền.</span>
+                            }
+                        </p>
                         <span asp-validation-for="SessionNo" class="admin-validation"></span>
                     </div>
+
 
                     <div>
                         <label asp-for="Date" class="admin-label"></label>
@@ -56,17 +77,53 @@
                         <span asp-validation-for="Date" class="admin-validation"></span>
                     </div>
 
+
                     <div>
-                        <label asp-for="StartTime" class="admin-label"></label>
-                        <input asp-for="StartTime" class="admin-input" />
+                        <label class="admin-label">Giờ bắt đầu</label>
+                        <div class="flex items-center gap-2">
+                            <select id="start-hh" class="admin-select" style="width:auto;min-width:80px;flex:1">
+                                @for (int h = 0; h <= 23; h++) {
+                                    var hStr = h.ToString("D2");
+                                    var sel = Model.StartTime.HasValue && Model.StartTime.Value.Hour == h;
+                                    <option value="@hStr" selected="@(sel ? "selected" : null)">@hStr</option>
+                                }
+                            </select>
+                            <span class="text-lg font-bold text-[#3a4f6e] select-none">:</span>
+                            <select id="start-mm" class="admin-select" style="width:auto;min-width:80px;flex:1">
+                                @for (int m = 0; m <= 59; m++) {
+                                    var mStr = m.ToString("D2");
+                                    var sel = Model.StartTime.HasValue && Model.StartTime.Value.Minute == m;
+                                    <option value="@mStr" selected="@(sel ? "selected" : null)">@mStr</option>
+                                }
+                            </select>
+                        </div>
+                        <input type="hidden" name="StartTime" id="StartTime" value="@(Model.StartTime.HasValue ? Model.StartTime.Value.ToString("HH:mm") : "")" />
                         <span asp-validation-for="StartTime" class="admin-validation"></span>
                     </div>
 
                     <div>
-                        <label asp-for="EndTime" class="admin-label"></label>
-                        <input asp-for="EndTime" class="admin-input" />
+                        <label class="admin-label">Giờ kết thúc</label>
+                        <div class="flex items-center gap-2">
+                            <select id="end-hh" class="admin-select" style="width:auto;min-width:80px;flex:1">
+                                @for (int h = 0; h <= 23; h++) {
+                                    var hStr2 = h.ToString("D2");
+                                    var sel2 = Model.EndTime.HasValue && Model.EndTime.Value.Hour == h;
+                                    <option value="@hStr2" selected="@(sel2 ? "selected" : null)">@hStr2</option>
+                                }
+                            </select>
+                            <span class="text-lg font-bold text-[#3a4f6e] select-none">:</span>
+                            <select id="end-mm" class="admin-select" style="width:auto;min-width:80px;flex:1">
+                                @for (int m2 = 0; m2 <= 59; m2++) {
+                                    var mStr2 = m2.ToString("D2");
+                                    var sel2 = Model.EndTime.HasValue && Model.EndTime.Value.Minute == m2;
+                                    <option value="@mStr2" selected="@(sel2 ? "selected" : null)">@mStr2</option>
+                                }
+                            </select>
+                        </div>
+                        <input type="hidden" name="EndTime" id="EndTime" value="@(Model.EndTime.HasValue ? Model.EndTime.Value.ToString("HH:mm") : "")" />
                         <span asp-validation-for="EndTime" class="admin-validation"></span>
                     </div>
+
 
                     <div class="md:col-span-2">
                         <label asp-for="Topic" class="admin-label"></label>
@@ -74,12 +131,14 @@
                         <span asp-validation-for="Topic" class="admin-validation"></span>
                     </div>
 
+
                     <div class="md:col-span-2">
                         <label asp-for="MaterialFile" class="admin-label"></label>
                         <input type="file" asp-for="MaterialFile" accept=".pdf" class="admin-input p-2" />
                         <span asp-validation-for="MaterialFile" class="admin-validation"></span>
-                        <p class="mt-2 text-sm text-[#73796b]">Chỉ hỗ trợ file PDF (Max 20MB). File tải lên sẽ có thể xem trực tiếp mượt mà ngay trên web.</p>
+                        <p class="mt-1.5 text-sm text-[#6b7c99]">Chỉ hỗ trợ file PDF (tối đa 25MB).</p>
                     </div>
+
 
                     <div class="md:col-span-2">
                         <label asp-for="TeachingMaterialUrl" class="admin-label"></label>
@@ -100,4 +159,60 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        // ── Time picker: sync HH+MM dropdowns → hidden input ──
+        function syncTime(hhId, mmId, hiddenId) {
+            const hh = document.getElementById(hhId);
+            const mm = document.getElementById(mmId);
+            const hidden = document.getElementById(hiddenId);
+            const update = () => { hidden.value = hh.value + ':' + mm.value; };
+            hh.addEventListener('change', update);
+            mm.addEventListener('change', update);
+            update(); // init
+        }
+        syncTime('start-hh', 'start-mm', 'StartTime');
+        syncTime('end-hh', 'end-mm', 'EndTime');
+
+        // ── Class info AJAX ──
+        (function () {
+            const classSelect = document.getElementById('ClassId');
+            const sessionNoInput = document.getElementById('SessionNo');
+            const infoStrip = document.getElementById('class-info-strip');
+            const infoText = document.getElementById('class-info-text');
+            const warningStrip = document.getElementById('class-warning-strip');
+            const warningText = document.getElementById('class-warning-text');
+            const sessionNoHint = document.getElementById('session-no-hint');
+
+            classSelect.addEventListener('change', async function () {
+                const classId = this.value;
+                warningStrip.classList.add('hidden');
+
+                if (!classId) {
+                    infoStrip.style.display = 'none';
+                    sessionNoHint.innerHTML = '<span>Chọn lớp để hệ thống tự điền.</span>';
+                    return;
+                }
+
+                try {
+                    const resp = await fetch(`/Admin/Sessions/GetClassInfo?classId=${classId}`);
+                    if (!resp.ok) return;
+                    const d = await resp.json();
+
+                    sessionNoInput.value = d.nextSessionNo;
+                    sessionNoHint.innerHTML = `Đề xuất <strong>Buổi ${d.nextSessionNo}</strong> — đã dạy ${d.currentSessionCount}/${d.totalSessions} buổi.`;
+
+                    infoText.textContent = `${d.classCode} · ${d.courseName} · ${d.enrollmentCount} học viên · ${d.currentSessionCount}/${d.totalSessions} buổi`;
+                    infoStrip.style.display = 'block';
+
+                    if (d.minStudents > 0 && d.enrollmentCount < d.minStudents) {
+                        warningText.textContent = `Lớp chỉ có ${d.enrollmentCount}/${d.minStudents} học viên tối thiểu — không thể lưu buổi học.`;
+                        warningStrip.classList.remove('hidden');
+                    } else if (d.nextSessionNo > d.totalSessions) {
+                        warningText.textContent = `Lớp đã đủ ${d.totalSessions} buổi theo khóa học.`;
+                        warningStrip.classList.remove('hidden');
+                    }
+                } catch (e) { /* silent */ }
+            });
+        })();
+    </script>
 }
