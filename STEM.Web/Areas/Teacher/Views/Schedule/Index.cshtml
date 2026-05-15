@@ -153,6 +153,7 @@
                                     data-session-label="@session.SessionLabel"
                                     data-time="@session.ScheduleText"
                                     data-teacher="@session.TeacherName"
+                                    data-room="@(session.RoomName ?? "Chưa xếp phòng")"
                                     data-topic="@session.Topic"
                                     data-students="@session.StudentCount"
                                     data-status="@session.StatusLabel"
@@ -163,6 +164,12 @@
                                     <div class="truncate text-[11px] font-bold leading-tight" style="color:@timeColor">@session.ScheduleText</div>
                                     <div class="truncate text-[12px] font-semibold text-[#1c1c1e] leading-snug mt-0.5">@session.CourseName</div>
                                     <div class="truncate text-[10px] text-[#78716c] leading-tight">Lớp @session.ClassCode &middot; @session.Topic</div>
+                                    @if (!string.IsNullOrWhiteSpace(session.RoomName)) {
+                                        <div class="mt-0.5 flex items-center gap-0.5 truncate text-[10px]" style="color:@borderColor">
+                                            <span class="material-symbols-outlined text-[10px]">meeting_room</span>
+                                            @session.RoomName
+                                        </div>
+                                    }
                                 </div>
                             </button>
                         }
@@ -202,14 +209,18 @@
                         <span id="popup-att-badge" class="rounded-full bg-[#f3f4f6] px-3 py-1 text-xs text-[#6b7280]"></span>
                     </div>
                 </div>
-                <div class="mt-4 grid grid-cols-2 gap-4">
+                <div class="mt-4 grid grid-cols-3 gap-4">
                     <div>
-                        <p class="text-xs text-[#9ca3af]" >Giờ học</p>
+                        <p class="text-xs text-[#9ca3af]">Giờ học</p>
                         <p class="mt-1 text-base font-bold text-[#1c1c1e]" id="popup-time"></p>
                     </div>
                     <div>
                         <p class="text-xs text-[#9ca3af]">Giáo viên</p>
                         <p class="mt-1 text-sm font-semibold text-[#1c1c1e]" id="popup-teacher"></p>
+                    </div>
+                    <div>
+                        <p class="text-xs text-[#9ca3af]">Phòng học</p>
+                        <p class="mt-1 text-sm font-semibold text-[#1c1c1e]" id="popup-room"></p>
                     </div>
                 </div>
                 <div class="mt-4">
@@ -371,6 +382,7 @@
                 document.getElementById('popup-subtitle').textContent = `Lớp ${d.class} · ${d.sessionLabel}`;
                 document.getElementById('popup-time').textContent     = d.time;
                 document.getElementById('popup-teacher').textContent  = d.teacher || '—';
+                document.getElementById('popup-room').textContent     = d.room || '—';
                 document.getElementById('popup-topic').textContent    = d.topic;
 
                 const badge = document.getElementById('popup-status-badge');

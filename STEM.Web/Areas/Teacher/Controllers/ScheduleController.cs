@@ -107,9 +107,10 @@ public class ScheduleController : Controller
                 x.EndTime,
                 x.Topic,
                 x.TeachingMaterialUrl,
-                ClassCode = x.Class.ClassCode,
-                CourseName = x.Class.Course.Name,
-                TeacherName = x.Class.Teacher.FullName,
+                ClassCode    = x.Class.ClassCode,
+                CourseName   = x.Class.Course.Name,
+                TeacherName  = x.Class.Teacher.FullName,
+                RoomName     = x.Room != null ? x.Room.Name : null,
                 StudentCount = x.Class.Enrollments.Count,
                 AttendanceCount = x.Attendances.Count
             })
@@ -169,6 +170,7 @@ public class ScheduleController : Controller
                 HasTeachingMaterial  = !string.IsNullOrWhiteSpace(x.TeachingMaterialUrl),
                 TeachingMaterialUrl  = x.TeachingMaterialUrl ?? string.Empty,
                 TeacherName          = x.TeacherName,
+                RoomName             = x.RoomName,
                 StatusLabel          = x.Date > today ? "Sắp tới" : x.Date < today ? "Đã dạy" : "Hôm nay",
                 StatusBadgeClass     = x.Date > today ? "upcoming" : x.Date < today ? "past" : "today"
             }).ToList()
