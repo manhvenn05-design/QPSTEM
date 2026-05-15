@@ -109,6 +109,7 @@ public class ScheduleController : Controller
                 x.TeachingMaterialUrl,
                 ClassCode = x.Class.ClassCode,
                 CourseName = x.Class.Course.Name,
+                TeacherName = x.Class.Teacher.FullName,
                 StudentCount = x.Class.Enrollments.Count,
                 AttendanceCount = x.Attendances.Count
             })
@@ -153,17 +154,23 @@ public class ScheduleController : Controller
             }).ToList(),
             CalendarSessions = calendarRawSessions.Select(x => new TeacherScheduleItemViewModel
             {
-                SessionId = x.Id,
-                SessionLabel = $"Buổi số {x.SessionNo:00}",
-                ClassCode = x.ClassCode,
-                CourseName = x.CourseName,
-                Date = x.Date.ToDateTime(TimeOnly.MinValue),
-                StartTime = x.StartTime,
-                EndTime = x.EndTime,
-                ScheduleText = $"{x.StartTime:HH\\:mm} - {x.EndTime:HH\\:mm}",
-                Topic = string.IsNullOrWhiteSpace(x.Topic) ? "Chưa cập nhật chủ đề" : x.Topic,
-                StudentCount = x.StudentCount,
-                AttendanceCount = x.AttendanceCount
+                SessionId            = x.Id,
+                SessionLabel         = $"Buổi số {x.SessionNo:00}",
+                ClassCode            = x.ClassCode,
+                CourseName           = x.CourseName,
+                Date                 = x.Date.ToDateTime(TimeOnly.MinValue),
+                StartTime            = x.StartTime,
+                EndTime              = x.EndTime,
+                ScheduleText         = $"{x.StartTime:HH\\:mm} – {x.EndTime:HH\\:mm}",
+                Topic                = string.IsNullOrWhiteSpace(x.Topic) ? "Chưa cập nhật chủ đề" : x.Topic,
+                StudentCount         = x.StudentCount,
+                AttendanceCount      = x.AttendanceCount,
+                AttendancePercent    = x.StudentCount == 0 ? 0 : (int)Math.Round((double)x.AttendanceCount * 100 / x.StudentCount),
+                HasTeachingMaterial  = !string.IsNullOrWhiteSpace(x.TeachingMaterialUrl),
+                TeachingMaterialUrl  = x.TeachingMaterialUrl ?? string.Empty,
+                TeacherName          = x.TeacherName,
+                StatusLabel          = x.Date > today ? "Sắp tới" : x.Date < today ? "Đã dạy" : "Hôm nay",
+                StatusBadgeClass     = x.Date > today ? "upcoming" : x.Date < today ? "past" : "today"
             }).ToList()
         };
 

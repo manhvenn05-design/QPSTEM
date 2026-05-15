@@ -94,6 +94,7 @@ public class TeacherScheduleItemViewModel
     public string TeachingMaterialUrl { get; set; } = string.Empty;
     public string StatusLabel { get; set; } = string.Empty;
     public string StatusBadgeClass { get; set; } = string.Empty;
+    public string TeacherName { get; set; } = string.Empty;
 }
 
 public class TeacherScheduleDetailsViewModel
