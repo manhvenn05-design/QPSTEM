@@ -3,7 +3,7 @@
 @{
     ViewData["Title"] = "Lịch dạy";
     const int calendarStartHour = 7;
-    const int calendarEndHour = 17;
+    const int calendarEndHour = 22;
     const int slotMinutes = 30;
     var totalSlots = (calendarEndHour - calendarStartHour) * 60 / slotMinutes;
     var isCalendarView = Model.SelectedView == "calendar";
