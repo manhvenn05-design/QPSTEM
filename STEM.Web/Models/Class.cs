@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace STEM.Web.Models;
@@ -16,6 +16,12 @@ public partial class Class
     public DateOnly StartDate { get; set; }
 
     public DateOnly? EndDate { get; set; }
+
+    public ClassStatus Status { get; set; }
+
+    public DateTime CreatedAt { get; set; }
+
+    public DateTime? UpdatedAt { get; set; }
 
     public virtual Course Course { get; set; } = null!;
 

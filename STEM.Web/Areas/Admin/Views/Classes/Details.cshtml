@@ -1,4 +1,4 @@
-﻿@model STEM.Web.Areas.Admin.Models.ClassDetailsViewModel
+@model STEM.Web.Areas.Admin.Models.ClassDetailsViewModel
 
 @{
     ViewData["Title"] = "Chi tiết lớp học";
@@ -203,7 +203,10 @@
                             <h2 class="admin-section-title">Buổi học đã tạo</h2>
                             <p class="admin-section-subtitle">Tạo buổi mới hoặc mở nhanh sang điểm danh.</p>
                         </div>
-                        <a asp-area="Admin" asp-controller="Sessions" asp-action="Create" asp-route-classId="@Model.Id" class="admin-btn-secondary !h-10">Thêm buổi học</a>
+                        <div class="flex gap-2">
+                            <a asp-area="Admin" asp-controller="Sessions" asp-action="Generate" asp-route-classId="@Model.Id" class="admin-btn-primary !h-10">Sinh lịch tự động</a>
+                            <a asp-area="Admin" asp-controller="Sessions" asp-action="Create" asp-route-classId="@Model.Id" class="admin-btn-secondary !h-10">Thêm buổi học</a>
+                        </div>
                     </div>
 
                     @if (Model.Sessions.Count == 0)
@@ -253,7 +256,7 @@
                     <h2 class="admin-section-title">Trạng thái</h2>
                     <div class="mt-5">
                         <span class="inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-semibold @Model.StatusBadgeClass">
-                            <span class="h-2 w-2 rounded-full @(Model.StatusLabel == "Đang mở" ? "bg-[#1a3a6e]" : Model.StatusLabel == "Sắp khai giảng" ? "bg-[#9b682f]" : "bg-[#73796b]")"></span>
+                            <span class="h-2 w-2 rounded-full @(Model.StatusLabel == "Đang mở" ? "bg-[#456c3f]" : Model.StatusLabel == "Tạm dừng" ? "bg-[#9b682f]" : Model.StatusLabel == "Đã hủy" ? "bg-[#b33a3a]" : "bg-[#42493d]")"></span>
                             @Model.StatusLabel
                         </span>
                     </div>

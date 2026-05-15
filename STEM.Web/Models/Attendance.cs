@@ -25,7 +25,7 @@ public partial class Attendance
 
     public string? AiProcessStatus { get; set; }
 
-    public string? SoftSkillJson { get; set; }
+    public virtual ICollection<AttendanceSkillScore> SkillScores { get; set; } = new List<AttendanceSkillScore>();
 
     public virtual Session Session { get; set; } = null!;
 

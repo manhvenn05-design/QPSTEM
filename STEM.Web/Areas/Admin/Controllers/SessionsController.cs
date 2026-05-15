@@ -53,6 +53,7 @@ public class SessionsController : Controller
                 ClassCode = x.Class.ClassCode,
                 CourseName = x.Class.Course.Name,
                 TeacherName = x.Class.Teacher.FullName,
+                RoomName = x.Room != null ? x.Room.Name : string.Empty,
                 SessionNo = x.SessionNo,
                 Date = x.Date,
                 StartTime = x.StartTime,
@@ -117,6 +118,7 @@ public class SessionsController : Controller
                 CourseName = x.Class.Course.Name,
                 TeacherName = x.Class.Teacher.FullName,
                 TeacherEmail = x.Class.Teacher.Email,
+                RoomName = x.Room != null ? x.Room.Name : string.Empty,
                 ClassStartDate = x.Class.StartDate,
                 ClassEndDate = x.Class.EndDate,
                 Date = x.Date,
@@ -205,6 +207,7 @@ public class SessionsController : Controller
         var entity = new Session
         {
             ClassId = model.ClassId!.Value,
+            RoomId = model.RoomId,
             SessionNo = model.SessionNo,
             Date = model.Date!.Value,
             StartTime = model.StartTime!.Value,
@@ -236,6 +239,7 @@ public class SessionsController : Controller
         {
             Id = entity.Id,
             ClassId = entity.ClassId,
+            RoomId = entity.RoomId,
             SessionNo = entity.SessionNo,
             Date = entity.Date,
             StartTime = entity.StartTime,
@@ -290,6 +294,7 @@ public class SessionsController : Controller
         }
 
         entity.ClassId = model.ClassId!.Value;
+        entity.RoomId = model.RoomId;
         entity.SessionNo = model.SessionNo;
         entity.Date = model.Date!.Value;
         entity.StartTime = model.StartTime!.Value;
@@ -386,6 +391,12 @@ public class SessionsController : Controller
             .OrderBy(x => x.ClassCode)
             .Select(x => new SelectListItem($"{x.ClassCode} - {x.Course.Name}", x.Id.ToString()))
             .ToListAsync();
+
+        model.RoomOptions = await _context.Rooms
+            .AsNoTracking()
+            .OrderBy(x => x.Name)
+            .Select(x => new SelectListItem($"{x.Name} (Sức chứa: {x.Capacity})", x.Id.ToString()))
+            .ToListAsync();
     }
 
     private async Task ValidateSessionAsync(CreateSessionViewModel model, int? currentId = null)
@@ -403,6 +414,7 @@ public class SessionsController : Controller
             {
                 x.StartDate,
                 x.EndDate,
+                x.TeacherId,
                 TotalSessions = x.Course.TotalSessions
             })
             .FirstAsync();
@@ -434,6 +446,38 @@ public class SessionsController : Controller
         {
             ModelState.AddModelError(nameof(model.SessionNo), "Số buổi này đã tồn tại trong lớp học đã chọn.");
         }
+
+        // Kiểm tra trùng giờ giáo viên
+        if (model.Date.HasValue && model.StartTime.HasValue && model.EndTime.HasValue)
+        {
+            var teacherConflict = await _context.Sessions.AnyAsync(x =>
+                x.Class.TeacherId == classInfo.TeacherId &&
+                x.Date == model.Date.Value &&
+                x.StartTime < model.EndTime.Value &&
+                x.EndTime > model.StartTime.Value &&
+                (!currentId.HasValue || x.Id != currentId.Value));
+
+            if (teacherConflict)
+            {
+                ModelState.AddModelError(string.Empty, "Giáo viên đã có lịch dạy trong khung giờ này ở một lớp khác.");
+            }
+
+            // Kiểm tra trùng phòng học
+            if (model.RoomId.HasValue)
+            {
+                var roomConflict = await _context.Sessions.AnyAsync(x =>
+                    x.RoomId == model.RoomId.Value &&
+                    x.Date == model.Date.Value &&
+                    x.StartTime < model.EndTime.Value &&
+                    x.EndTime > model.StartTime.Value &&
+                    (!currentId.HasValue || x.Id != currentId.Value));
+
+                if (roomConflict)
+                {
+                    ModelState.AddModelError(nameof(model.RoomId), "Phòng học này đã được sử dụng trong khung giờ này.");
+                }
+            }
+        }
     }
 
     private static IQueryable<SessionListProjection> ApplyFilter(IQueryable<SessionListProjection> query, string filter, DateOnly today)
@@ -463,6 +507,7 @@ public class SessionsController : Controller
             ClassCode = item.ClassCode,
             CourseName = item.CourseName,
             TeacherName = item.TeacherName,
+            RoomName = string.IsNullOrWhiteSpace(item.RoomName) ? "Chưa xếp phòng" : item.RoomName,
             DateText = item.Date.ToString("dd/MM/yyyy"),
             TimeRangeText = $"{item.StartTime:HH\\:mm} - {item.EndTime:HH\\:mm}",
             TopicText = string.IsNullOrWhiteSpace(item.Topic) ? "Chưa cập nhật chủ đề" : item.Topic,
@@ -478,6 +523,168 @@ public class SessionsController : Controller
     private static string? NormalizeText(string? value)
     {
         return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+    }
+
+    // ─── Generate Schedule ───────────────────────────────────────────────────
+    
+    [HttpGet]
+    public async Task<IActionResult> Generate(int? classId)
+    {
+        if (!classId.HasValue)
+        {
+            TempData["ErrorMessage"] = "Vui lòng chọn lớp học trước khi sinh lịch.";
+            return RedirectToAction(nameof(Index), "Classes");
+        }
+
+        var classInfo = await _context.Classes
+            .Include(c => c.Course)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(c => c.Id == classId.Value);
+
+        if (classInfo == null)
+        {
+            TempData["ErrorMessage"] = "Không tìm thấy lớp học.";
+            return RedirectToAction(nameof(Index), "Classes");
+        }
+
+        var currentSessionCount = await _context.Sessions.CountAsync(s => s.ClassId == classId.Value);
+
+        var model = new GenerateScheduleViewModel
+        {
+            ClassId = classInfo.Id,
+            ClassCode = classInfo.ClassCode,
+            CourseName = classInfo.Course.Name,
+            StartDate = classInfo.StartDate,
+            StartTime = new TimeOnly(18, 0),
+            EndTime = new TimeOnly(20, 0),
+            TotalSessionsAllowed = classInfo.Course.TotalSessions,
+            CurrentSessionCount = currentSessionCount,
+            SessionCount = Math.Max(0, classInfo.Course.TotalSessions - currentSessionCount)
+        };
+
+        model.RoomOptions = await _context.Rooms
+            .AsNoTracking()
+            .OrderBy(x => x.Name)
+            .Select(x => new SelectListItem($"{x.Name} (Sức chứa: {x.Capacity})", x.Id.ToString()))
+            .ToListAsync();
+
+        return View(model);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Generate(GenerateScheduleViewModel model)
+    {
+        model.RoomOptions = await _context.Rooms
+            .AsNoTracking()
+            .OrderBy(x => x.Name)
+            .Select(x => new SelectListItem($"{x.Name} (Sức chứa: {x.Capacity})", x.Id.ToString()))
+            .ToListAsync();
+
+        var classInfo = await _context.Classes
+            .Include(c => c.Course)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(c => c.Id == model.ClassId);
+
+        if (classInfo == null)
+        {
+            TempData["ErrorMessage"] = "Không tìm thấy lớp học.";
+            return RedirectToAction(nameof(Index), "Classes");
+        }
+
+        model.ClassCode = classInfo.ClassCode;
+        model.CourseName = classInfo.Course.Name;
+        model.TotalSessionsAllowed = classInfo.Course.TotalSessions;
+        model.CurrentSessionCount = await _context.Sessions.CountAsync(s => s.ClassId == model.ClassId);
+
+        if (!ModelState.IsValid)
+        {
+            return View(model);
+        }
+
+        if (model.SelectedDays == null || !model.SelectedDays.Any())
+        {
+            ModelState.AddModelError(nameof(model.SelectedDays), "Vui lòng chọn ít nhất 1 ngày trong tuần.");
+            return View(model);
+        }
+
+        if (model.StartTime >= model.EndTime)
+        {
+            ModelState.AddModelError(nameof(model.EndTime), "Giờ kết thúc phải lớn hơn giờ bắt đầu.");
+            return View(model);
+        }
+
+        var newSessions = new List<Session>();
+        var currentDate = model.StartDate;
+        int generatedCount = 0;
+        int nextSessionNo = model.CurrentSessionCount + 1;
+
+        // Transactional generation
+        while (generatedCount < model.SessionCount)
+        {
+            if (model.SelectedDays.Contains(currentDate.DayOfWeek))
+            {
+                // Validate Teacher Conflict
+                var teacherConflict = await _context.Sessions
+                    .AnyAsync(s => s.Class.TeacherId == classInfo.TeacherId
+                                && s.Date == currentDate
+                                && s.StartTime < model.EndTime
+                                && s.EndTime > model.StartTime);
+
+                if (teacherConflict)
+                {
+                    ModelState.AddModelError(string.Empty, $"Sinh lịch thất bại ở buổi thứ {nextSessionNo} (Ngày {currentDate:dd/MM/yyyy}). Giáo viên bị trùng lịch. Tiến trình đã bị hủy toàn bộ.");
+                    return View(model);
+                }
+
+                // Validate Room Conflict
+                var roomConflict = await _context.Sessions
+                    .AnyAsync(s => s.RoomId == model.RoomId
+                                && s.Date == currentDate
+                                && s.StartTime < model.EndTime
+                                && s.EndTime > model.StartTime);
+
+                if (roomConflict)
+                {
+                    ModelState.AddModelError(string.Empty, $"Sinh lịch thất bại ở buổi thứ {nextSessionNo} (Ngày {currentDate:dd/MM/yyyy}). Phòng học bị trùng lịch. Tiến trình đã bị hủy toàn bộ.");
+                    return View(model);
+                }
+
+                newSessions.Add(new Session
+                {
+                    ClassId = model.ClassId,
+                    RoomId = model.RoomId,
+                    SessionNo = nextSessionNo,
+                    Date = currentDate,
+                    StartTime = model.StartTime,
+                    EndTime = model.EndTime,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                });
+
+                generatedCount++;
+                nextSessionNo++;
+            }
+
+            currentDate = currentDate.AddDays(1);
+        }
+
+        using var transaction = await _context.Database.BeginTransactionAsync();
+        try
+        {
+            await _context.Sessions.AddRangeAsync(newSessions);
+            await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
+
+            TempData["SuccessMessage"] = $"Đã tạo thành công {newSessions.Count} buổi học tự động.";
+            return RedirectToAction("Details", "Classes", new { id = model.ClassId });
+        }
+        catch (Exception ex)
+        {
+            await transaction.RollbackAsync();
+            TempData["ErrorMessage"] = $"Lưu dữ liệu thất bại: {ex.Message}";
+            return View(model);
+        }
     }
 
     private async Task<string?> HandleFileUploadAsync(IFormFile? file)
@@ -538,6 +745,7 @@ public class SessionsController : Controller
         public string ClassCode { get; set; } = string.Empty;
         public string CourseName { get; set; } = string.Empty;
         public string TeacherName { get; set; } = string.Empty;
+        public string RoomName { get; set; } = string.Empty;
         public int SessionNo { get; set; }
         public DateOnly Date { get; set; }
         public TimeOnly StartTime { get; set; }

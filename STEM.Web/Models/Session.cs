@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace STEM.Web.Models;
@@ -25,9 +25,17 @@ public partial class Session
 
     public string? AssistantNote { get; set; }
 
+    public DateTime CreatedAt { get; set; }
+
+    public DateTime? UpdatedAt { get; set; }
+
+    public int? RoomId { get; set; }
+
     public virtual ICollection<Attendance> Attendances { get; set; } = new List<Attendance>();
 
     public virtual Class Class { get; set; } = null!;
+
+    public virtual Room? Room { get; set; }
 
     public virtual ICollection<EquipmentBorrow> EquipmentBorrows { get; set; } = new List<EquipmentBorrow>();
 }

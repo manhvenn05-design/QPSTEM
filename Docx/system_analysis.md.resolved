@@ -1,0 +1,310 @@
+# Phân tích Hệ thống QPSTEM — Báo cáo Kỹ thuật
+
+> Dựa trên đọc trực tiếp source code. Không phải ý kiến chủ quan.
+
+---
+
+## 🔴 Nhóm 1: Lịch học — Vấn đề Nghiêm trọng nhất
+
+### 1.1 Không có khái niệm "Phòng học"
+
+**Bằng chứng — `Session.cs`:**
+```csharp
+public int ClassId { get; set; }
+public DateOnly Date { get; set; }
+public TimeOnly StartTime { get; set; }
+public TimeOnly EndTime { get; set; }
+// ← KHÔNG CÓ RoomId, không có Room
+```
+
+**Hậu quả:** Khi có 5 lớp, không có cách nào biết lớp nào đang dùng phòng nào. Hệ thống **không thể phát hiện 2 lớp đặt cùng phòng cùng giờ**.
+
+---
+
+### 1.2 Không kiểm tra trùng lịch Giáo viên
+
+**Bằng chứng — `SessionsController.cs` → `ValidateSessionAsync()`:**
+```csharp
+// Chỉ kiểm tra SessionNo trùng trong cùng 1 lớp
+var duplicateSessionNo = await _context.Sessions.AnyAsync(x =>
+    x.ClassId == model.ClassId.Value &&
+    x.SessionNo == model.SessionNo &&
+    (!currentId.HasValue || x.Id != currentId.Value));
+
+// ← KHÔNG CÓ kiểm tra giáo viên có bị trùng giờ với lớp khác không
+```
+
+**Tình huống thực tế:**
+- GV Nguyễn dạy lớp A: Thứ 3, 8:00–10:00  
+- GV Nguyễn dạy lớp B: Thứ 3, 9:00–11:00  
+→ Hệ thống **tạo cả 2 session thành công**, không có cảnh báo gì.
+
+---
+
+### 1.3 Không kiểm tra trùng lịch Học sinh
+
+**Bằng chứng — `Enrollment.cs`:**
+```csharp
+public int ClassId { get; set; }
+public int StudentId { get; set; }
+// Không có Unique constraint (ClassId, StudentId)
+// Không có kiểm tra thời gian chồng chéo khi enroll
+```
+
+Học sinh có thể đăng ký 2 lớp cùng giờ. Hệ thống không có validation nào ngăn điều này.
+
+---
+
+### 1.4 Nhập lịch hoàn toàn thủ công — Không có Pattern lặp lại
+
+**Bằng chứng:** Không có model `ClassSchedulePattern` hay bất kỳ concept nào về:
+- "Lớp này học mỗi Thứ 3 và Thứ 5"
+- "Tạo tự động 20 buổi từ ngày X đến ngày Y"
+
+**Hậu quả với 30 lớp:** Admin phải nhập tay **30 × 20 = 600 session**. Xác suất lỗi nhập tay = gần như 100%.
+
+---
+
+### 1.5 Race Condition trong kiểm tra trùng
+
+**Bằng chứng — `ValidateSessionAsync()`:**
+```csharp
+var duplicateSessionNo = await _context.Sessions.AnyAsync(x =>
+    x.ClassId == model.ClassId.Value &&
+    x.SessionNo == model.SessionNo ...);
+
+// ... sau đó mới
+_context.Sessions.Add(entity);
+await _context.SaveChangesAsync();
+```
+
+Không có `UNIQUE constraint` ở DB level, không có transaction isolation. Nếu 2 admin nhấn Save cùng lúc → **cả 2 session trùng đều được tạo**.
+
+---
+
+## 🟠 Nhóm 2: Database — Vấn đề Hiệu năng khi Scale
+
+### 2.1 Thiếu Index trên các cột truy vấn nhiều nhất
+
+**Bằng chứng — `ApplicationDbContext.cs` → `Sessions` entity:**
+```csharp
+modelBuilder.Entity<Session>(entity =>
+{
+    entity.HasKey(e => e.Id)...;
+    entity.Property(e => e.Topic).HasMaxLength(200);
+    entity.HasOne(d => d.Class)...;
+    // ← KHÔNG CÓ index nào cho Date, StartTime, ClassId
+});
+```
+
+| Cột | Dùng ở đâu | Có Index? |
+|-----|-----------|-----------|
+| `Sessions.Date` | Lọc "Hôm nay / Sắp tới / Đã qua" — mọi trang | ❌ |
+| `Sessions.ClassId` | Join với Class mọi nơi | ⚠️ FK tự tạo |
+| `Attendances.StudentId` | Dashboard học sinh, điểm danh | ❌ |
+| `Attendances.SessionId` | Load điểm danh mỗi buổi | ⚠️ FK tự tạo |
+| `Enrollments.StudentId` | Xem lớp của học sinh | ❌ |
+
+Với 100 session, query `WHERE Date = today` phải scan toàn bộ bảng.
+
+---
+
+### 2.2 Thiếu Unique Constraint quan trọng
+
+**Bằng chứng:**
+```csharp
+// Enrollments — không có unique(ClassId, StudentId)
+entity.HasOne(d => d.Class)...;
+entity.HasOne(d => d.Student)...;
+// ← Học sinh có thể được enroll vào cùng 1 lớp 2 lần
+```
+
+Không có unique constraint `(SessionId, StudentId)` trong `Attendances` → Điểm danh có thể bị ghi trùng.
+
+---
+
+### 2.3 JSON lưu dưới dạng String — Không query được
+
+**Bằng chứng:**
+```csharp
+// Attendance.cs
+public string? ProductMediaUrls { get; set; }  // JSON array of URLs
+public string? SoftSkillJson { get; set; }     // JSON object AI evaluation
+
+// Session.cs
+public string? ClassMediaUrls { get; set; }    // JSON array
+```
+
+**Hậu quả khi scale:** Muốn hỏi "Học sinh nào được đánh giá kỹ năng giao tiếp > 7 điểm?" → **Không thể query được** ở SQL level. Phải load toàn bộ dữ liệu về application rồi deserialize từng record.
+
+---
+
+### 2.4 File lưu Local — Không Scalable
+
+**Bằng chứng — `SessionsController.cs`:**
+```csharp
+var uploadsFolder = Path.Combine(_environment.WebRootPath, "uploads", "slides");
+// File PDF lưu vào wwwroot/uploads/slides/
+```
+
+**Vấn đề:** 
+- Deploy lên server mới → mất toàn bộ file
+- Không có backup tự động
+- Disk đầy → hệ thống crash
+- Không thể scale ngang (nhiều server)
+
+---
+
+## 🟡 Nhóm 3: Logic Nghiệp vụ — Lỗ hổng Dữ liệu
+
+### 3.1 Không có Audit Trail
+
+**Bằng chứng:** Hầu hết model không có:
+```csharp
+// Session.cs — KHÔNG CÓ
+// public DateTime CreatedAt { get; set; }
+// public int CreatedBy { get; set; }  
+// public DateTime? UpdatedAt { get; set; }
+```
+
+Không thể biết: ai tạo buổi học này, ai chỉnh sửa, chỉnh lúc mấy giờ.
+
+---
+
+### 3.2 Tài chính — Không có Constraint tổng tiền
+
+**Bằng chứng — `Invoice.cs` + `Payment.cs`:**
+```csharp
+public decimal FinalAmount { get; set; }  // Invoice
+// Payment chỉ có Amount, không có check sum(Payments) <= FinalAmount
+```
+
+Nếu bug code hoặc admin nhập sai, tổng tiền đã thu có thể **vượt quá hóa đơn** và hệ thống không phát hiện.
+
+---
+
+### 3.3 Trạng thái Lớp học không được Model hóa
+
+**Bằng chứng — `Class.cs`:**
+```csharp
+public DateOnly StartDate { get; set; }
+public DateOnly? EndDate { get; set; }
+// ← Không có Status: Active / Completed / Cancelled / Suspended
+```
+
+Không có cách phân biệt "lớp đang học" vs "lớp đã kết thúc" vs "lớp bị hủy" ở DB level. Logic phải tính từ ngày — dễ sai khi dữ liệu không đồng bộ.
+
+---
+
+## 📋 Ma trận Rủi ro — Ưu tiên Xử lý
+
+| # | Vấn đề | Mức độ | Khi nào gặp? | Khó sửa? |
+|---|--------|--------|-------------|----------|
+| 1 | Không kiểm tra trùng giờ GV | 🔴 Nghiêm trọng | Ngay bây giờ | Trung bình |
+| 2 | Không có Room | 🔴 Nghiêm trọng | Ngay bây giờ | Cao |
+| 3 | Nhập lịch thủ công | 🔴 Nghiêm trọng | ≥ 10 lớp | Cao |
+| 4 | Thiếu index Sessions.Date | 🟠 Quan trọng | ≥ 500 sessions | Thấp |
+| 5 | Không có unique Enrollment | 🟠 Quan trọng | Ngay bây giờ | Thấp |
+| 6 | JSON string không query | 🟠 Quan trọng | Khi cần báo cáo AI | Cao |
+| 7 | File lưu local | 🟠 Quan trọng | Khi deploy thật | Trung bình |
+| 8 | Không có Audit Trail | 🟡 Trung bình | Khi có tranh chấp | Thấp |
+| 9 | Không có Class.Status | 🟡 Trung bình | ≥ 20 lớp | Thấp |
+| 10 | Finance constraint | 🟡 Trung bình | Khi có bug | Trung bình |
+
+---
+
+## 🛠️ Đề xuất Giải pháp theo Thứ tự Ưu tiên
+
+### Ưu tiên 1 — Sửa ngay (không cần migration phức tạp)
+
+**A. Thêm kiểm tra trùng giờ GV trong `ValidateSessionAsync`:**
+```csharp
+// Thêm vào SessionsController.cs
+var teacherId = await _context.Classes
+    .Where(x => x.Id == model.ClassId.Value)
+    .Select(x => x.TeacherId)
+    .FirstAsync();
+
+var teacherConflict = await _context.Sessions.AnyAsync(x =>
+    x.Class.TeacherId == teacherId &&
+    x.Date == model.Date &&
+    x.StartTime < model.EndTime &&   // overlap condition
+    x.EndTime > model.StartTime &&
+    (!currentId.HasValue || x.Id != currentId));
+
+if (teacherConflict)
+    ModelState.AddModelError("", "Giáo viên đã có lịch dạy trong khung giờ này.");
+```
+
+**B. Thêm unique constraint Enrollment:**
+```sql
+ALTER TABLE Enrollments 
+ADD CONSTRAINT UQ_Enrollment_Student_Class 
+UNIQUE (StudentId, ClassId);
+```
+
+**C. Thêm index Sessions.Date:**
+```sql
+CREATE INDEX IX_Sessions_Date ON Sessions(Date);
+CREATE INDEX IX_Sessions_ClassId_Date ON Sessions(ClassId, Date);
+CREATE INDEX IX_Attendances_StudentId ON Attendances(StudentId);
+```
+
+---
+
+### Ưu tiên 2 — Sprint tiếp theo
+
+**D. Thêm `Room` entity và kiểm tra trùng phòng:**
+```csharp
+public class Room {
+    public int Id { get; set; }
+    public string Name { get; set; }   // "Phòng 101"
+    public int Capacity { get; set; }
+}
+// Session thêm: public int? RoomId { get; set; }
+```
+
+**E. Thêm `Class.Status` enum:**
+```csharp
+public enum ClassStatus { Active, Completed, Cancelled, Suspended }
+public ClassStatus Status { get; set; } = ClassStatus.Active;
+```
+
+**F. Thêm Audit fields cho Session, Class:**
+```csharp
+public DateTime CreatedAt { get; set; }
+public int CreatedById { get; set; }
+public DateTime? UpdatedAt { get; set; }
+```
+
+---
+
+### Ưu tiên 3 — Cải thiện dài hạn
+
+**G. Recurring Schedule Pattern:**
+```csharp
+public class ClassSchedule {
+    public int ClassId { get; set; }
+    public DayOfWeek DayOfWeek { get; set; }
+    public TimeOnly StartTime { get; set; }
+    public TimeOnly EndTime { get; set; }
+    public int? RoomId { get; set; }
+}
+// Admin chỉ định pattern → hệ thống tự generate Sessions
+```
+
+**H. Tách JSON columns:** Cân nhắc tách `SoftSkillJson` thành table `AttendanceSkillScore` riêng để có thể query và làm báo cáo AI.
+
+**I. File Storage:** Cân nhắc Azure Blob Storage hoặc Cloudinary thay vì local filesystem.
+
+---
+
+## Tóm tắt cho Thầy hướng dẫn
+
+Hệ thống hiện tại thiếu **3 trụ cột cốt lõi của quản lý lịch học**:
+
+1. **Không có Resource (Phòng học)** — không thể phân bổ tài nguyên
+2. **Không có Constraint (Ràng buộc thời gian)** — không phát hiện xung đột  
+3. **Không có Pattern (Mẫu lịch lặp lại)** — không thể tự động hóa
+
+Đây là các vấn đề **thiết kế dữ liệu** (data modeling), không phải lỗi code. Cần giải quyết từ tầng schema trước khi fix ở tầng application.

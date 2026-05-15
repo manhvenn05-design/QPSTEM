@@ -30,8 +30,9 @@ public class ClassesController : Controller
         {
             new ClassFilterViewModel { Key = "all",       Label = "Tất cả" },
             new ClassFilterViewModel { Key = "active",    Label = "Đang mở" },
-            new ClassFilterViewModel { Key = "upcoming",  Label = "Sắp khai giảng" },
-            new ClassFilterViewModel { Key = "completed", Label = "Đã kết thúc" }
+            new ClassFilterViewModel { Key = "completed", Label = "Đã kết thúc" },
+            new ClassFilterViewModel { Key = "cancelled", Label = "Đã hủy" },
+            new ClassFilterViewModel { Key = "suspended", Label = "Tạm dừng" }
         };
 
         var normalizedFilter = string.IsNullOrWhiteSpace(filter) ? "all" : filter.Trim().ToLowerInvariant();
@@ -52,6 +53,7 @@ public class ClassesController : Controller
                 TeacherName     = x.Teacher.FullName,
                 StartDate       = x.StartDate,
                 EndDate         = x.EndDate,
+                Status          = x.Status,
                 EnrollmentCount = x.Enrollments.Count,
                 SessionCount    = x.Sessions.Count
             });
@@ -115,16 +117,8 @@ public class ClassesController : Controller
                 EndDate         = x.EndDate,
                 EnrollmentCount = x.Enrollments.Count,
                 SessionCount    = x.Sessions.Count,
-                StatusLabel = x.StartDate > today
-                    ? "Sắp khai giảng"
-                    : x.EndDate.HasValue && x.EndDate.Value < today
-                        ? "Đã kết thúc"
-                        : "Đang mở",
-                StatusBadgeClass = x.StartDate > today
-                    ? "bg-[#fff4e8] text-[#9b682f]"
-                    : x.EndDate.HasValue && x.EndDate.Value < today
-                        ? "bg-[#eeeee9] text-[#42493d]"
-                        : "bg-[#edf7e8] text-[#456c3f]",
+                StatusLabel     = GetStatusLabel(x.Status),
+                StatusBadgeClass = GetStatusBadgeClass(x.Status),
                 AgeRangeText    = $"{x.Course.TargetAgeMin}-{x.Course.TargetAgeMax} tuổi",
                 PriceText       = $"{x.Course.Price:N0}đ",
                 TotalSessionsText = $"{x.Course.TotalSessions} buổi",
@@ -200,7 +194,8 @@ public class ClassesController : Controller
             TeacherId = model.TeacherId!.Value,
             ClassCode = normalizedCode,
             StartDate = model.StartDate!.Value,
-            EndDate   = model.EndDate
+            EndDate   = model.EndDate,
+            Status    = model.Status
         };
 
         try
@@ -237,7 +232,8 @@ public class ClassesController : Controller
             TeacherId = entity.TeacherId,
             ClassCode = entity.ClassCode,
             StartDate = entity.StartDate,
-            EndDate   = entity.EndDate
+            EndDate   = entity.EndDate,
+            Status    = entity.Status
         };
 
         await PopulateOptionsAsync(model);
@@ -273,6 +269,7 @@ public class ClassesController : Controller
         entity.ClassCode  = normalizedCode;
         entity.StartDate  = model.StartDate!.Value;
         entity.EndDate    = model.EndDate;
+        entity.Status     = model.Status;
 
         try
         {
@@ -545,6 +542,13 @@ public class ClassesController : Controller
             .OrderBy(x => x.FullName)
             .Select(x => new SelectListItem(x.FullName, x.Id.ToString()))
             .ToListAsync();
+
+        var statusValues = Enum.GetValues<ClassStatus>();
+        model.StatusOptions = statusValues.Select(s => new SelectListItem
+        {
+            Value = ((int)s).ToString(),
+            Text = GetStatusLabel(s)
+        }).ToList();
     }
 
     private async Task<IReadOnlyList<ClassAvailableStudentViewModel>> GetAvailableStudentsAsync(int classId, string searchTerm)
@@ -593,28 +597,20 @@ public class ClassesController : Controller
     {
         return filter switch
         {
-            "active"    => query.Where(x => x.StartDate <= today && (!x.EndDate.HasValue || x.EndDate.Value >= today)),
-            "upcoming"  => query.Where(x => x.StartDate > today),
-            "completed" => query.Where(x => x.EndDate.HasValue && x.EndDate.Value < today),
+            "active"    => query.Where(x => x.Status == ClassStatus.Active),
+            "completed" => query.Where(x => x.Status == ClassStatus.Completed),
+            "cancelled" => query.Where(x => x.Status == ClassStatus.Cancelled),
+            "suspended" => query.Where(x => x.Status == ClassStatus.Suspended),
             _           => query
         };
     }
 
     private static ClassManagementItemViewModel MapClassListItem(ClassListProjection item, DateOnly today)
     {
-        var statusLabel = item.StartDate > today
-            ? "Sắp khai giảng"
-            : item.EndDate.HasValue && item.EndDate.Value < today
-                ? "Đã kết thúc"
-                : "Đang mở";
+        var statusLabel = GetStatusLabel(item.Status);
+        var statusBadgeClass = GetStatusBadgeClass(item.Status);
 
-        var statusBadgeClass = item.StartDate > today
-            ? "bg-[#fff4e8] text-[#9b682f]"
-            : item.EndDate.HasValue && item.EndDate.Value < today
-                ? "bg-[#eeeee9] text-[#42493d]"
-                : "bg-[#edf7e8] text-[#456c3f]";
-
-        var scheduleText = $"{item.StartDate:dd/MM/yyyy} – {(item.EndDate.HasValue ? item.EndDate.Value.ToString("dd/MM/yyyy") : "Đang mở")}";
+        var scheduleText = $"{item.StartDate:dd/MM/yyyy} – {(item.EndDate.HasValue ? item.EndDate.Value.ToString("dd/MM/yyyy") : "Chưa rõ")}";
 
         return new ClassManagementItemViewModel
         {
@@ -641,6 +637,24 @@ public class ClassesController : Controller
             && sqlEx.Message.Contains("UQ__Classes__2ECD4A55", StringComparison.OrdinalIgnoreCase);
     }
 
+    private static string GetStatusLabel(ClassStatus status) => status switch
+    {
+        ClassStatus.Active => "Đang mở",
+        ClassStatus.Completed => "Đã kết thúc",
+        ClassStatus.Cancelled => "Đã hủy",
+        ClassStatus.Suspended => "Tạm dừng",
+        _ => "Không xác định"
+    };
+
+    private static string GetStatusBadgeClass(ClassStatus status) => status switch
+    {
+        ClassStatus.Active => "bg-[#edf7e8] text-[#456c3f]", // Green
+        ClassStatus.Completed => "bg-[#eeeee9] text-[#42493d]", // Gray
+        ClassStatus.Suspended => "bg-[#fff4e8] text-[#9b682f]", // Orange
+        ClassStatus.Cancelled => "bg-[#fceeed] text-[#b33a3a]", // Red
+        _ => "bg-[#eeeee9] text-[#42493d]"
+    };
+
     // ─── Nested projection ────────────────────────────────────────────────────
 
     private sealed class ClassListProjection
@@ -652,6 +666,7 @@ public class ClassesController : Controller
         public string TeacherName { get; set; } = string.Empty;
         public DateOnly StartDate { get; set; }
         public DateOnly? EndDate { get; set; }
+        public ClassStatus Status { get; set; }
         public int EnrollmentCount { get; set; }
         public int SessionCount { get; set; }
     }
