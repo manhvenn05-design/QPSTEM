@@ -6,10 +6,10 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
-using STEM.Web.Areas.Admin.Infrastructure;
 using STEM.Web.Areas.Admin.Models;
 using STEM.Web.Data;
 using STEM.Web.Models;
+using STEM.Web.Services;
 
 namespace STEM.Web.Areas.Admin.Controllers;
 
@@ -18,12 +18,12 @@ namespace STEM.Web.Areas.Admin.Controllers;
 public class CmsController : Controller
 {
     private readonly ApplicationDbContext _context;
-    private readonly IWebHostEnvironment _environment;
+    private readonly IFileStorageService _fileStorage;
 
-    public CmsController(ApplicationDbContext context, IWebHostEnvironment environment)
+    public CmsController(ApplicationDbContext context, IFileStorageService fileStorage)
     {
         _context = context;
-        _environment = environment;
+        _fileStorage = fileStorage;
     }
 
     // ─── Index ────────────────────────────────────────────────────────────────
@@ -181,8 +181,8 @@ public class CmsController : Controller
         {
             try
             {
-                uploadedImageUrl = await AdminImageStorage.SaveImageAsync(
-                    model.ThumbnailFile, _environment.WebRootPath, "posts");
+                uploadedImageUrl = await _fileStorage.SaveFileAsync(
+                    model.ThumbnailFile, "posts");
             }
             catch (InvalidOperationException ex)
             {
@@ -271,9 +271,9 @@ public class CmsController : Controller
         {
             try
             {
-                var newImageUrl = await AdminImageStorage.SaveImageAsync(
-                    model.ThumbnailFile, _environment.WebRootPath, "posts");
-                AdminImageStorage.DeleteIfManaged(entity.ImageUrl, _environment.WebRootPath);
+                var newImageUrl = await _fileStorage.SaveFileAsync(
+                    model.ThumbnailFile, "posts");
+                await _fileStorage.DeleteFileAsync(entity.ImageUrl);
                 entity.ImageUrl = newImageUrl;
             }
             catch (InvalidOperationException ex)
@@ -318,7 +318,7 @@ public class CmsController : Controller
         var entity = await _context.Posts.FirstOrDefaultAsync(x => x.Id == id);
         if (entity == null) return NotFound();
 
-        AdminImageStorage.DeleteIfManaged(entity.ImageUrl, _environment.WebRootPath);
+        await _fileStorage.DeleteFileAsync(entity.ImageUrl);
         _context.Posts.Remove(entity);
         await _context.SaveChangesAsync();
 
@@ -346,8 +346,8 @@ public class CmsController : Controller
 
         try
         {
-            model.ImageUrl = await AdminImageStorage.SaveImageAsync(
-                model.ImageFile!, _environment.WebRootPath, "banners", cancellationToken);
+            model.ImageUrl = await _fileStorage.SaveFileAsync(
+                model.ImageFile!, "banners", cancellationToken);
         }
         catch (InvalidOperationException ex)
         {
@@ -407,9 +407,9 @@ public class CmsController : Controller
         {
             try
             {
-                var newImageUrl = await AdminImageStorage.SaveImageAsync(
-                    model.ImageFile, _environment.WebRootPath, "banners", cancellationToken);
-                AdminImageStorage.DeleteIfManaged(entity.ImageUrl, _environment.WebRootPath);
+                var newImageUrl = await _fileStorage.SaveFileAsync(
+                    model.ImageFile, "banners", cancellationToken);
+                await _fileStorage.DeleteFileAsync(entity.ImageUrl);
                 entity.ImageUrl = newImageUrl;
             }
             catch (InvalidOperationException ex)
@@ -462,7 +462,7 @@ public class CmsController : Controller
         var entity = await _context.Banners.FirstOrDefaultAsync(x => x.Id == id);
         if (entity == null) return NotFound();
 
-        AdminImageStorage.DeleteIfManaged(entity.ImageUrl, _environment.WebRootPath);
+        await _fileStorage.DeleteFileAsync(entity.ImageUrl);
         _context.Banners.Remove(entity);
         await _context.SaveChangesAsync();
 

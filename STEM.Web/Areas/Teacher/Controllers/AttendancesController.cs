@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using STEM.Web.Areas.Teacher.Models;
 using STEM.Web.Data;
 using STEM.Web.Models;
+using STEM.Web.Services;
 
 namespace STEM.Web.Areas.Teacher.Controllers;
 
@@ -31,12 +32,12 @@ public class AttendancesController : Controller
     };
 
     private readonly ApplicationDbContext _context;
-    private readonly IWebHostEnvironment _env;
+    private readonly IFileStorageService _fileStorage;
 
-    public AttendancesController(ApplicationDbContext context, IWebHostEnvironment env)
+    public AttendancesController(ApplicationDbContext context, IFileStorageService fileStorage)
     {
         _context = context;
-        _env = env;
+        _fileStorage = fileStorage;
     }
 
     [HttpGet]
@@ -547,21 +548,7 @@ public class AttendancesController : Controller
 
         try
         {
-            var uploadsFolder = Path.Combine(_env.WebRootPath, "uploads", "videos");
-            if (!Directory.Exists(uploadsFolder))
-            {
-                Directory.CreateDirectory(uploadsFolder);
-            }
-
-            var uniqueFileName = $"{Guid.NewGuid():N}{extension.ToLowerInvariant()}";
-            var filePath = Path.Combine(uploadsFolder, uniqueFileName);
-
-            using (var stream = new FileStream(filePath, FileMode.Create))
-            {
-                await file.CopyToAsync(stream);
-            }
-
-            var fileUrl = $"/uploads/videos/{uniqueFileName}";
+            var fileUrl = await _fileStorage.SaveFileAsync(file, "videos");
             return Json(new { success = true, url = fileUrl, fileName = file.FileName });
         }
         catch

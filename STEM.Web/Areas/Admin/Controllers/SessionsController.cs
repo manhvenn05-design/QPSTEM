@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using STEM.Web.Areas.Admin.Models;
 using STEM.Web.Data;
 using STEM.Web.Models;
+using STEM.Web.Services;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using System.IO;
@@ -17,12 +18,12 @@ public class SessionsController : Controller
 {
     private const int PageSize = 10;
     private readonly ApplicationDbContext _context;
-    private readonly IWebHostEnvironment _environment;
+    private readonly IFileStorageService _fileStorage;
 
-    public SessionsController(ApplicationDbContext context, IWebHostEnvironment environment)
+    public SessionsController(ApplicationDbContext context, IFileStorageService fileStorage)
     {
         _context = context;
-        _environment = environment;
+        _fileStorage = fileStorage;
     }
 
     [HttpGet]
@@ -278,13 +279,13 @@ public class SessionsController : Controller
             if (!string.IsNullOrEmpty(uploadedUrl))
             {
                 // Nếu up file mới thì xóa file cũ nếu có
-                DeleteOldFileIfManaged(entity.TeachingMaterialUrl);
+                await DeleteOldFileIfManaged(entity.TeachingMaterialUrl);
                 teachingMaterialUrl = uploadedUrl;
             }
             else if (teachingMaterialUrl != entity.TeachingMaterialUrl && !string.IsNullOrEmpty(entity.TeachingMaterialUrl))
             {
                 // Xóa file cũ nếu đổi sang link khác hoặc xóa hẳn link
-                DeleteOldFileIfManaged(entity.TeachingMaterialUrl);
+                await DeleteOldFileIfManaged(entity.TeachingMaterialUrl);
             }
         }
         catch (InvalidOperationException ex)
@@ -329,7 +330,7 @@ public class SessionsController : Controller
             return RedirectToAction(nameof(Index));
         }
 
-        DeleteOldFileIfManaged(entity.TeachingMaterialUrl);
+        await DeleteOldFileIfManaged(entity.TeachingMaterialUrl);
 
         _context.Sessions.Remove(entity);
         await _context.SaveChangesAsync();
@@ -370,7 +371,7 @@ public class SessionsController : Controller
             _context.Attendances.RemoveRange(attendances);
 
             // 3. Xóa buổi học
-            DeleteOldFileIfManaged(entity.TeachingMaterialUrl);
+            await DeleteOldFileIfManaged(entity.TeachingMaterialUrl);
             _context.Sessions.Remove(entity);
             await _context.SaveChangesAsync();
 
@@ -690,52 +691,14 @@ public class SessionsController : Controller
     private async Task<string?> HandleFileUploadAsync(IFormFile? file)
     {
         if (file == null || file.Length == 0) return null;
-
-        var allowedExtensions = new[] { ".pdf" };
-        var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
-
-        if (!allowedExtensions.Contains(extension))
-        {
-            throw new InvalidOperationException("Hệ thống hiện tại chỉ hỗ trợ trình chiếu file PDF. Vui lòng xuất giáo án ra định dạng .pdf để tải lên.");
-        }
-
-        if (file.Length > 20 * 1024 * 1024)
-        {
-            throw new InvalidOperationException("Dung lượng file tải lên vượt quá 20MB.");
-        }
-
-        var uploadsFolder = Path.Combine(_environment.WebRootPath, "uploads", "slides");
-        if (!Directory.Exists(uploadsFolder))
-        {
-            Directory.CreateDirectory(uploadsFolder);
-        }
-
-        var uniqueFileName = $"{Guid.NewGuid()}{extension}";
-        var filePath = Path.Combine(uploadsFolder, uniqueFileName);
-
-        await using var stream = new FileStream(filePath, FileMode.Create);
-        await file.CopyToAsync(stream);
-
-        return $"/uploads/slides/{uniqueFileName}";
+        return await _fileStorage.SaveFileAsync(file, "slides");
     }
 
-    private void DeleteOldFileIfManaged(string? fileUrl)
+    private async Task DeleteOldFileIfManaged(string? fileUrl)
     {
-        if (string.IsNullOrWhiteSpace(fileUrl) || !fileUrl.StartsWith("/uploads/slides/")) return;
-
-        var relativePath = fileUrl.TrimStart('/');
-        var fullPath = Path.Combine(_environment.WebRootPath, relativePath.Replace("/", "\\"));
-        
-        if (System.IO.File.Exists(fullPath))
+        if (!string.IsNullOrWhiteSpace(fileUrl))
         {
-            try
-            {
-                System.IO.File.Delete(fullPath);
-            }
-            catch
-            {
-                // Ignore delete errors
-            }
+            await _fileStorage.DeleteFileAsync(fileUrl);
         }
     }
 

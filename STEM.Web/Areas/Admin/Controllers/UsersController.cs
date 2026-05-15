@@ -3,10 +3,10 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
-using STEM.Web.Areas.Admin.Infrastructure;
 using STEM.Web.Areas.Admin.Models;
 using STEM.Web.Data;
 using STEM.Web.Models;
+using STEM.Web.Services;
 
 namespace STEM.Web.Areas.Admin.Controllers;
 
@@ -15,12 +15,12 @@ namespace STEM.Web.Areas.Admin.Controllers;
 public class UsersController : Controller
 {
     private readonly ApplicationDbContext _context;
-    private readonly IWebHostEnvironment _environment;
+    private readonly IFileStorageService _fileStorage;
 
-    public UsersController(ApplicationDbContext context, IWebHostEnvironment environment)
+    public UsersController(ApplicationDbContext context, IFileStorageService fileStorage)
     {
         _context = context;
-        _environment = environment;
+        _fileStorage = fileStorage;
     }
 
     [HttpGet]
@@ -178,7 +178,7 @@ public class UsersController : Controller
         {
             if (model.AvatarFile != null)
             {
-                uploadedAvatarUrl = await AdminImageStorage.SaveImageAsync(model.AvatarFile, _environment.WebRootPath, "users");
+                uploadedAvatarUrl = await _fileStorage.SaveFileAsync(model.AvatarFile, "users");
             }
         }
         catch (InvalidOperationException ex)
@@ -211,7 +211,7 @@ public class UsersController : Controller
         {
             if (uploadedAvatarUrl != null)
             {
-                AdminImageStorage.DeleteIfManaged(uploadedAvatarUrl, _environment.WebRootPath);
+                await _fileStorage.DeleteFileAsync(uploadedAvatarUrl);
             }
 
             model.SuggestedUsernames = await SuggestAvailableUsernamesAsync(normalizedUsername, model.FullName);
@@ -314,7 +314,7 @@ public class UsersController : Controller
         {
             if (model.AvatarFile != null)
             {
-                uploadedAvatarUrl = await AdminImageStorage.SaveImageAsync(model.AvatarFile, _environment.WebRootPath, "users");
+                uploadedAvatarUrl = await _fileStorage.SaveFileAsync(model.AvatarFile, "users");
                 user.AvatarUrl = uploadedAvatarUrl;
             }
         }
@@ -345,7 +345,7 @@ public class UsersController : Controller
         {
             if (uploadedAvatarUrl != null)
             {
-                AdminImageStorage.DeleteIfManaged(uploadedAvatarUrl, _environment.WebRootPath);
+                await _fileStorage.DeleteFileAsync(uploadedAvatarUrl);
                 user.AvatarUrl = previousAvatarUrl;
             }
 
@@ -356,7 +356,7 @@ public class UsersController : Controller
 
         if (uploadedAvatarUrl != null && previousAvatarUrl != uploadedAvatarUrl)
         {
-            AdminImageStorage.DeleteIfManaged(previousAvatarUrl, _environment.WebRootPath);
+            if (previousAvatarUrl != null) await _fileStorage.DeleteFileAsync(previousAvatarUrl);
         }
 
         TempData["SuccessMessage"] = "Đã cập nhật người dùng.";
@@ -400,7 +400,7 @@ public class UsersController : Controller
 
         _context.Users.Remove(user);
         await _context.SaveChangesAsync();
-        AdminImageStorage.DeleteIfManaged(avatarUrl, _environment.WebRootPath);
+        if (avatarUrl != null) await _fileStorage.DeleteFileAsync(avatarUrl);
 
         TempData["SuccessMessage"] = "Đã xóa người dùng.";
         return RedirectToAction(nameof(Index));
@@ -561,7 +561,7 @@ public class UsersController : Controller
             _context.Users.Remove(user);
             await _context.SaveChangesAsync();
 
-            AdminImageStorage.DeleteIfManaged(avatarUrl, _environment.WebRootPath);
+            if (avatarUrl != null) await _fileStorage.DeleteFileAsync(avatarUrl);
 
             TempData["SuccessMessage"] = $"Đã xóa toàn bộ dữ liệu của \"{user.FullName}\".";
         }

@@ -2,10 +2,10 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
-using STEM.Web.Areas.Admin.Infrastructure;
 using STEM.Web.Areas.Admin.Models;
 using STEM.Web.Data;
 using STEM.Web.Models;
+using STEM.Web.Services;
 
 namespace STEM.Web.Areas.Admin.Controllers;
 
@@ -15,12 +15,12 @@ public class CoursesController : Controller
 {
     private const int PageSize = 10;
     private readonly ApplicationDbContext _context;
-    private readonly IWebHostEnvironment _environment;
+    private readonly IFileStorageService _fileStorage;
 
-    public CoursesController(ApplicationDbContext context, IWebHostEnvironment environment)
+    public CoursesController(ApplicationDbContext context, IFileStorageService fileStorage)
     {
         _context = context;
-        _environment = environment;
+        _fileStorage = fileStorage;
     }
 
     [HttpGet]
@@ -176,7 +176,7 @@ public class CoursesController : Controller
         {
             if (model.ImageFile != null)
             {
-                uploadedImageUrl = await AdminImageStorage.SaveImageAsync(model.ImageFile, _environment.WebRootPath, "courses");
+                uploadedImageUrl = await _fileStorage.SaveFileAsync(model.ImageFile, "courses");
             }
         }
         catch (InvalidOperationException ex)
@@ -206,7 +206,7 @@ public class CoursesController : Controller
         {
             if (uploadedImageUrl != null)
             {
-                AdminImageStorage.DeleteIfManaged(uploadedImageUrl, _environment.WebRootPath);
+                await _fileStorage.DeleteFileAsync(uploadedImageUrl);
             }
 
             ModelState.AddModelError(nameof(model.Code), "Mã khóa học đã tồn tại.");
@@ -278,7 +278,7 @@ public class CoursesController : Controller
         {
             if (model.ImageFile != null)
             {
-                uploadedImageUrl = await AdminImageStorage.SaveImageAsync(model.ImageFile, _environment.WebRootPath, "courses");
+                uploadedImageUrl = await _fileStorage.SaveFileAsync(model.ImageFile, "courses");
                 course.ImageUrl = uploadedImageUrl;
             }
         }
@@ -304,7 +304,7 @@ public class CoursesController : Controller
         {
             if (uploadedImageUrl != null)
             {
-                AdminImageStorage.DeleteIfManaged(uploadedImageUrl, _environment.WebRootPath);
+                await _fileStorage.DeleteFileAsync(uploadedImageUrl);
                 course.ImageUrl = previousImageUrl;
             }
 
@@ -314,7 +314,7 @@ public class CoursesController : Controller
 
         if (uploadedImageUrl != null && previousImageUrl != uploadedImageUrl)
         {
-            AdminImageStorage.DeleteIfManaged(previousImageUrl, _environment.WebRootPath);
+            if (previousImageUrl != null) await _fileStorage.DeleteFileAsync(previousImageUrl);
         }
 
         TempData["SuccessMessage"] = "Đã cập nhật khóa học.";
@@ -354,7 +354,7 @@ public class CoursesController : Controller
         var imageUrl = course.ImageUrl;
         _context.Courses.Remove(course);
         await _context.SaveChangesAsync();
-        AdminImageStorage.DeleteIfManaged(imageUrl, _environment.WebRootPath);
+        if (imageUrl != null) await _fileStorage.DeleteFileAsync(imageUrl);
 
         TempData["SuccessMessage"] = "Đã xóa khóa học.";
         return RedirectToAction(nameof(Index));
