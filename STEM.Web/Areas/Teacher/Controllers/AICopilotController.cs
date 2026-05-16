@@ -66,7 +66,10 @@ public class AICopilotController : Controller
         try
         {
         string filePath;
-        if (Uri.TryCreate(request.VideoUrl, UriKind.Absolute, out var absoluteUri) &&
+        var rawUrl = request.VideoUrl.Trim();
+        
+        // Cố gắng parse URL
+        if (Uri.TryCreate(rawUrl, UriKind.Absolute, out var absoluteUri) &&
             (absoluteUri.Scheme == Uri.UriSchemeHttp || absoluteUri.Scheme == Uri.UriSchemeHttps))
         {
             tempFilePath = await DownloadVideoToTempFileAsync(absoluteUri, ct);
@@ -74,12 +77,15 @@ public class AICopilotController : Controller
         }
         else
         {
-            var relativePath = request.VideoUrl.TrimStart('/').Replace('/', Path.DirectorySeparatorChar);
+            var relativePath = rawUrl.TrimStart('/').Replace('/', Path.DirectorySeparatorChar);
             filePath = Path.Combine(_env.WebRootPath, relativePath);
         }
 
         if (!System.IO.File.Exists(filePath))
-            return Ok(new { success = false, message = "Không tìm thấy file video trên máy chủ." });
+        {
+            _logger.LogWarning("Không tìm thấy file video. Url: {VideoUrl}, FilePath: {FilePath}", rawUrl, filePath);
+            return Ok(new { success = false, message = $"Không tìm thấy file video trên máy chủ." });
+        }
 
         var ext = Path.GetExtension(filePath);
         if (!MimeMap.TryGetValue(ext, out var mimeType))
