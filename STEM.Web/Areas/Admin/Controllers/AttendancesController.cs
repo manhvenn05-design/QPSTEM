@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using STEM.Web.Areas.Admin.Models;
 using STEM.Web.Data;
 using STEM.Web.Models;
+using STEM.Web.Services;
 
 namespace STEM.Web.Areas.Admin.Controllers;
 
@@ -450,7 +451,7 @@ public class AttendancesController : Controller
                 PresenceBadgeClass = x.IsPresent ? "bg-[#edf7e8] text-[#456c3f]" : "bg-[#ffdad6] text-[#ba1a1a]",
                 ProductMediaUrls = x.ProductMediaUrls,
                 TeacherRawNote = x.TeacherRawNote,
-                AiEvaluation = x.AiEvaluation,
+                AiEvaluation = AiEvaluationFormatter.FormatForDisplay(x.AiEvaluation),
                 VideoTranscript = x.VideoTranscript,
                 SkillScores = x.SkillScores.Select(s => new AttendanceSkillScoreItemViewModel
                 {

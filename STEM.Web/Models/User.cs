@@ -39,7 +39,11 @@ public partial class User
 
     public virtual ICollection<Post> Posts { get; set; } = new List<Post>();
 
+    public virtual ICollection<PayrollRecord> PayrollRecords { get; set; } = new List<PayrollRecord>();
+
     public virtual Role Role { get; set; } = null!;
 
     public virtual StudentProfile? StudentProfile { get; set; }
+
+    public virtual TeacherProfile? TeacherProfile { get; set; }
 }

@@ -5,18 +5,22 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using STEM.Web.Areas.Teacher.Models;
 using STEM.Web.Data;
+using STEM.Web.Models;
+using STEM.Web.Services;
 
 namespace STEM.Web.Areas.Teacher.Controllers;
 
 [Area("Teacher")]
 [Authorize(Roles = "Teacher")]
-public class DashboardController : Controller
+    public class DashboardController : Controller
 {
     private readonly ApplicationDbContext _context;
+    private readonly PayrollCalculationService _payrollService;
 
-    public DashboardController(ApplicationDbContext context)
+    public DashboardController(ApplicationDbContext context, PayrollCalculationService payrollService)
     {
         _context = context;
+        _payrollService = payrollService;
     }
 
     [HttpGet]
@@ -123,6 +127,13 @@ public class DashboardController : Controller
             .Select(x => x.FullName)
             .FirstOrDefaultAsync() ?? User.Identity?.Name ?? "Giáo viên";
 
+        var teacherProfile = await _context.Set<TeacherProfile>()
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.UserId == teacherId.Value);
+
+        var now = DateTime.UtcNow;
+        var estimate = await _payrollService.GetTeacherEstimateAsync(teacherId.Value, now.Year, now.Month);
+
         var model = new TeacherDashboardViewModel
         {
             TodayLabel = $"Hôm nay · {DateTime.Today.ToString("dddd, dd/MM/yyyy", vietnameseCulture)}",
@@ -140,6 +151,12 @@ public class DashboardController : Controller
                 x.Session.Class.TeacherId == teacherId.Value &&
                 !string.IsNullOrWhiteSpace(x.TeacherRawNote) &&
                 !string.IsNullOrWhiteSpace(x.ProductMediaUrls)),
+                
+            EstimatedCurrentMonthPay = estimate.EstimatedTotalPay,
+            CurrentMonthValidSessions = estimate.ValidSessions,
+            CurrentMonthInvalidSessions = estimate.InvalidSessions,
+            HasSalaryTierConfigured = teacherProfile?.SalaryTier > 0 || teacherProfile?.CustomSessionRate.HasValue == true,
+
             TodaySessions = todaySessions,
             UpcomingSessions = upcomingSessions,
             EvidenceQueue = evidenceQueue,

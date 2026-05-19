@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using STEM.Web.Data;
 using STEM.Web.Models.StudentViewModels;
+using STEM.Web.Services;
 
 namespace STEM.Web.Areas.Student.Controllers;
 
@@ -791,41 +792,7 @@ public class StudentPortalController : Controller
 
     private static string FormatAiEvaluation(string? rawJson)
     {
-        if (string.IsNullOrWhiteSpace(rawJson)) return string.Empty;
-        try
-        {
-            using var doc = JsonDocument.Parse(rawJson);
-            var root = doc.RootElement;
-            
-            var score = root.TryGetProperty("score", out var s) ? s.GetString() : "";
-            var strengths = root.TryGetProperty("strengths", out var str) ? str.EnumerateArray().Select(x => x.GetString()).Where(x => !string.IsNullOrEmpty(x)).Cast<string>().ToList() : new List<string>();
-            var weaknesses = root.TryGetProperty("weaknesses", out var w) ? w.EnumerateArray().Select(x => x.GetString()).Where(x => !string.IsNullOrEmpty(x)).Cast<string>().ToList() : new List<string>();
-
-            var sb = new System.Text.StringBuilder();
-            if (!string.IsNullOrEmpty(score))
-                sb.AppendLine($"Điểm đánh giá: {score}\n");
-            
-            if (strengths.Any())
-            {
-                sb.AppendLine("Điểm tốt:");
-                foreach (var item in strengths)
-                    sb.AppendLine($"- {item}");
-                sb.AppendLine();
-            }
-            
-            if (weaknesses.Any())
-            {
-                sb.AppendLine("Cần cải thiện:");
-                foreach (var item in weaknesses)
-                    sb.AppendLine($"- {item}");
-            }
-            
-            return sb.ToString().Trim();
-        }
-        catch
-        {
-            // If not JSON, return as is
-            return rawJson;
-        }
+        return AiEvaluationFormatter.FormatForDisplay(rawJson);
     }
 }
+

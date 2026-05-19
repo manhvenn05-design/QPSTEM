@@ -14,6 +14,13 @@ public class TeacherDashboardViewModel
     public int UpcomingSessionCount { get; set; }
     public int ActiveBorrowCount { get; set; }
     public int EvidenceReadyCount { get; set; }
+    
+    // Payroll Estimation
+    public decimal EstimatedCurrentMonthPay { get; set; }
+    public int CurrentMonthValidSessions { get; set; }
+    public int CurrentMonthInvalidSessions { get; set; }
+    public bool HasSalaryTierConfigured { get; set; }
+    
     public IReadOnlyList<TeacherDashboardSessionItemViewModel> TodaySessions { get; set; } = [];
     public IReadOnlyList<TeacherDashboardSessionItemViewModel> UpcomingSessions { get; set; } = [];
     public IReadOnlyList<TeacherDashboardEvidenceItemViewModel> EvidenceQueue { get; set; } = [];

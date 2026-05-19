@@ -1,4 +1,4 @@
-﻿@model STEM.Web.Areas.Admin.Models.EditUserViewModel
+@model STEM.Web.Areas.Admin.Models.EditUserViewModel
 
 @{
     ViewData["Title"] = "Cập nhật người dùng";
@@ -153,6 +153,39 @@
             </div>
         </div>
 
+        <div id="teacher-profile-card" class="admin-card @(Model.IsTeacherRoleSelected ? string.Empty : "hidden")">
+            <div class="admin-card-section">
+                <div class="mb-6">
+                    <h2 class="admin-section-title">Thông tin bảng lương giáo viên</h2>
+                    <p class="admin-section-subtitle">Thiết lập bậc lương để tự động tính theo ma trận, hoặc nhập lương khoán để ghi đè.</p>
+                </div>
+
+                <div class="admin-field-grid two-col">
+                    <div>
+                        <label asp-for="SalaryTier" class="admin-label"></label>
+                        <select asp-for="SalaryTier" class="admin-select">
+                            <option value="1">Tier 1 (Cơ bản)</option>
+                            <option value="2">Tier 2</option>
+                            <option value="3">Tier 3</option>
+                            <option value="4">Tier 4</option>
+                            <option value="5">Tier 5 (Chuyên gia)</option>
+                        </select>
+                        <span asp-validation-for="SalaryTier" class="admin-validation"></span>
+                    </div>
+
+                    <div>
+                        <label asp-for="CustomSessionRate" class="admin-label"></label>
+                        <div class="relative">
+                            <input asp-for="CustomSessionRate" type="number" step="10000" class="admin-input pr-12 text-right" placeholder="Ví dụ: 300000" />
+                            <span class="absolute right-3 top-1/2 -translate-y-1/2 text-[#6b7c99] text-sm pointer-events-none">VNĐ</span>
+                        </div>
+                        <p class="admin-hint mt-1">Bỏ trống để tính theo ma trận Tier.</p>
+                        <span asp-validation-for="CustomSessionRate" class="admin-validation"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="admin-actions justify-end">
             <button type="submit" class="admin-btn-primary min-w-[192px]">Lưu cập nhật</button>
             <a asp-area="Admin" asp-controller="Users" asp-action="Index" class="admin-btn-secondary">Hủy</a>
@@ -167,18 +200,18 @@
             const usernameInput = document.getElementById("Username");
             const roleSelect = document.getElementById("RoleId");
             const studentCard = document.getElementById("student-profile-card");
+            const teacherCard = document.getElementById("teacher-profile-card");
 
-            if (!roleSelect || !studentCard) {
-                return;
-            }
+            if (!roleSelect) return;
 
-            const updateStudentCard = () => {
+            const updateProfileCards = () => {
                 const selectedText = roleSelect.options[roleSelect.selectedIndex]?.text?.trim().toLowerCase() ?? "";
-                studentCard.classList.toggle("hidden", selectedText !== "học sinh");
+                if (studentCard) studentCard.classList.toggle("hidden", selectedText !== "học sinh");
+                if (teacherCard) teacherCard.classList.toggle("hidden", selectedText !== "giáo viên");
             };
 
-            roleSelect.addEventListener("change", updateStudentCard);
-            updateStudentCard();
+            roleSelect.addEventListener("change", updateProfileCards);
+            updateProfileCards();
 
             document.querySelectorAll("[data-username-suggestion]").forEach((button) => {
                 button.addEventListener("click", () => {

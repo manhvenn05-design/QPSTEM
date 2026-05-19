@@ -63,6 +63,9 @@ public class TeacherAttendanceBoardViewModel
     public int MissingCount { get; set; }
     public int PresentCount { get; set; }
     public int AbsentCount { get; set; }
+    public string PayrollStatus { get; set; } = string.Empty;
+    public bool IsReadOnly { get; set; }
+    public string? EditLockMessage { get; set; }
     public bool HasStudents => Rows.Count > 0;
     public List<TeacherAttendanceBoardRowViewModel> Rows { get; set; } = [];
 }

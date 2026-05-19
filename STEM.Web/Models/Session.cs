@@ -29,6 +29,8 @@ public partial class Session
 
     public DateTime? UpdatedAt { get; set; }
 
+    public string PayrollStatus { get; set; } = string.Empty;
+
     public int? RoomId { get; set; }
 
     public virtual ICollection<Attendance> Attendances { get; set; } = new List<Attendance>();

@@ -1,0 +1,137 @@
+@model STEM.Web.Areas.Teacher.Models.TeacherPayrollIndexViewModel
+
+@{
+    ViewData["Title"] = "Phiếu lương";
+}
+
+<section class="teacher-page">
+    <div class="teacher-page-header">
+        <div>
+            <h1 class="teacher-page-title">Phiếu lương</h1>
+            <p class="teacher-page-subtitle">Xem lịch sử lương và ước tính thu nhập tháng hiện tại.</p>
+        </div>
+    </div>
+
+    @if (Model.CurrentMonthEstimate != null && Model.CurrentMonthEstimate.HasData)
+    {
+        <div class="teacher-card mb-8">
+            <div class="teacher-card-section bg-[#f5f7fb] border-b border-[#dce6f5]">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="teacher-section-title text-[#1a3a6e]">Lương tạm tính tháng @Model.CurrentMonthEstimate.Month.ToString("00")/@Model.CurrentMonthEstimate.Year</h2>
+                        <p class="teacher-section-subtitle">Dữ liệu được cập nhật theo thời gian thực dựa trên các buổi dạy đã điểm danh hợp lệ.</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-sm font-semibold text-[#6b7c99] uppercase tracking-wider">Tổng thu nhập ước tính</p>
+                        <p class="text-3xl font-bold text-[#1a3a6e]">@Model.CurrentMonthEstimate.EstimatedTotalPay.ToString("N0") ₫</p>
+                    </div>
+                </div>
+            </div>
+            <div class="teacher-card-section">
+                <div class="teacher-stat-grid teacher-stat-grid--4">
+                    <div class="teacher-stat-card bg-white">
+                        <div class="teacher-stat-icon bg-[#edf7e8] text-[#456c3f]">
+                            <span class="material-symbols-outlined">check_circle</span>
+                        </div>
+                        <div class="mt-3">
+                            <p class="teacher-stat-label">Hợp lệ</p>
+                            <p class="teacher-stat-value text-[#456c3f]">@Model.CurrentMonthEstimate.ValidSessions</p>
+                            <p class="teacher-kicker">buổi có minh chứng</p>
+                        </div>
+                    </div>
+                    
+                    <div class="teacher-stat-card bg-white border-l-[#ba1a1a]">
+                        <div class="teacher-stat-icon bg-[#fff1ef] text-[#ba1a1a]">
+                            <span class="material-symbols-outlined">warning</span>
+                        </div>
+                        <div class="mt-3">
+                            <p class="teacher-stat-label">Vi phạm</p>
+                            <p class="teacher-stat-value text-[#ba1a1a]">@Model.CurrentMonthEstimate.InvalidSessions</p>
+                            <p class="teacher-kicker">quá hạn hoặc bị từ chối</p>
+                        </div>
+                    </div>
+
+                    <div class="teacher-stat-card bg-white border-l-[#f97316]">
+                        <div class="teacher-stat-icon bg-[#fff7ed] text-[#f97316]">
+                            <span class="material-symbols-outlined">star</span>
+                        </div>
+                        <div class="mt-3">
+                            <p class="teacher-stat-label">Hạng mục giáo viên</p>
+                            <p class="teacher-stat-value text-[#f97316]">@Model.SalaryTierLabel</p>
+                            <p class="teacher-kicker">áp dụng cho tháng này</p>
+                        </div>
+                    </div>
+                    
+                    <div class="teacher-stat-card bg-white border-l-[#6b7c99]">
+                        <div class="teacher-stat-icon bg-[#f5f7fb] text-[#6b7c99]">
+                            <span class="material-symbols-outlined">calculate</span>
+                        </div>
+                        <div class="mt-3">
+                            <p class="teacher-stat-label">Tổng kết</p>
+                            <p class="teacher-stat-value text-[#0f1e38]">@Model.CurrentMonthEstimate.EstimatedTotalPay.ToString("N0") ₫</p>
+                            <p class="teacher-kicker">đã trừ phí vi phạm (nếu có)</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-6 flex items-start gap-3 rounded-xl bg-[#e8f0fb] p-4 text-[#1a3a6e]">
+                    <span class="material-symbols-outlined mt-0.5 text-[20px]">info</span>
+                    <p class="text-sm">Đây chỉ là mức lương <strong>tạm tính</strong> dựa trên dữ liệu hiện tại của hệ thống. Bảng lương chính thức sẽ được chốt và xuất bởi Quản trị viên vào ngày cuối tháng. Các buổi dạy vi phạm (không có minh chứng hoặc minh chứng không hợp lệ sau 48h) có thể làm giảm tổng thu nhập theo quy định.</p>
+                </div>
+            </div>
+        </div>
+    }
+
+    <div class="teacher-card">
+        <div class="teacher-card-section">
+            <h2 class="teacher-section-title">Lịch sử phiếu lương</h2>
+            <p class="teacher-section-subtitle mb-6">Danh sách các kỳ lương đã được chốt và thanh toán.</p>
+
+            @if (Model.History.Count == 0)
+            {
+                <p class="teacher-empty">Chưa có dữ liệu phiếu lương lịch sử.</p>
+            }
+            else
+            {
+                <div class="overflow-x-auto rounded-xl border border-[#dce6f5]">
+                    <table class="w-full text-left text-sm text-[#0f1e38]">
+                        <thead class="bg-[#f5f7fb] text-xs font-semibold uppercase tracking-wider text-[#6b7c99]">
+                            <tr>
+                                <th class="border-b border-[#dce6f5] px-6 py-4">Kỳ lương</th>
+                                <th class="border-b border-[#dce6f5] px-6 py-4">Số buổi</th>
+                                <th class="border-b border-[#dce6f5] px-6 py-4">Tổng thu nhập</th>
+                                <th class="border-b border-[#dce6f5] px-6 py-4">Trạng thái</th>
+                                <th class="border-b border-[#dce6f5] px-6 py-4 text-right">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-[#dce6f5]">
+                            @foreach (var item in Model.History)
+                            {
+                                <tr class="hover:bg-[#f8fafd] transition-colors">
+                                    <td class="px-6 py-4 font-medium">@item.PeriodLabel</td>
+                                    <td class="px-6 py-4">
+                                        <span class="text-[#456c3f] font-semibold">@item.TotalValidSessions hợp lệ</span>
+                                    </td>
+                                    <td class="px-6 py-4 font-bold text-[#1a3a6e]">@item.TotalPay.ToString("N0") ₫</td>
+                                    <td class="px-6 py-4">
+                                        @if (item.IsApproved)
+                                        {
+                                            <span class="teacher-tag teacher-tag--success">Đã duyệt</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="teacher-tag teacher-tag--warning">@item.Status</span>
+                                        }
+                                    </td>
+                                    <td class="px-6 py-4 text-right">
+                                        <a asp-area="Teacher" asp-controller="Payroll" asp-action="Period" asp-route-id="@item.RecordId" class="text-[#1a3a6e] hover:underline font-medium">Chi tiết</a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+</section>

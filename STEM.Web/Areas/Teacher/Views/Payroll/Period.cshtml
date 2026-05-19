@@ -1,0 +1,167 @@
+@model STEM.Web.Areas.Teacher.Models.TeacherPayrollPeriodViewModel
+
+@{
+    ViewData["Title"] = "Chi tiết phiếu lương";
+}
+
+<section class="teacher-page">
+    <div class="teacher-page-header">
+        <div>
+            <div class="mb-2 flex items-center gap-2 text-sm font-medium text-[#6b7c99]">
+                <a asp-area="Teacher" asp-controller="Payroll" asp-action="Index" class="hover:text-[#1a3a6e]">Phiếu lương</a>
+                <span class="material-symbols-outlined text-[16px]">chevron_right</span>
+                <span class="text-[#1a1c19]">Kỳ @Model.PeriodLabel</span>
+            </div>
+            <h1 class="teacher-page-title">Chi tiết phiếu lương @Model.PeriodLabel</h1>
+            <p class="teacher-page-subtitle">Ngày chốt bảng lương: @(Model.ApprovedAt?.ToString("dd/MM/yyyy") ?? Model.CreatedAt.ToString("dd/MM/yyyy"))</p>
+        </div>
+        <div class="teacher-actions">
+            <button type="button" class="teacher-btn-secondary" onclick="window.print()">
+                <span class="material-symbols-outlined text-[18px]">print</span>
+                <span>In phiếu lương</span>
+            </button>
+        </div>
+    </div>
+
+    <div class="teacher-panel-grid">
+        <div class="teacher-stack">
+            <div class="teacher-card">
+                <div class="teacher-card-section">
+                    <h2 class="teacher-section-title">Danh sách buổi dạy</h2>
+                    <p class="teacher-section-subtitle mb-6">Chi tiết các buổi dạy đã được ghi nhận trong kỳ lương này.</p>
+                    
+                    <div class="overflow-x-auto rounded-xl border border-[#dce6f5]">
+                        <table class="w-full text-left text-sm text-[#0f1e38]">
+                            <thead class="bg-[#f5f7fb] text-xs font-semibold uppercase tracking-wider text-[#6b7c99]">
+                                <tr>
+                                    <th class="border-b border-[#dce6f5] px-4 py-3">Buổi học</th>
+                                    <th class="border-b border-[#dce6f5] px-4 py-3">Thời gian</th>
+                                    <th class="border-b border-[#dce6f5] px-4 py-3">Trạng thái</th>
+                                    <th class="border-b border-[#dce6f5] px-4 py-3 text-right">Lương ca</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-[#dce6f5]">
+                                @foreach (var session in Model.Sessions)
+                                {
+                                    <tr class="hover:bg-[#f8fafd] transition-colors">
+                                        <td class="px-4 py-3">
+                                            <p class="font-medium">@session.CourseName - @session.ClassCode</p>
+                                            <p class="text-xs text-[#6b7c99] mt-0.5">@session.SessionLabel • Độ khó @session.CourseDifficultyLabel</p>
+                                        </td>
+                                        <td class="px-4 py-3 whitespace-nowrap">
+                                            <p>@session.DateText</p>
+                                            <p class="text-xs text-[#6b7c99] mt-0.5">@session.TimeText</p>
+                                        </td>
+                                        <td class="px-4 py-3">
+                                            <span class="teacher-tag @session.PayrollStatusBadgeClass">@session.PayrollStatusLabel</span>
+                                        </td>
+                                        <td class="px-4 py-3 text-right font-medium text-[#1a3a6e]">
+                                            @session.RateForSession.ToString("N0") ₫
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                            <tfoot class="bg-[#f5f7fb] font-semibold">
+                                <tr>
+                                    <td colspan="3" class="px-4 py-3 text-right text-[#6b7c99]">Tổng lương cơ bản (các buổi hợp lệ):</td>
+                                    <td class="px-4 py-3 text-right text-[#1a3a6e]">@Model.SessionEarnings.ToString("N0") ₫</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="teacher-stack">
+            <div class="teacher-card">
+                <div class="teacher-card-section bg-[#f5f7fb] border-b border-[#dce6f5]">
+                    <p class="text-sm font-semibold text-[#6b7c99] uppercase tracking-wider mb-2">Thực nhận kỳ này</p>
+                    <p class="text-4xl font-bold text-[#1a3a6e]">@Model.TotalPay.ToString("N0") ₫</p>
+                    
+                    <div class="mt-4 flex items-center gap-2">
+                        @if (Model.IsApproved)
+                        {
+                            <span class="teacher-tag teacher-tag--success">Đã duyệt & thanh toán</span>
+                        }
+                        else
+                        {
+                            <span class="teacher-tag teacher-tag--warning">@Model.Status</span>
+                        }
+                        <span class="teacher-tag teacher-tag--neutral">@Model.SalaryTierLabel</span>
+                    </div>
+                </div>
+                
+                <div class="teacher-card-section space-y-6">
+                    <div>
+                        <h3 class="text-sm font-semibold text-[#0f1e38] uppercase tracking-wider mb-3">Tóm tắt hoạt động</h3>
+                        <div class="flex justify-between items-center py-2 border-b border-dashed border-[#dce6f5]">
+                            <span class="text-[#6b7c99]">Tổng số buổi phân công</span>
+                            <span class="font-medium text-[#0f1e38]">@Model.TotalSessions</span>
+                        </div>
+                        <div class="flex justify-between items-center py-2 border-b border-dashed border-[#dce6f5]">
+                            <span class="text-[#6b7c99]">Buổi hợp lệ (tính lương)</span>
+                            <span class="font-medium text-[#456c3f]">@Model.ValidSessions</span>
+                        </div>
+                        <div class="flex justify-between items-center py-2 border-b border-dashed border-[#dce6f5]">
+                            <span class="text-[#6b7c99]">Buổi vi phạm (không tính lương)</span>
+                            <span class="font-medium text-[#ba1a1a]">@Model.InvalidSessions</span>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h3 class="text-sm font-semibold text-[#0f1e38] uppercase tracking-wider mb-3">Chi tiết thu nhập</h3>
+                        
+                        <div class="flex justify-between items-center py-2">
+                            <span class="text-[#6b7c99]">Lương cơ bản</span>
+                            <span class="font-medium text-[#0f1e38]">@Model.SessionEarnings.ToString("N0") ₫</span>
+                        </div>
+                        
+                        @if (Model.BonusItems.Any())
+                        {
+                            <div class="mt-2 space-y-2">
+                                @foreach (var bonus in Model.BonusItems)
+                                {
+                                    <div class="flex justify-between items-center py-1 pl-4 relative">
+                                        <div class="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-[#456c3f]"></div>
+                                        <span class="text-sm text-[#456c3f]">@bonus.Description</span>
+                                        <span class="text-sm font-medium text-[#456c3f]">+@bonus.Amount.ToString("N0") ₫</span>
+                                    </div>
+                                }
+                            </div>
+                        }
+
+                        @if (Model.DeductionItems.Any())
+                        {
+                            <div class="mt-2 space-y-2">
+                                @foreach (var deduction in Model.DeductionItems)
+                                {
+                                    <div class="flex justify-between items-center py-1 pl-4 relative">
+                                        <div class="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-[#ba1a1a]"></div>
+                                        <span class="text-sm text-[#ba1a1a]">@deduction.Description</span>
+                                        <span class="text-sm font-medium text-[#ba1a1a]">-@deduction.Amount.ToString("N0") ₫</span>
+                                    </div>
+                                }
+                            </div>
+                        }
+
+                        <div class="mt-4 pt-4 border-t border-[#dce6f5] flex justify-between items-center">
+                            <span class="font-bold text-[#0f1e38]">Tổng cộng</span>
+                            <span class="text-lg font-bold text-[#1a3a6e]">@Model.TotalPay.ToString("N0") ₫</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+    @@media print {
+        .teacher-sidebar, .teacher-header, .teacher-actions { display: none !important; }
+        .teacher-body { margin-left: 0 !important; }
+        .teacher-container { padding: 0 !important; }
+        .teacher-panel-grid { display: block; }
+        .teacher-stack { margin-bottom: 2rem; }
+    }
+</style>

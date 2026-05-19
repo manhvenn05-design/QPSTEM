@@ -97,6 +97,7 @@ public class UsersController : Controller
             .AsNoTracking()
             .Include(x => x.Role)
             .Include(x => x.StudentProfile)
+            .Include(x => x.TeacherProfile)
             .FirstOrDefaultAsync(x => x.Id == id);
 
         if (user == null)
@@ -119,7 +120,9 @@ public class UsersController : Controller
             CurrentSchool = user.StudentProfile?.CurrentSchool,
             GuardianName = user.StudentProfile?.GuardianName,
             GuardianPhone = user.StudentProfile?.GuardianPhone,
-            MedicalNotes = user.StudentProfile?.MedicalNotes
+            MedicalNotes = user.StudentProfile?.MedicalNotes,
+            SalaryTier = user.TeacherProfile?.SalaryTier,
+            CustomSessionRate = user.TeacherProfile?.CustomSessionRate
         };
 
         return View(model);
@@ -149,6 +152,7 @@ public class UsersController : Controller
         var normalizedEmail = string.IsNullOrWhiteSpace(model.Email) ? null : model.Email.Trim();
         var selectedRole = roles.FirstOrDefault(x => x.Id == model.RoleId);
         model.IsStudentRoleSelected = selectedRole != null && IsStudentRole(selectedRole.Name);
+        model.IsTeacherRoleSelected = selectedRole != null && IsTeacherRole(selectedRole.Name);
 
         if (!string.IsNullOrWhiteSpace(normalizedUsername) &&
             await _context.Users.AnyAsync(x => x.Username.ToLower() == normalizedUsername.ToLower()))
@@ -206,6 +210,7 @@ public class UsersController : Controller
             await _context.SaveChangesAsync();
 
             await UpsertStudentProfileAsync(user.Id, model.IsStudentRoleSelected, model.CurrentSchool, model.GuardianName, model.GuardianPhone, model.MedicalNotes);
+            await UpsertTeacherProfileAsync(user.Id, model.IsTeacherRoleSelected, model.SalaryTier, model.CustomSessionRate);
         }
         catch (DbUpdateException ex) when (IsDuplicateUsername(ex))
         {
@@ -230,6 +235,7 @@ public class UsersController : Controller
             .AsNoTracking()
             .Include(x => x.Role)
             .Include(x => x.StudentProfile)
+            .Include(x => x.TeacherProfile)
             .FirstOrDefaultAsync(x => x.Id == id);
 
         if (user == null)
@@ -252,6 +258,9 @@ public class UsersController : Controller
             GuardianPhone = user.StudentProfile?.GuardianPhone,
             MedicalNotes = user.StudentProfile?.MedicalNotes,
             IsStudentRoleSelected = IsStudentRole(user.Role.Name),
+            SalaryTier = user.TeacherProfile?.SalaryTier,
+            CustomSessionRate = user.TeacherProfile?.CustomSessionRate,
+            IsTeacherRoleSelected = IsTeacherRole(user.Role.Name),
             RoleOptions = await BuildRoleOptionsAsync()
         };
 
@@ -270,6 +279,7 @@ public class UsersController : Controller
         var user = await _context.Users
             .Include(x => x.Role)
             .Include(x => x.StudentProfile)
+            .Include(x => x.TeacherProfile)
             .FirstOrDefaultAsync(x => x.Id == model.Id);
 
         if (user == null)
@@ -283,6 +293,7 @@ public class UsersController : Controller
         var normalizedEmail = string.IsNullOrWhiteSpace(model.Email) ? null : model.Email.Trim();
         var selectedRole = roles.FirstOrDefault(x => x.Id == model.RoleId);
         model.IsStudentRoleSelected = selectedRole != null && IsStudentRole(selectedRole.Name);
+        model.IsTeacherRoleSelected = selectedRole != null && IsTeacherRole(selectedRole.Name);
 
         if (!string.IsNullOrWhiteSpace(normalizedUsername) &&
             await _context.Users.AnyAsync(x => x.Id != model.Id && x.Username.ToLower() == normalizedUsername.ToLower()))
@@ -340,6 +351,7 @@ public class UsersController : Controller
         {
             await _context.SaveChangesAsync();
             await UpsertStudentProfileAsync(user.Id, model.IsStudentRoleSelected, model.CurrentSchool, model.GuardianName, model.GuardianPhone, model.MedicalNotes);
+            await UpsertTeacherProfileAsync(user.Id, model.IsTeacherRoleSelected, model.SalaryTier, model.CustomSessionRate);
         }
         catch (DbUpdateException ex) when (IsDuplicateUsername(ex))
         {
@@ -369,6 +381,7 @@ public class UsersController : Controller
     {
         var user = await _context.Users
             .Include(x => x.StudentProfile)
+            .Include(x => x.TeacherProfile)
             .FirstOrDefaultAsync(x => x.Id == id);
 
         if (user == null)
@@ -397,6 +410,8 @@ public class UsersController : Controller
 
         if (user.StudentProfile != null)
             _context.StudentProfiles.Remove(user.StudentProfile);
+        if (user.TeacherProfile != null)
+            _context.TeacherProfiles.Remove(user.TeacherProfile);
 
         _context.Users.Remove(user);
         await _context.SaveChangesAsync();
@@ -416,6 +431,7 @@ public class UsersController : Controller
     {
         var user = await _context.Users
             .Include(x => x.StudentProfile)
+            .Include(x => x.TeacherProfile)
             .FirstOrDefaultAsync(x => x.Id == id);
 
         if (user == null)
@@ -551,10 +567,14 @@ public class UsersController : Controller
                 .ToListAsync();
             _context.Invoices.RemoveRange(invoices);
 
-            // 8. StudentProfile
+            // 8. StudentProfile & TeacherProfile
             if (user.StudentProfile != null)
             {
                 _context.StudentProfiles.Remove(user.StudentProfile);
+            }
+            if (user.TeacherProfile != null)
+            {
+                _context.TeacherProfiles.Remove(user.TeacherProfile);
             }
 
             // 9. Cuối cùng: xóa User
@@ -659,6 +679,35 @@ public class UsersController : Controller
         await _context.SaveChangesAsync();
     }
 
+    private async Task UpsertTeacherProfileAsync(int userId, bool isTeacherRoleSelected, int? salaryTier, decimal? customSessionRate)
+    {
+        var profile = await _context.TeacherProfiles.FirstOrDefaultAsync(x => x.UserId == userId);
+
+        if (!isTeacherRoleSelected)
+        {
+            if (profile != null)
+            {
+                _context.TeacherProfiles.Remove(profile);
+                await _context.SaveChangesAsync();
+            }
+            return;
+        }
+
+        if (profile == null)
+        {
+            profile = new TeacherProfile
+            {
+                UserId = userId
+            };
+            _context.TeacherProfiles.Add(profile);
+        }
+
+        profile.SalaryTier = salaryTier ?? 1;
+        profile.CustomSessionRate = customSessionRate;
+
+        await _context.SaveChangesAsync();
+    }
+
     private static string NormalizeRoleLabel(string roleName)
     {
         return roleName switch
@@ -673,6 +722,11 @@ public class UsersController : Controller
     private static bool IsStudentRole(string roleName)
     {
         return roleName == "Student" || roleName == "Học sinh";
+    }
+
+    private static bool IsTeacherRole(string roleName)
+    {
+        return roleName == "Teacher" || roleName == "Giáo viên";
     }
 
     private static string GetRoleBadgeClass(string roleName)

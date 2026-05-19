@@ -1042,6 +1042,10 @@
                     <span class="material-symbols-outlined text-[20px]">photo_library</span>
                     <span>Minh chứng</span>
                 </a>
+                <a class="@NavClass("Payroll")" asp-area="Teacher" asp-controller="Payroll" asp-action="Index">
+                    <span class="material-symbols-outlined text-[20px]">request_quote</span>
+                    <span>Phiếu lương</span>
+                </a>
                 <a class="@NavClass("Equipment")" asp-area="Teacher" asp-controller="Equipment" asp-action="Index">
                     <span class="material-symbols-outlined text-[20px]">inventory_2</span>
                     <span>Mượn / Trả thiết bị</span>
@@ -1114,6 +1118,32 @@
         </div>
     </div>
 
+    <div class="teacher-modal-backdrop" data-teacher-notice-modal>
+        <div class="teacher-modal shadow-xl" style="max-width: 560px;">
+            <div class="teacher-modal-content relative">
+                <button type="button" class="absolute right-4 top-4 text-[#73796b] hover:text-[#1a1c19]" data-teacher-notice-close>
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+
+                <div class="mb-4 flex items-center gap-3">
+                    <div data-teacher-notice-icon-wrap class="flex h-11 w-11 items-center justify-center rounded-full bg-[#e8f0fb] text-[#1a3a6e]">
+                        <span data-teacher-notice-icon class="material-symbols-outlined">info</span>
+                    </div>
+                    <div>
+                        <h2 data-teacher-notice-title class="text-lg font-semibold text-[#1a1c19]">Th&#244;ng b&#225;o</h2>
+                    </div>
+                </div>
+
+                <p data-teacher-notice-text class="teacher-page-subtitle mt-0 max-w-none whitespace-pre-line"></p>
+
+                <div class="mt-6 flex justify-end gap-3">
+                    <button type="button" data-teacher-notice-cancel class="teacher-btn-secondary hidden">&#272;&#243;ng</button>
+                    <button type="button" data-teacher-notice-confirm class="teacher-btn-primary">OK</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         (() => {
             const shell = document.querySelector('[data-teacher-shell]');
@@ -1122,13 +1152,86 @@
             const modal = document.querySelector('[data-teacher-logout-modal]');
             const openButton = document.querySelector('[data-teacher-logout-open]');
             const closeButtons = document.querySelectorAll('[data-teacher-logout-close]');
+            const noticeModal = document.querySelector('[data-teacher-notice-modal]');
+            const noticeTitle = document.querySelector('[data-teacher-notice-title]');
+            const noticeText = document.querySelector('[data-teacher-notice-text]');
+            const noticeIcon = document.querySelector('[data-teacher-notice-icon]');
+            const noticeIconWrap = document.querySelector('[data-teacher-notice-icon-wrap]');
+            const noticeConfirm = document.querySelector('[data-teacher-notice-confirm]');
+            const noticeCancel = document.querySelector('[data-teacher-notice-cancel]');
+            const noticeCloseButton = document.querySelector('[data-teacher-notice-close]');
             const headerTitle = document.querySelector('.teacher-header-title');
             const storageKey = 'teacher-sidebar-collapsed';
             const mobileQuery = window.matchMedia('(max-width: 1023px)');
+            let noticeResolver = null;
 
             if (!shell) {
                 return;
             }
+
+            const getNoticeVisual = (iconType) => {
+                switch (iconType) {
+                    case 'error':
+                        return { icon: 'error', background: '#fde8e8', color: '#ba1a1a' };
+                    case 'warning':
+                        return { icon: 'warning', background: '#fff4e8', color: '#9b682f' };
+                    case 'success':
+                        return { icon: 'check_circle', background: '#edf7e8', color: '#456c3f' };
+                    default:
+                        return { icon: 'info', background: '#e8f0fb', color: '#1a3a6e' };
+                }
+            };
+
+            const closeNoticeModal = (isConfirmed) => {
+                noticeModal?.classList.remove('is-open');
+                if (noticeResolver) {
+                    noticeResolver({ isConfirmed });
+                    noticeResolver = null;
+                }
+            };
+
+            const openNoticeModal = (options = {}) => {
+                if (!noticeModal || !noticeTitle || !noticeText || !noticeConfirm || !noticeCancel || !noticeIcon || !noticeIconWrap) {
+                    return Promise.resolve({ isConfirmed: true });
+                }
+
+                const visual = getNoticeVisual(options.icon || 'info');
+                noticeTitle.textContent = options.title || 'Th\u00f4ng b\u00e1o';
+                noticeText.textContent = options.text || '';
+                noticeIcon.textContent = visual.icon;
+                noticeIconWrap.style.background = visual.background;
+                noticeIconWrap.style.color = visual.color;
+                noticeConfirm.textContent = options.confirmButtonText || 'OK';
+                noticeConfirm.style.background = options.confirmButtonColor || '#1a3a6e';
+                noticeCancel.textContent = options.cancelButtonText || '\u0110\u00f3ng';
+                noticeCancel.classList.toggle('hidden', !options.showCancelButton);
+                noticeModal.classList.add('is-open');
+
+                return new Promise((resolve) => {
+                    noticeResolver = resolve;
+                });
+            };
+
+            window.TeacherDialog = {
+                alert: openNoticeModal,
+                close: closeNoticeModal
+            };
+
+            window.alert = (message) => {
+                openNoticeModal({
+                    title: 'Th\u00f4ng b\u00e1o',
+                    text: typeof message === 'string' ? message : String(message ?? '')
+                });
+            };
+
+            noticeConfirm?.addEventListener('click', () => closeNoticeModal(true));
+            noticeCancel?.addEventListener('click', () => closeNoticeModal(false));
+            noticeCloseButton?.addEventListener('click', () => closeNoticeModal(false));
+            noticeModal?.addEventListener('click', (event) => {
+                if (event.target === noticeModal) {
+                    closeNoticeModal(false);
+                }
+            });
 
             const syncShellState = () => {
                 if (mobileQuery.matches) {
