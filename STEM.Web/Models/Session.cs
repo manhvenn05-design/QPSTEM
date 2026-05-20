@@ -33,11 +33,17 @@ public partial class Session
 
     public int? RoomId { get; set; }
 
+    public int? SubstituteTeacherId { get; set; }
+
+    public decimal SessionRateApplied { get; set; }
+
     public virtual ICollection<Attendance> Attendances { get; set; } = new List<Attendance>();
 
     public virtual Class Class { get; set; } = null!;
 
     public virtual Room? Room { get; set; }
+
+    public virtual User? SubstituteTeacher { get; set; }
 
     public virtual ICollection<EquipmentBorrow> EquipmentBorrows { get; set; } = new List<EquipmentBorrow>();
 }

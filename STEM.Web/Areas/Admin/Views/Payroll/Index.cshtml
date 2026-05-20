@@ -103,6 +103,8 @@
                                 <th>Khấu trừ</th>
                                 <th>Thực nhận</th>
                                 <th>Trạng thái</th>
+                                <th>Ghi chú điều chỉnh</th>
+                                <th></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -130,6 +132,23 @@
                                             <div class="mt-1 text-xs text-[#6b7c99]">@record.ApprovedAt.Value.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</div>
                                         }
                                     </td>
+                                    <td class="text-xs text-[#6b7c99]">
+                                        @(string.IsNullOrWhiteSpace(record.AdjustmentNotes) ? "-" : record.AdjustmentNotes)
+                                    </td>
+                                    <td class="text-right">
+                                        @if (!string.Equals(record.Status, STEM.Web.Services.AttendanceWorkflowService.PayrollRecordStatusApproved, StringComparison.OrdinalIgnoreCase))
+                                        {
+                                            <button type="button" class="admin-btn-secondary py-1 px-2 text-xs" 
+                                                onclick="openEditDraftModal(this)"
+                                                data-id="@record.Id"
+                                                data-name="@record.TeacherName"
+                                                data-bonuses="@record.Bonuses"
+                                                data-deductions="@record.Deductions"
+                                                data-notes="@record.AdjustmentNotes">
+                                                Điều chỉnh
+                                            </button>
+                                        }
+                                    </td>
                                 </tr>
                             }
                         </tbody>
@@ -139,3 +158,54 @@
         </div>
     </div>
 </section>
+
+<!-- Modal Cập nhật Draft -->
+<div id="editDraftModal" class="fixed inset-0 z-50 flex hidden items-center justify-center bg-[#0f1e38]/50 backdrop-blur-sm">
+    <form asp-area="Admin" asp-controller="Payroll" asp-action="UpdateDraft" method="post" class="admin-card w-full max-w-lg">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="year" value="@Model.Year" />
+        <input type="hidden" name="month" value="@Model.Month" />
+        <input type="hidden" id="editDraftId" name="Id" value="" />
+        
+        <div class="admin-card-section border-b border-[#dce6f5]">
+            <h3 class="admin-section-title">Điều chỉnh bảng lương</h3>
+            <p class="admin-section-subtitle">Giáo viên: <strong id="editDraftName"></strong></p>
+        </div>
+        <div class="admin-card-section grid gap-4">
+            <div>
+                <label class="admin-label" for="editDraftBonuses">Thưởng (VNĐ)</label>
+                <input type="number" id="editDraftBonuses" name="Bonuses" class="admin-input" min="0" step="10000" />
+            </div>
+            <div>
+                <label class="admin-label" for="editDraftDeductions">Khấu trừ (VNĐ)</label>
+                <input type="number" id="editDraftDeductions" name="Deductions" class="admin-input" min="0" step="10000" />
+            </div>
+            <div>
+                <label class="admin-label" for="editDraftNotes">Ghi chú điều chỉnh</label>
+                <textarea id="editDraftNotes" name="AdjustmentNotes" class="admin-input min-h-[80px]" placeholder="Lý do thưởng/phạt..."></textarea>
+            </div>
+        </div>
+        <div class="admin-card-section flex justify-end gap-3 border-t border-[#dce6f5] bg-[#f8fbff]">
+            <button type="button" class="admin-btn-secondary" onclick="closeEditDraftModal()">Hủy</button>
+            <button type="submit" class="admin-btn-primary">Lưu thay đổi</button>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <script>
+        function openEditDraftModal(btn) {
+            document.getElementById('editDraftId').value = btn.dataset.id;
+            document.getElementById('editDraftName').innerText = btn.dataset.name;
+            document.getElementById('editDraftBonuses').value = btn.dataset.bonuses;
+            document.getElementById('editDraftDeductions').value = btn.dataset.deductions;
+            document.getElementById('editDraftNotes').value = btn.dataset.notes;
+            
+            document.getElementById('editDraftModal').classList.remove('hidden');
+        }
+
+        function closeEditDraftModal() {
+            document.getElementById('editDraftModal').classList.add('hidden');
+        }
+    </script>
+}

@@ -46,6 +46,15 @@
                         <span asp-validation-for="RoomId" class="admin-validation"></span>
                     </div>
 
+                    <div class="md:col-span-2">
+                        <label asp-for="SubstituteTeacherId" class="admin-label"></label>
+                        <select asp-for="SubstituteTeacherId" asp-items="Model.SubstituteTeacherOptions" class="admin-select">
+                            <option value="">Không có dạy thay (Sử dụng giáo viên chính)</option>
+                        </select>
+                        <span asp-validation-for="SubstituteTeacherId" class="admin-validation"></span>
+                        <p class="mt-2 text-sm text-[#73796b]">Nếu chọn giáo viên dạy thay, lương của buổi này sẽ được tính cho giáo viên dạy thay.</p>
+                    </div>
+
                     <div>
                         <label asp-for="SessionNo" class="admin-label"></label>
                         <input asp-for="SessionNo" class="admin-input" placeholder="Ví dụ: 1, 2, 3..." />

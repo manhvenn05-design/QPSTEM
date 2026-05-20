@@ -26,4 +26,13 @@ public class PayrollRecordItemViewModel
     public decimal TotalPay { get; set; }
     public string Status { get; set; } = string.Empty;
     public DateTime? ApprovedAt { get; set; }
+    public string? AdjustmentNotes { get; set; }
+}
+
+public class UpdateDraftViewModel
+{
+    public int Id { get; set; }
+    public decimal Bonuses { get; set; }
+    public decimal Deductions { get; set; }
+    public string? AdjustmentNotes { get; set; }
 }

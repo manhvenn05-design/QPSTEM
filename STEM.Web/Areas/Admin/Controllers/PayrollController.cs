@@ -46,7 +46,8 @@ public class PayrollController : Controller
                 Deductions = x.Deductions,
                 TotalPay = x.TotalPay,
                 Status = x.Status,
-                ApprovedAt = x.ApprovedAt
+                ApprovedAt = x.ApprovedAt,
+                AdjustmentNotes = x.AdjustmentNotes
             })
             .ToListAsync(cancellationToken);
 
@@ -85,6 +86,34 @@ public class PayrollController : Controller
         TempData["SuccessMessage"] = approvedCount == 0
             ? $"Chưa có bảng lương để chốt cho tháng {month:00}/{year}."
             : $"Đã chốt {approvedCount} bản ghi lương cho tháng {month:00}/{year}.";
+        return RedirectToAction(nameof(Index), new { year, month });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> UpdateDraft(UpdateDraftViewModel model, int year, int month, CancellationToken cancellationToken = default)
+    {
+        var record = await _context.PayrollRecords.FirstOrDefaultAsync(x => x.Id == model.Id, cancellationToken);
+        if (record == null)
+        {
+            TempData["ErrorMessage"] = "Không tìm thấy bản ghi lương.";
+            return RedirectToAction(nameof(Index), new { year, month });
+        }
+
+        if (string.Equals(record.Status, AttendanceWorkflowService.PayrollRecordStatusApproved, StringComparison.OrdinalIgnoreCase))
+        {
+            TempData["ErrorMessage"] = "Không thể chỉnh sửa bản ghi lương đã chốt.";
+            return RedirectToAction(nameof(Index), new { year, month });
+        }
+
+        record.Bonuses = model.Bonuses;
+        record.Deductions = model.Deductions;
+        record.AdjustmentNotes = string.IsNullOrWhiteSpace(model.AdjustmentNotes) ? null : model.AdjustmentNotes.Trim();
+        record.TotalPay = Math.Max(0m, record.SessionEarnings + record.Bonuses - record.Deductions);
+
+        await _context.SaveChangesAsync(cancellationToken);
+        
+        TempData["SuccessMessage"] = $"Đã cập nhật thưởng/phạt cho giáo viên.";
         return RedirectToAction(nameof(Index), new { year, month });
     }
 }

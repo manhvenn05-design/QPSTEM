@@ -39,12 +39,13 @@ public sealed class PayrollCalculationService
             .Select(x => new PayrollSessionRow
             {
                 SessionId = x.Id,
-                TeacherId = x.Class.TeacherId,
+                TeacherId = x.SubstituteTeacherId ?? x.Class.TeacherId,
                 ClassId = x.ClassId,
                 CourseId = x.Class.CourseId,
                 CourseDifficulty = x.Class.Course.DifficultyLevel,
                 SessionDate = x.Date,
                 PayrollStatus = x.PayrollStatus,
+                SessionRateApplied = x.SessionRateApplied,
                 AttendanceCount = x.Attendances.Count,
                 PresentCount = x.Attendances.Count(a => a.IsPresent),
                 StudentCount = x.Class.Enrollments.Count,
@@ -87,19 +88,7 @@ public sealed class PayrollCalculationService
                 .Where(x => string.Equals(x.PayrollStatus, AttendanceIntegrityRules.PayrollStatusValid, StringComparison.OrdinalIgnoreCase))
                 .ToList();
 
-            var sessionEarnings = validSessions.Sum(session =>
-            {
-                if (teacherProfile.CustomSessionRate.HasValue)
-                {
-                    return teacherProfile.CustomSessionRate.Value;
-                }
-
-                return payRates
-                    .FirstOrDefault(x =>
-                        x.TeacherTier == teacherProfile.SalaryTier &&
-                        x.CourseDifficulty == session.CourseDifficulty)
-                    ?.RatePerSession ?? 0m;
-            });
+            var sessionEarnings = validSessions.Sum(session => session.SessionRateApplied);
 
             var bonuses = CalculateBonuses(teacherGroup.ToList(), validSessions, sessionEarnings);
             var deductions = CalculateDeductions(teacherGroup.ToList(), validSessions, sessionEarnings);
@@ -167,7 +156,7 @@ public sealed class PayrollCalculationService
 
         var sessionRows = await _context.Sessions
             .AsNoTracking()
-            .Where(x => x.Class.TeacherId == teacherId &&
+            .Where(x => (x.Class.TeacherId == teacherId && x.SubstituteTeacherId == null || x.SubstituteTeacherId == teacherId) &&
                         x.Date >= periodStart && x.Date < periodEnd)
             .Select(x => new PayrollSessionRow
             {
@@ -178,6 +167,7 @@ public sealed class PayrollCalculationService
                 CourseDifficulty = x.Class.Course.DifficultyLevel,
                 SessionDate = x.Date,
                 PayrollStatus = x.PayrollStatus,
+                SessionRateApplied = x.SessionRateApplied,
                 AttendanceCount = x.Attendances.Count,
                 PresentCount = x.Attendances.Count(a => a.IsPresent),
                 StudentCount = x.Class.Enrollments.Count,
@@ -190,7 +180,7 @@ public sealed class PayrollCalculationService
 
         var aiScores = await _context.Attendances
             .AsNoTracking()
-            .Where(x => x.Session.Class.TeacherId == teacherId &&
+            .Where(x => (x.Session.Class.TeacherId == teacherId && x.Session.SubstituteTeacherId == null || x.Session.SubstituteTeacherId == teacherId) &&
                         x.Session.Date >= periodStart && x.Session.Date < periodEnd &&
                         !string.IsNullOrWhiteSpace(x.AiEvaluation))
             .Select(x => new { x.SessionId, x.AiEvaluation })
@@ -213,19 +203,7 @@ public sealed class PayrollCalculationService
         decimal sessionEarnings = 0m;
         if (teacherProfile != null)
         {
-            sessionEarnings = validSessions.Sum(session =>
-            {
-                if (teacherProfile.CustomSessionRate.HasValue)
-                {
-                    return teacherProfile.CustomSessionRate.Value;
-                }
-
-                return payRates
-                    .FirstOrDefault(x =>
-                        x.TeacherTier == teacherProfile.SalaryTier &&
-                        x.CourseDifficulty == session.CourseDifficulty)
-                    ?.RatePerSession ?? 0m;
-            });
+            sessionEarnings = validSessions.Sum(session => session.SessionRateApplied);
         }
 
         var bonuses = CalculateBonuses(sessionRows, validSessions, sessionEarnings);
@@ -351,6 +329,7 @@ public sealed class PayrollCalculationService
         public int StudentCount { get; set; }
         public int MediaReadyCount { get; set; }
         public int ExcellentAiCount { get; set; }
+        public decimal SessionRateApplied { get; set; }
     }
 }
 

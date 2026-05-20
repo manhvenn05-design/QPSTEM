@@ -111,6 +111,34 @@ public sealed class AttendanceWorkflowService
             DateOnly.FromDateTime(DateTime.Today));
 
         session.PayrollStatus = payrollStatus;
+
+        if (string.Equals(payrollStatus, AttendanceIntegrityRules.PayrollStatusValid, StringComparison.OrdinalIgnoreCase))
+        {
+            var effectiveTeacherId = session.SubstituteTeacherId ?? session.Class.TeacherId;
+            var teacherProfile = await _context.Set<TeacherProfile>()
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.UserId == effectiveTeacherId, cancellationToken);
+                
+            if (teacherProfile != null)
+            {
+                if (teacherProfile.CustomSessionRate.HasValue)
+                {
+                    session.SessionRateApplied = teacherProfile.CustomSessionRate.Value;
+                }
+                else
+                {
+                    var payRate = await _context.Set<PayRateConfig>()
+                        .AsNoTracking()
+                        .FirstOrDefaultAsync(x => x.TeacherTier == teacherProfile.SalaryTier && x.CourseDifficulty == session.Class.Course.DifficultyLevel, cancellationToken);
+                    
+                    if (payRate != null)
+                    {
+                        session.SessionRateApplied = payRate.RatePerSession;
+                    }
+                }
+            }
+        }
+
         await _context.SaveChangesAsync(cancellationToken);
         return payrollStatus;
     }

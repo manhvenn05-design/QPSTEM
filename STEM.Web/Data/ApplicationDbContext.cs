@@ -395,11 +395,18 @@ public partial class ApplicationDbContext : DbContext
             entity.Property(e => e.Topic).HasMaxLength(200);
             entity.Property(e => e.PayrollStatus)
                 .HasDefaultValue(AttendanceIntegrityRules.PayrollStatusPending);
+            entity.Property(e => e.SessionRateApplied)
+                .HasColumnType("decimal(18, 2)")
+                .HasDefaultValue(0m);
 
             entity.HasOne(d => d.Class).WithMany(p => p.Sessions)
                 .HasForeignKey(d => d.ClassId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Sessions_Classes");
+
+            entity.HasOne(d => d.SubstituteTeacher).WithMany()
+                .HasForeignKey(d => d.SubstituteTeacherId)
+                .HasConstraintName("FK_Sessions_Users_Substitute");
 
             entity.HasOne(d => d.Room).WithMany(p => p.Sessions)
                 .HasForeignKey(d => d.RoomId)

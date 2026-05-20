@@ -97,6 +97,11 @@ public class CreateSessionViewModel : IValidatableObject
 public class EditSessionViewModel : CreateSessionViewModel
 {
     public int Id { get; set; }
+    
+    [Display(Name = "Giáo viên dạy thay (Nếu có)")]
+    public int? SubstituteTeacherId { get; set; }
+    
+    public IReadOnlyList<SelectListItem> SubstituteTeacherOptions { get; set; } = [];
 }
 
 public class SessionDetailsViewModel

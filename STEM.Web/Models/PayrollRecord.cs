@@ -22,6 +22,8 @@ public partial class PayrollRecord
 
     public string Status { get; set; } = string.Empty;
 
+    public string? AdjustmentNotes { get; set; }
+
     public DateTime CreatedAt { get; set; }
 
     public DateTime? ApprovedAt { get; set; }
