@@ -3,10 +3,10 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
-using STEM.Web.Areas.Admin.Infrastructure;
 using STEM.Web.Areas.Admin.Models;
 using STEM.Web.Data;
 using STEM.Web.Models;
+using STEM.Web.Services;
 
 namespace STEM.Web.Areas.Admin.Controllers;
 
@@ -15,12 +15,12 @@ namespace STEM.Web.Areas.Admin.Controllers;
 public class InventoryController : Controller
 {
     private readonly ApplicationDbContext _context;
-    private readonly IWebHostEnvironment _environment;
+    private readonly IFileStorageService _fileStorage;
 
-    public InventoryController(ApplicationDbContext context, IWebHostEnvironment environment)
+    public InventoryController(ApplicationDbContext context, IFileStorageService fileStorage)
     {
         _context = context;
-        _environment = environment;
+        _fileStorage = fileStorage;
     }
 
     [HttpGet]
@@ -380,7 +380,7 @@ public class InventoryController : Controller
         {
             if (model.ImageFile != null)
             {
-                uploadedImageUrl = await AdminImageStorage.SaveImageAsync(model.ImageFile, _environment.WebRootPath, "equipments");
+                uploadedImageUrl = await _fileStorage.SaveFileAsync(model.ImageFile, "equipments");
                 entity.ImageUrl = uploadedImageUrl;
             }
         }
@@ -400,7 +400,7 @@ public class InventoryController : Controller
         {
             if (uploadedImageUrl != null)
             {
-                AdminImageStorage.DeleteIfManaged(uploadedImageUrl, _environment.WebRootPath);
+                await _fileStorage.DeleteFileAsync(uploadedImageUrl);
             }
 
             ModelState.AddModelError(nameof(model.SerialNumber), "Mã thiết bị đã tồn tại.");
@@ -473,7 +473,7 @@ public class InventoryController : Controller
         {
             if (model.ImageFile != null)
             {
-                uploadedImageUrl = await AdminImageStorage.SaveImageAsync(model.ImageFile, _environment.WebRootPath, "equipments");
+                uploadedImageUrl = await _fileStorage.SaveFileAsync(model.ImageFile, "equipments");
                 entity.ImageUrl = uploadedImageUrl;
             }
         }
@@ -490,14 +490,14 @@ public class InventoryController : Controller
             await SyncCategoryTotalsAsync(oldCategoryId, entity.CategoryId);
             if (uploadedImageUrl != null && !string.IsNullOrWhiteSpace(oldImageUrl))
             {
-                AdminImageStorage.DeleteIfManaged(oldImageUrl, _environment.WebRootPath);
+                await _fileStorage.DeleteFileAsync(oldImageUrl);
             }
         }
         catch (DbUpdateException ex) when (IsDuplicateSerialNumber(ex))
         {
             if (uploadedImageUrl != null)
             {
-                AdminImageStorage.DeleteIfManaged(uploadedImageUrl, _environment.WebRootPath);
+                await _fileStorage.DeleteFileAsync(uploadedImageUrl);
             }
 
             ModelState.AddModelError(nameof(model.SerialNumber), "Mã thiết bị đã tồn tại.");
@@ -537,7 +537,7 @@ public class InventoryController : Controller
 
         if (!string.IsNullOrWhiteSpace(imageUrl))
         {
-            AdminImageStorage.DeleteIfManaged(imageUrl, _environment.WebRootPath);
+            await _fileStorage.DeleteFileAsync(imageUrl);
         }
 
         TempData["SuccessMessage"] = "Đã xóa thiết bị.";

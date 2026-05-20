@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using STEM.Web.Models;
 
 namespace STEM.Web.Areas.Admin.Models;
 
@@ -59,8 +60,12 @@ public class CreateClassViewModel : IValidatableObject
     [Display(Name = "Ngày kết thúc")]
     public DateOnly? EndDate { get; set; }
 
+    [Display(Name = "Trạng thái")]
+    public ClassStatus Status { get; set; } = ClassStatus.Active;
+
     public IReadOnlyList<SelectListItem> CourseOptions { get; set; } = [];
     public IReadOnlyList<SelectListItem> TeacherOptions { get; set; } = [];
+    public IReadOnlyList<SelectListItem> StatusOptions { get; set; } = [];
 
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {

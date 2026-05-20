@@ -30,12 +30,29 @@
                 </div>
 
                 <div class="admin-field-grid two-col">
-                    <div class="md:col-span-2">
+                    <div class="md:col-span-1">
                         <label asp-for="ClassId" class="admin-label"></label>
                         <select asp-for="ClassId" asp-items="Model.ClassOptions" class="admin-select">
                             <option value="">Chọn lớp học</option>
                         </select>
                         <span asp-validation-for="ClassId" class="admin-validation"></span>
+                    </div>
+
+                    <div class="md:col-span-1">
+                        <label asp-for="RoomId" class="admin-label"></label>
+                        <select asp-for="RoomId" asp-items="Model.RoomOptions" class="admin-select">
+                            <option value="">Chưa xếp phòng</option>
+                        </select>
+                        <span asp-validation-for="RoomId" class="admin-validation"></span>
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <label asp-for="SubstituteTeacherId" class="admin-label"></label>
+                        <select asp-for="SubstituteTeacherId" asp-items="Model.SubstituteTeacherOptions" class="admin-select">
+                            <option value="">Không có dạy thay (Sử dụng giáo viên chính)</option>
+                        </select>
+                        <span asp-validation-for="SubstituteTeacherId" class="admin-validation"></span>
+                        <p class="mt-2 text-sm text-[#73796b]">Nếu chọn giáo viên dạy thay, lương của buổi này sẽ được tính cho giáo viên dạy thay.</p>
                     </div>
 
                     <div>

@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using STEM.Web.Areas.Teacher.Models;
 using STEM.Web.Data;
 using STEM.Web.Models;
+using STEM.Web.Services;
 
 namespace STEM.Web.Areas.Teacher.Controllers;
 
@@ -13,6 +14,7 @@ namespace STEM.Web.Areas.Teacher.Controllers;
 public class AttendancesController : Controller
 {
     private const long MaxVideoUploadBytes = 50 * 1024 * 1024;
+
     private static readonly HashSet<string> AllowedVideoExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
         ".mp4",
@@ -31,12 +33,17 @@ public class AttendancesController : Controller
     };
 
     private readonly ApplicationDbContext _context;
-    private readonly IWebHostEnvironment _env;
+    private readonly IFileStorageService _fileStorage;
+    private readonly AttendanceWorkflowService _attendanceWorkflow;
 
-    public AttendancesController(ApplicationDbContext context, IWebHostEnvironment env)
+    public AttendancesController(
+        ApplicationDbContext context,
+        IFileStorageService fileStorage,
+        AttendanceWorkflowService attendanceWorkflow)
     {
         _context = context;
-        _env = env;
+        _fileStorage = fileStorage;
+        _attendanceWorkflow = attendanceWorkflow;
     }
 
     [HttpGet]
@@ -131,26 +138,10 @@ public class AttendancesController : Controller
             CompletedCount = mappedOverviewSessions.Count(x => x.IsCompleted),
             Filters = filters,
             Sessions = mappedVisibleSessions,
-            PrioritySessions = sectionSource
-                .Where(x => x.NeedsAttention)
-                .OrderBy(x => x.Date)
-                .ThenBy(x => x.SessionLabel)
-                .ToList(),
-            UpcomingSessions = sectionSource
-                .Where(x => x.IsUpcoming)
-                .OrderBy(x => x.Date)
-                .ThenBy(x => x.SessionLabel)
-                .ToList(),
-            CompletedSessions = sectionSource
-                .Where(x => x.IsCompleted)
-                .OrderByDescending(x => x.Date)
-                .ThenBy(x => x.SessionLabel)
-                .ToList(),
-            EmptySessions = sectionSource
-                .Where(x => !x.HasStudents)
-                .OrderBy(x => x.Date)
-                .ThenBy(x => x.SessionLabel)
-                .ToList()
+            PrioritySessions = sectionSource.Where(x => x.NeedsAttention).OrderBy(x => x.Date).ThenBy(x => x.SessionLabel).ToList(),
+            UpcomingSessions = sectionSource.Where(x => x.IsUpcoming).OrderBy(x => x.Date).ThenBy(x => x.SessionLabel).ToList(),
+            CompletedSessions = sectionSource.Where(x => x.IsCompleted).OrderByDescending(x => x.Date).ThenBy(x => x.SessionLabel).ToList(),
+            EmptySessions = sectionSource.Where(x => !x.HasStudents).OrderBy(x => x.Date).ThenBy(x => x.SessionLabel).ToList()
         });
     }
 
@@ -163,7 +154,8 @@ public class AttendancesController : Controller
             return Challenge();
         }
 
-        var model = await BuildBoardViewModelAsync(sessionId, teacherId.Value);
+        var editLockMessage = await _attendanceWorkflow.GetTeacherEditLockMessageAsync(teacherId.Value, sessionId);
+        var model = await BuildBoardViewModelAsync(sessionId, teacherId.Value, editLockMessage: editLockMessage);
         if (model == null)
         {
             return NotFound();
@@ -186,12 +178,29 @@ public class AttendancesController : Controller
         var session = await _context.Sessions
             .AsNoTracking()
             .Where(x => x.Id == model.SessionId && x.Class.TeacherId == teacherId.Value)
-            .Select(x => new { x.Id, x.ClassId })
+            .Select(x => new
+            {
+                x.Id,
+                x.ClassId,
+                x.Date,
+                x.StartTime,
+                x.EndTime
+            })
             .FirstOrDefaultAsync();
 
         if (session == null)
         {
             return NotFound();
+        }
+
+        var editLockMessage = await _attendanceWorkflow.GetTeacherEditLockMessageAsync(
+            teacherId.Value,
+            session.Date,
+            session.StartTime,
+            session.EndTime);
+        if (!string.IsNullOrWhiteSpace(editLockMessage))
+        {
+            return WriteDenied(model.SessionId, editLockMessage);
         }
 
         var validStudentIds = await _context.Enrollments
@@ -208,6 +217,14 @@ public class AttendancesController : Controller
             ModelState.AddModelError(string.Empty, "Lớp này chưa có học viên để điểm danh.");
         }
 
+        for (var i = 0; i < submittedRows.Count; i++)
+        {
+            if (!_attendanceWorkflow.IsValidProductMediaCollection(submittedRows[i].ProductMediaUrls))
+            {
+                ModelState.AddModelError($"Rows[{i}].ProductMediaUrls", "Link video không hợp lệ hoặc không thuộc kho lưu trữ của hệ thống.");
+            }
+        }
+
         var existingAttendances = await _context.Attendances
             .Where(x => x.SessionId == model.SessionId && validIdSet.Contains(x.StudentId))
             .ToListAsync();
@@ -215,35 +232,62 @@ public class AttendancesController : Controller
         foreach (var row in submittedRows)
         {
             var attendance = existingAttendances.FirstOrDefault(x => x.StudentId == row.StudentId);
+            var normalizedTeacherNote = NormalizeText(row.TeacherRawNote);
+            var normalizedMediaUrls = NormalizeText(row.ProductMediaUrls);
+
             if (attendance == null)
             {
-                _context.Attendances.Add(new Attendance
+                var newAttendance = new Attendance
                 {
                     SessionId = model.SessionId,
                     StudentId = row.StudentId,
                     IsPresent = row.IsPresent,
                     IsExcused = row.IsExcused,
-                    TeacherRawNote = NormalizeText(row.TeacherRawNote),
-                    ProductMediaUrls = NormalizeText(row.ProductMediaUrls),
-                    AiEvaluation = NormalizeText(row.AiEvaluation)
-                });
+                    TeacherRawNote = normalizedTeacherNote,
+                    ProductMediaUrls = normalizedMediaUrls
+                };
+
+                _context.Attendances.Add(newAttendance);
+                existingAttendances.Add(newAttendance);
+                continue;
             }
-            else
+
+            attendance.IsPresent = row.IsPresent;
+            attendance.IsExcused = row.IsExcused;
+            attendance.TeacherRawNote = normalizedTeacherNote;
+
+            if (!string.Equals(attendance.ProductMediaUrls, normalizedMediaUrls, StringComparison.Ordinal))
             {
-                attendance.IsPresent = row.IsPresent;
-                attendance.IsExcused = row.IsExcused;
-                attendance.TeacherRawNote = NormalizeText(row.TeacherRawNote);
-                attendance.ProductMediaUrls = NormalizeText(row.ProductMediaUrls);
-                attendance.AiEvaluation = NormalizeText(row.AiEvaluation);
+                attendance.ProductMediaUrls = normalizedMediaUrls;
+                attendance.AiEvaluation = null;
+                attendance.VideoTranscript = null;
+                attendance.AiProcessStatus = null;
             }
         }
 
         if (!ModelState.IsValid)
         {
-            var fallbackModel = await BuildBoardViewModelAsync(model.SessionId, teacherId.Value, submittedRows);
+            var fallbackModel = await BuildBoardViewModelAsync(
+                model.SessionId,
+                teacherId.Value,
+                submittedRows,
+                editLockMessage);
             if (fallbackModel == null)
             {
                 return NotFound();
+            }
+
+            if (IsAjaxRequest())
+            {
+                return BadRequest(new
+                {
+                    success = false,
+                    message = "Dữ liệu điểm danh chưa hợp lệ.",
+                    errors = ModelState
+                        .Where(x => x.Value?.Errors.Count > 0)
+                        .SelectMany(x => x.Value!.Errors.Select(error => new { field = x.Key, message = error.ErrorMessage }))
+                        .ToList()
+                });
             }
 
             ViewData["Title"] = "Điểm danh";
@@ -251,6 +295,21 @@ public class AttendancesController : Controller
         }
 
         await _context.SaveChangesAsync();
+        var payrollStatus = await _attendanceWorkflow.RecomputeSessionPayrollStatusAsync(model.SessionId);
+
+        if (IsAjaxRequest())
+        {
+            return Json(new
+            {
+                success = true,
+                payrollStatus,
+                rows = existingAttendances
+                    .Select(x => new { x.Id, x.StudentId })
+                    .OrderBy(x => x.StudentId)
+                    .ToList()
+            });
+        }
+
         TempData["SuccessMessage"] = "Đã lưu điểm danh cho buổi học.";
         return RedirectToAction(nameof(Board), new { sessionId = model.SessionId });
     }
@@ -271,6 +330,9 @@ public class AttendancesController : Controller
             .Select(x => new
             {
                 x.Id,
+                x.Date,
+                x.StartTime,
+                x.EndTime,
                 StudentIds = x.Class.Enrollments.Select(e => e.StudentId).ToList()
             })
             .FirstOrDefaultAsync();
@@ -278,6 +340,17 @@ public class AttendancesController : Controller
         if (session == null)
         {
             return NotFound();
+        }
+
+        var editLockMessage = await _attendanceWorkflow.GetTeacherEditLockMessageAsync(
+            teacherId.Value,
+            session.Date,
+            session.StartTime,
+            session.EndTime);
+        if (!string.IsNullOrWhiteSpace(editLockMessage))
+        {
+            TempData["ErrorMessage"] = editLockMessage;
+            return RedirectToAction(nameof(Board), new { sessionId });
         }
 
         if (session.StudentIds.Count == 0)
@@ -305,12 +378,51 @@ public class AttendancesController : Controller
             }
 
             attendance.IsPresent = true;
-            attendance.TeacherRawNote ??= null;
+            attendance.IsExcused = false;
         }
 
         await _context.SaveChangesAsync();
+        await _attendanceWorkflow.RecomputeSessionPayrollStatusAsync(sessionId);
+
         TempData["SuccessMessage"] = "Đã đánh dấu nhanh cả lớp có mặt.";
         return RedirectToAction(nameof(Board), new { sessionId });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [RequestSizeLimit(MaxVideoUploadBytes)]
+    public async Task<IActionResult> UploadVideo(IFormFile? file)
+    {
+        if (file == null || file.Length == 0)
+        {
+            return Json(new { success = false, message = "Vui lòng chọn một file video hợp lệ." });
+        }
+
+        if (file.Length > MaxVideoUploadBytes)
+        {
+            return Json(new { success = false, message = "File video quá lớn. Vui lòng chọn file dưới 50MB." });
+        }
+
+        var extension = Path.GetExtension(file.FileName);
+        if (string.IsNullOrWhiteSpace(extension) || !AllowedVideoExtensions.Contains(extension))
+        {
+            return Json(new { success = false, message = "Định dạng video không được hỗ trợ." });
+        }
+
+        if (string.IsNullOrWhiteSpace(file.ContentType) || !AllowedVideoContentTypes.Contains(file.ContentType))
+        {
+            return Json(new { success = false, message = "Loại nội dung file không hợp lệ." });
+        }
+
+        try
+        {
+            var fileUrl = await _fileStorage.SaveFileAsync(file, "videos");
+            return Json(new { success = true, url = fileUrl, fileName = file.FileName });
+        }
+        catch
+        {
+            return Json(new { success = false, message = "Không thể lưu video lên hệ thống." });
+        }
     }
 
     private int? GetCurrentTeacherId()
@@ -322,7 +434,8 @@ public class AttendancesController : Controller
     private async Task<TeacherAttendanceBoardViewModel?> BuildBoardViewModelAsync(
         int sessionId,
         int teacherId,
-        IReadOnlyCollection<TeacherAttendanceBoardRowViewModel>? overrides = null)
+        IReadOnlyCollection<TeacherAttendanceBoardRowViewModel>? overrides = null,
+        string? editLockMessage = null)
     {
         var session = await _context.Sessions
             .AsNoTracking()
@@ -336,13 +449,11 @@ public class AttendancesController : Controller
                 x.Date,
                 x.StartTime,
                 x.EndTime,
+                x.PayrollStatus,
                 x.ClassId,
                 x.Class.ClassCode,
                 CourseName = x.Class.Course.Name,
-                StudentCount = x.Class.Enrollments.Count,
-                AttendanceCount = x.Attendances.Count,
-                PresentCount = x.Attendances.Count(a => a.IsPresent),
-                AbsentCount = x.Attendances.Count(a => !a.IsPresent)
+                StudentCount = x.Class.Enrollments.Count
             })
             .FirstOrDefaultAsync();
 
@@ -399,21 +510,21 @@ public class AttendancesController : Controller
                     continue;
                 }
 
-                row.AttendanceId = overrideRow.AttendanceId;
+                row.AttendanceId = overrideRow.AttendanceId ?? row.AttendanceId;
                 row.HasAttendance = overrideRow.HasAttendance || row.HasAttendance;
                 row.IsPresent = overrideRow.IsPresent;
                 row.IsExcused = overrideRow.IsExcused;
                 row.TeacherRawNote = overrideRow.TeacherRawNote;
                 row.ProductMediaUrls = overrideRow.ProductMediaUrls;
-                row.AiEvaluation = overrideRow.AiEvaluation;
+                row.AiEvaluation = overrideRow.AiEvaluation ?? row.AiEvaluation;
             }
         }
 
         foreach (var row in studentRows)
         {
             row.MediaHint = string.IsNullOrWhiteSpace(row.ProductMediaUrls)
-                ? "Dán link ảnh hoặc video nếu đã có."
-                : "Có thể dán thêm link mới nếu cần.";
+                ? "Tải video sản phẩm lên để làm minh chứng."
+                : "Có thể tải lại video mới nếu cần phân tích lại.";
 
             row.StatusLabel = !row.HasAttendance
                 ? "Chưa ghi nhận"
@@ -448,8 +559,27 @@ public class AttendancesController : Controller
             MissingCount = studentRows.Count(x => !x.HasAttendance),
             PresentCount = studentRows.Count(x => x.HasAttendance && x.IsPresent),
             AbsentCount = studentRows.Count(x => x.HasAttendance && !x.IsPresent),
+            PayrollStatus = session.PayrollStatus,
+            IsReadOnly = !string.IsNullOrWhiteSpace(editLockMessage),
+            EditLockMessage = editLockMessage,
             Rows = studentRows
         };
+    }
+
+    private IActionResult WriteDenied(int sessionId, string message)
+    {
+        if (IsAjaxRequest())
+        {
+            return BadRequest(new { success = false, message });
+        }
+
+        TempData["ErrorMessage"] = message;
+        return RedirectToAction(nameof(Board), new { sessionId });
+    }
+
+    private bool IsAjaxRequest()
+    {
+        return string.Equals(Request.Headers["X-Requested-With"], "XMLHttpRequest", StringComparison.OrdinalIgnoreCase);
     }
 
     private static IQueryable<SessionProjection> ApplyFilter(IQueryable<SessionProjection> query, string filter, DateOnly today)
@@ -500,7 +630,7 @@ public class AttendancesController : Controller
             StatusLabel = statusLabel,
             StatusBadgeClass = statusBadgeClass,
             ActionHint = item.Date > today
-                ? "Buổi này chưa diễn ra. Bạn có thể chuẩn bị trước nội dung."
+                ? "Buổi này chưa diễn ra."
                 : item.StudentCount == 0
                     ? "Cần ghi danh học viên vào lớp trước khi điểm danh."
                     : item.AttendanceCount >= item.StudentCount
@@ -517,57 +647,6 @@ public class AttendancesController : Controller
     private static string? NormalizeText(string? value)
     {
         return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
-    }
-
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    [RequestSizeLimit(MaxVideoUploadBytes)]
-    public async Task<IActionResult> UploadVideo(IFormFile? file)
-    {
-        if (file == null || file.Length == 0)
-        {
-            return Json(new { success = false, message = "Vui lòng chọn một file video hợp lệ." });
-        }
-
-        if (file.Length > MaxVideoUploadBytes)
-        {
-            return Json(new { success = false, message = "File video quá lớn. Vui lòng chọn file dưới 50MB." });
-        }
-
-        var extension = Path.GetExtension(file.FileName);
-        if (string.IsNullOrWhiteSpace(extension) || !AllowedVideoExtensions.Contains(extension))
-        {
-            return Json(new { success = false, message = "Định dạng video không được hỗ trợ." });
-        }
-
-        if (string.IsNullOrWhiteSpace(file.ContentType) || !AllowedVideoContentTypes.Contains(file.ContentType))
-        {
-            return Json(new { success = false, message = "Loại nội dung file không hợp lệ." });
-        }
-
-        try
-        {
-            var uploadsFolder = Path.Combine(_env.WebRootPath, "uploads", "videos");
-            if (!Directory.Exists(uploadsFolder))
-            {
-                Directory.CreateDirectory(uploadsFolder);
-            }
-
-            var uniqueFileName = $"{Guid.NewGuid():N}{extension.ToLowerInvariant()}";
-            var filePath = Path.Combine(uploadsFolder, uniqueFileName);
-
-            using (var stream = new FileStream(filePath, FileMode.Create))
-            {
-                await file.CopyToAsync(stream);
-            }
-
-            var fileUrl = $"/uploads/videos/{uniqueFileName}";
-            return Json(new { success = true, url = fileUrl, fileName = file.FileName });
-        }
-        catch
-        {
-            return Json(new { success = false, message = "Không thể lưu video lên hệ thống." });
-        }
     }
 
     private sealed class SessionProjection

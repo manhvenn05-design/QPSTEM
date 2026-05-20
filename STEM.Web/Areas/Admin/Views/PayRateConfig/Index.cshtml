@@ -1,0 +1,112 @@
+@model STEM.Web.Areas.Admin.Controllers.PayRateConfigIndexViewModel
+
+@{
+    ViewData["Title"] = "Cấu hình đơn giá lương";
+}
+
+<section class="admin-page">
+    <div class="admin-header flex flex-wrap items-end justify-between gap-4 mb-6">
+        <div>
+            <h1 class="admin-page-title">Cấu hình ma trận lương</h1>
+            <p class="admin-page-subtitle">Quản lý đơn giá theo cấp độ giảng viên và độ khó môn học (VNĐ/buổi).</p>
+        </div>
+        <div class="flex items-center gap-3">
+            <button type="button" class="admin-btn-secondary" onclick="window.location.reload()">
+                <span class="material-symbols-outlined">refresh</span>
+                <span>Tải lại</span>
+            </button>
+            <button type="button" class="admin-btn-primary" onclick="saveMatrix()">
+                <span class="material-symbols-outlined">save</span>
+                <span>Lưu cấu hình</span>
+            </button>
+        </div>
+    </div>
+
+    <div class="admin-card">
+        <div class="admin-card-section">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm text-[#0f1e38]">
+                    <thead class="bg-[#f5f7fb] text-xs font-semibold uppercase tracking-wider text-[#6b7c99]">
+                        <tr>
+                            <th class="border-b border-[#dce6f5] px-6 py-4">Hạng giáo viên</th>
+                            <th class="border-b border-[#dce6f5] px-6 py-4">Cơ bản (Level 1)</th>
+                            <th class="border-b border-[#dce6f5] px-6 py-4">Nâng cao (Level 2)</th>
+                            <th class="border-b border-[#dce6f5] px-6 py-4">Chuyên sâu (Level 3)</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-[#dce6f5]" id="payRateMatrix">
+                        @for (int tier = 1; tier <= 5; tier++)
+                        {
+                            <tr class="hover:bg-[#f8fafd] transition-colors">
+                                <td class="px-6 py-4 font-semibold text-[#1a3a6e] align-middle">
+                                    Tier @tier
+                                </td>
+                                @for (int diff = 1; diff <= 3; diff++)
+                                {
+                                    var configItem = Model.Configs.FirstOrDefault(c => c.TeacherTier == tier && c.CourseDifficulty == diff);
+                                    var rateValue = configItem?.RatePerSession ?? 0;
+                                    <td class="px-6 py-4">
+                                        <div class="relative">
+                                            <input type="number" 
+                                                   class="pay-rate-input w-full rounded-md border border-[#dce6f5] px-3 py-2 text-right pr-8 focus:border-[#1a3a6e] focus:outline-none focus:ring-1 focus:ring-[#1a3a6e]"
+                                                   data-tier="@tier" 
+                                                   data-diff="@diff" 
+                                                   value="@rateValue.ToString("0")" 
+                                                   min="0" step="10000" />
+                                            <span class="absolute right-3 top-1/2 -translate-y-1/2 text-[#6b7c99] text-xs font-medium pointer-events-none">₫</span>
+                                        </div>
+                                    </td>
+                                }
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="mt-6 flex items-start gap-3 rounded-xl bg-[#e8f0fb] p-4 text-[#1a3a6e]">
+                <span class="material-symbols-outlined mt-0.5 text-[20px]">info</span>
+                <div class="text-sm">
+                    <p><strong>Lưu ý:</strong> Bảng giá mới sẽ được áp dụng cho toàn bộ các buổi học <strong>chưa tính lương</strong> (hoặc tính lương dạng dự kiến). Các kỳ lương đã "chốt" trong quá khứ sẽ không bị ảnh hưởng bởi thay đổi này.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <script>
+        async function saveMatrix() {
+            const inputs = document.querySelectorAll('.pay-rate-input');
+            const data = [];
+
+            inputs.forEach(input => {
+                data.push({
+                    TeacherTier: parseInt(input.dataset.tier),
+                    CourseDifficulty: parseInt(input.dataset.diff),
+                    RatePerSession: parseFloat(input.value) || 0
+                });
+            });
+
+            try {
+                const response = await fetch('@Url.Action("Save", "PayRateConfig", new { area = "Admin" })', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    alert(result.message || 'Lưu cấu hình thành công!');
+                } else {
+                    alert('Có lỗi xảy ra khi lưu cấu hình.');
+                }
+            } catch (error) {
+                console.error(error);
+                alert('Có lỗi xảy ra khi lưu cấu hình.');
+            }
+        }
+    </script>
+}

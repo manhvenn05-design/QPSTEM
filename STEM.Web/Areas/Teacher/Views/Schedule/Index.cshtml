@@ -2,8 +2,8 @@
 
 @{
     ViewData["Title"] = "Lịch dạy";
-    const int calendarStartHour = 7;
-    const int calendarEndHour = 17;
+    const int calendarStartHour = 6;
+    const int calendarEndHour = 22;
     const int slotMinutes = 30;
     var totalSlots = (calendarEndHour - calendarStartHour) * 60 / slotMinutes;
     var isCalendarView = Model.SelectedView == "calendar";
@@ -98,40 +98,77 @@
                         {
                             var sessionDate = session.Date.Date;
                             var dayOffset = (sessionDate - Model.WeekStart.Date).Days;
-                            if (dayOffset < 0 || dayOffset > 6)
-                            {
-                                continue;
+                            if (dayOffset < 0 || dayOffset > 6) { continue; }
+
+                            var startOff = ((session.StartTime.Hour * 60) + session.StartTime.Minute) - (calendarStartHour * 60);
+                            var endOff   = ((session.EndTime.Hour   * 60) + session.EndTime.Minute)   - (calendarStartHour * 60);
+                            var safeStart = Math.Max(0, startOff);
+                            var safeEnd   = Math.Min(totalSlots * slotMinutes, Math.Max(safeStart + slotMinutes, endOff));
+                            var rowStart  = (int)Math.Floor(safeStart / (double)slotMinutes) + 1;
+                            var rowEnd    = (int)Math.Ceiling(safeEnd  / (double)slotMinutes) + 1;
+                            var col       = dayOffset + 2;
+
+                            // Màu nhạt theo trạng thái
+                            string cardStyle, borderColor, timeColor, badgeBg;
+                            if (session.StatusBadgeClass == "today") {
+                                cardStyle   = "background:#f0fdf4;border-left:3px solid #16a34a;";
+                                borderColor = "#16a34a";
+                                timeColor   = "#15803d";
+                                badgeBg     = "background:#dcfce7;color:#15803d;";
+                            } else if (session.StatusBadgeClass == "upcoming") {
+                                cardStyle   = "background:#fff7ed;border-left:3px solid #ea580c;";
+                                borderColor = "#ea580c";
+                                timeColor   = "#c2410c";
+                                badgeBg     = "background:#ffedd5;color:#c2410c;";
+                            } else {
+                                cardStyle   = "background:#f5f5f4;border-left:3px solid #a8a29e;";
+                                borderColor = "#a8a29e";
+                                timeColor   = "#78716c";
+                                badgeBg     = "background:#e7e5e4;color:#78716c;";
                             }
 
-                            var startOffsetMinutes = ((session.StartTime.Hour * 60) + session.StartTime.Minute) - (calendarStartHour * 60);
-                            var endOffsetMinutes = ((session.EndTime.Hour * 60) + session.EndTime.Minute) - (calendarStartHour * 60);
-                            var safeStartOffsetMinutes = Math.Max(0, startOffsetMinutes);
-                            var safeEndOffsetMinutes = Math.Min(totalSlots * slotMinutes, Math.Max(safeStartOffsetMinutes + slotMinutes, endOffsetMinutes));
-                            var gridRowStart = Math.Floor(safeStartOffsetMinutes / (double)slotMinutes) + 1;
-                            var gridRowEnd = Math.Ceiling(safeEndOffsetMinutes / (double)slotMinutes) + 1;
-                            var colStart = dayOffset + 2;
-                            var bgBlock = sessionDate < DateTime.Today ? "bg-[#8a9985] hover:bg-[#7a8975]" : "bg-[#1a3a6e] hover:bg-[#5b8742]";
+                            var dayLabel = session.Date.DayOfWeek switch {
+                                DayOfWeek.Monday    => "Thứ Hai",
+                                DayOfWeek.Tuesday   => "Thứ Ba",
+                                DayOfWeek.Wednesday => "Thứ Tư",
+                                DayOfWeek.Thursday  => "Thứ Năm",
+                                DayOfWeek.Friday    => "Thứ Sáu",
+                                DayOfWeek.Saturday  => "Thứ Bảy",
+                                _                   => "Chủ Nhật"
+                            };
+                            var attLabel = session.StatusBadgeClass == "past"
+                                ? (session.AttendanceCount > 0 ? $"Điểm danh: {session.AttendancePercent}% có mặt" : "Chưa điểm danh")
+                                : (session.StatusBadgeClass == "today" ? "Chưa điểm danh" : "—");
 
-                            <article class="pointer-events-auto z-10 mx-1 my-[3px] flex min-h-0 flex-col overflow-hidden rounded-lg @bgBlock p-3 text-white shadow transition-colors"
-                                     style="grid-column: @colStart; grid-row: @(gridRowStart) / @(gridRowEnd);">
-                                <div class="min-h-0 flex-1 overflow-hidden">
-                                    <h3 class="truncate text-sm font-bold leading-tight" title="@session.ClassCode · @session.CourseName">@session.ClassCode · @session.CourseName</h3>
-                                    <p class="mt-1 flex items-center gap-1 text-[11px] text-[#e0f0d9]">
-                                        <span class="material-symbols-outlined shrink-0 text-[14px]">schedule</span>
-                                        <span>@session.ScheduleText</span>
-                                    </p>
-                                    <p class="mt-0.5 flex items-center gap-1 text-[11px] text-[#e0f0d9]">
-                                        <span class="material-symbols-outlined shrink-0 text-[14px]">topic</span>
-                                        <span class="truncate" title="@session.Topic">@session.Topic</span>
-                                    </p>
+                            <button type="button"
+                                    class="popup-trigger pointer-events-auto z-10 mx-0.5 my-[2px] flex min-h-0 w-full flex-col overflow-hidden rounded-md text-left shadow-sm hover:shadow-md transition-shadow"
+                                    style="grid-column: @col; grid-row: @rowStart / @rowEnd; @cardStyle"
+                                    data-session-id="@session.SessionId"
+                                    data-day-label="@dayLabel, @session.Date.ToString("dd/MM/yyyy")"
+                                    data-course="@session.CourseName"
+                                    data-class="@session.ClassCode"
+                                    data-session-label="@session.SessionLabel"
+                                    data-time="@session.ScheduleText"
+                                    data-teacher="@session.TeacherName"
+                                    data-room="@(session.RoomName ?? "Chưa xếp phòng")"
+                                    data-topic="@session.Topic"
+                                    data-students="@session.StudentCount"
+                                    data-status="@session.StatusLabel"
+                                    data-badge-bg="@badgeBg"
+                                    data-att-label="@attLabel"
+                                    data-detail-url="@Url.Action("Details", "Schedule", new { area = "Teacher", id = session.SessionId })">
+                                <div class="flex min-h-0 flex-1 flex-col overflow-hidden px-2 py-1.5">
+                                    <div class="truncate text-[11px] font-bold leading-tight" style="color:@timeColor">@session.ScheduleText</div>
+                                    <div class="truncate text-[12px] font-semibold text-[#1c1c1e] leading-snug mt-0.5">@session.CourseName</div>
+                                    <div class="truncate text-[10px] text-[#78716c] leading-tight">Lớp @session.ClassCode &middot; @session.Topic</div>
+                                    @if (!string.IsNullOrWhiteSpace(session.RoomName)) {
+                                        <div class="mt-0.5 flex items-center gap-0.5 truncate text-[10px]" style="color:@borderColor">
+                                            <span class="material-symbols-outlined text-[10px]">meeting_room</span>
+                                            @session.RoomName
+                                        </div>
+                                    }
                                 </div>
-                                <div class="mt-2 flex items-center justify-between border-t border-white/30 pt-2 text-[10px] font-medium">
-                                    <span>@session.StudentCount học sinh</span>
-                                    <a asp-area="Teacher" asp-controller="Schedule" asp-action="Details" asp-route-id="@session.SessionId" class="text-white hover:text-white/80" title="Xem chi tiết">
-                                        <span class="material-symbols-outlined text-[14px]">open_in_new</span>
-                                    </a>
-                                </div>
-                            </article>
+                            </button>
                         }
                     </div>
                 </div>
@@ -139,14 +176,62 @@
         </div>
 
         <div class="mt-4 flex items-center justify-between text-sm text-[#42493f]">
-            <div class="flex items-center gap-4">
-                <div class="flex items-center gap-1.5"><div class="h-3 w-3 rounded bg-[#1a3a6e]"></div> Buổi sắp dạy hoặc trong tuần hiện tại</div>
-                <div class="flex items-center gap-1.5"><div class="h-3 w-3 rounded bg-[#8a9985]"></div> Buổi đã dạy</div>
+            <div class="flex items-center gap-4 text-xs">
+                <div class="flex items-center gap-1.5"><div class="h-3 w-3 rounded" style="background:#16a34a"></div> Hôm nay</div>
+                <div class="flex items-center gap-1.5"><div class="h-3 w-3 rounded" style="background:#ea580c"></div> Sắp tới</div>
+                <div class="flex items-center gap-1.5"><div class="h-3 w-3 rounded bg-[#a8a29e]"></div> Đã dạy</div>
             </div>
             <div class="flex items-center gap-2 rounded-lg bg-[#e8f0e5] px-4 py-2 font-medium text-[#2d4f19]">
                 <span class="material-symbols-outlined text-[18px]">info</span>
                 Tổng số ca dạy tuần này: @Model.CalendarSessions.Count ca
             </div>
+        </div>
+    </div>
+
+    @* Session Popup Modal *@
+    <div id="session-popup-overlay" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/40 p-4" onclick="closeSessionPopup(event)">
+        <div id="session-popup" class="relative w-full max-w-lg rounded-2xl bg-white shadow-2xl" onclick="event.stopPropagation()">
+            <div class="border-b border-[#e5e7eb] px-6 pt-6 pb-4">
+                <p id="popup-day" class="text-lg font-bold text-[#1c1c1e]"></p>
+                <p id="popup-count" class="mt-0.5 text-sm text-[#6b7280]"></p>
+            </div>
+            <div id="popup-card" class="m-4 rounded-xl border p-4">
+                <div class="flex flex-wrap items-start justify-between gap-2">
+                    <div>
+                        <p class="text-base font-bold text-[#1c1c1e]" id="popup-course"></p>
+                        <p class="mt-0.5 text-sm text-[#6b7280]" id="popup-subtitle"></p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span id="popup-status-badge" class="rounded-full px-3 py-1 text-xs font-semibold"></span>
+                        <span id="popup-att-badge" class="rounded-full bg-[#f3f4f6] px-3 py-1 text-xs text-[#6b7280]"></span>
+                    </div>
+                </div>
+                <div class="mt-4 grid grid-cols-3 gap-4">
+                    <div>
+                        <p class="text-xs text-[#9ca3af]">Giờ học</p>
+                        <p class="mt-1 text-base font-bold text-[#1c1c1e]" id="popup-time"></p>
+                    </div>
+                    <div>
+                        <p class="text-xs text-[#9ca3af]">Giáo viên</p>
+                        <p class="mt-1 text-sm font-semibold text-[#1c1c1e]" id="popup-teacher"></p>
+                    </div>
+                    <div>
+                        <p class="text-xs text-[#9ca3af]">Phòng học</p>
+                        <p class="mt-1 text-sm font-semibold text-[#1c1c1e]" id="popup-room"></p>
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <p class="text-xs text-[#9ca3af]">Học phần / nội dung học</p>
+                    <p class="mt-1 text-sm font-semibold text-[#1c1c1e]" id="popup-topic"></p>
+                </div>
+            </div>
+            <div class="flex justify-end gap-3 px-6 pb-5">
+                <button onclick="closeSessionPopup()" class="rounded-lg border border-[#d1d5db] px-4 py-2 text-sm text-[#374151] hover:bg-[#f9fafb] transition-colors">Đóng</button>
+                <a id="popup-detail-link" href="#" class="rounded-lg bg-[#1a3a6e] px-4 py-2 text-sm font-semibold text-white hover:bg-[#15306a] transition-colors">Xem chi tiết →</a>
+            </div>
+            <button onclick="closeSessionPopup()" class="absolute right-4 top-4 rounded-full p-1 text-[#9ca3af] hover:bg-[#f3f4f6] hover:text-[#374151] transition-colors">
+                <span class="material-symbols-outlined text-[20px]">close</span>
+            </button>
         </div>
     </div>
 
@@ -282,5 +367,55 @@
         }
 
         applyScheduleViewState('@Model.SelectedView');
+
+        // ── Popup logic ──────────────────────────────────────────
+        document.querySelectorAll('.popup-trigger').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const d = btn.dataset;
+
+                document.getElementById('popup-day').textContent      = d.dayLabel;
+                document.getElementById('popup-count').textContent    = '1 học phần / buổi học trong ngày này';
+                document.getElementById('popup-course').textContent   = d.course;
+                document.getElementById('popup-subtitle').textContent = `Lớp ${d.class} · ${d.sessionLabel}`;
+                document.getElementById('popup-time').textContent     = d.time;
+                document.getElementById('popup-teacher').textContent  = d.teacher || '—';
+                document.getElementById('popup-room').textContent     = d.room || '—';
+                document.getElementById('popup-topic').textContent    = d.topic;
+
+                const badge = document.getElementById('popup-status-badge');
+                badge.textContent = d.status;
+                badge.style.cssText = d.badgeBg;
+
+                document.getElementById('popup-att-badge').textContent = d.attLabel;
+                document.getElementById('popup-detail-link').href     = d.detailUrl;
+
+                // Border color của card trong popup
+                const card = document.getElementById('popup-card');
+                const status = d.status;
+                if (status === 'Hôm nay') {
+                    card.style.borderColor = '#16a34a';
+                } else if (status === 'Sắp tới') {
+                    card.style.borderColor = '#ea580c';
+                } else {
+                    card.style.borderColor = '#d1d5db';
+                }
+
+                const overlay = document.getElementById('session-popup-overlay');
+                overlay.classList.remove('hidden');
+                overlay.classList.add('flex');
+            });
+        });
+
+        function closeSessionPopup(e) {
+            if (e && e.target !== document.getElementById('session-popup-overlay')) return;
+            const overlay = document.getElementById('session-popup-overlay');
+            overlay.classList.add('hidden');
+            overlay.classList.remove('flex');
+        }
+        // ESC để đóng
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape') closeSessionPopup();
+        });
+        window.closeSessionPopup = closeSessionPopup;
     </script>
 }

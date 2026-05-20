@@ -38,6 +38,9 @@ builder.Services.AddHttpClient<IAIService, GeminiAiService>();
 
 builder.Services.AddScoped<IAdminShellService, AdminShellService>();
 builder.Services.AddScoped<ITeacherShellService, TeacherShellService>();
+builder.Services.AddScoped<AttendanceWorkflowService>();
+builder.Services.AddScoped<PayrollCalculationService>();
+builder.Services.AddSingleton<IFileStorageService, CloudinaryStorageService>();
 
 var app = builder.Build();
 

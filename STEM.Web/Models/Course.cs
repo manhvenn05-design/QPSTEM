@@ -19,9 +19,13 @@ public partial class Course
 
     public int TotalSessions { get; set; }
 
+    public int MinStudents { get; set; }
+
     public string? ImageUrl { get; set; }
 
     public string? Summary { get; set; }
+
+    public int DifficultyLevel { get; set; }
 
     public virtual ICollection<Class> Classes { get; set; } = new List<Class>();
 

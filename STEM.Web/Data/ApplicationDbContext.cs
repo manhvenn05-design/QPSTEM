@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using STEM.Web.Models;
+using STEM.Web.Services;
 
 namespace STEM.Web.Data;
 
@@ -16,7 +17,40 @@ public partial class ApplicationDbContext : DbContext
     {
     }
 
+    public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        var entries = ChangeTracker.Entries()
+            .Where(e => e.Entity is Class || e.Entity is Session)
+            .Where(e => e.State == EntityState.Added || e.State == EntityState.Modified);
+
+        var now = DateTime.UtcNow;
+
+        foreach (var entry in entries)
+        {
+            if (entry.Entity is Class classEntity)
+            {
+                if (entry.State == EntityState.Added)
+                {
+                    classEntity.CreatedAt = now;
+                }
+                classEntity.UpdatedAt = now;
+            }
+            else if (entry.Entity is Session sessionEntity)
+            {
+                if (entry.State == EntityState.Added)
+                {
+                    sessionEntity.CreatedAt = now;
+                }
+                sessionEntity.UpdatedAt = now;
+            }
+        }
+
+        return base.SaveChangesAsync(cancellationToken);
+    }
+
     public virtual DbSet<Attendance> Attendances { get; set; }
+
+    public virtual DbSet<AttendanceSkillScore> AttendanceSkillScores { get; set; }
 
     public virtual DbSet<Banner> Banners { get; set; }
 
@@ -38,15 +72,23 @@ public partial class ApplicationDbContext : DbContext
 
     public virtual DbSet<MaintenanceLog> MaintenanceLogs { get; set; }
 
+    public virtual DbSet<PayRateConfig> PayRateConfigs { get; set; }
+
     public virtual DbSet<Payment> Payments { get; set; }
+
+    public virtual DbSet<PayrollRecord> PayrollRecords { get; set; }
 
     public virtual DbSet<Post> Posts { get; set; }
 
     public virtual DbSet<Role> Roles { get; set; }
 
+    public virtual DbSet<Room> Rooms { get; set; }
+
     public virtual DbSet<Session> Sessions { get; set; }
 
     public virtual DbSet<StudentProfile> StudentProfiles { get; set; }
+
+    public virtual DbSet<TeacherProfile> TeacherProfiles { get; set; }
 
     public virtual DbSet<User> Users { get; set; }
 
@@ -61,6 +103,8 @@ public partial class ApplicationDbContext : DbContext
         {
             entity.HasKey(e => e.Id).HasName("PK__Attendan__3214EC07CBE09DDC");
 
+            entity.HasIndex(e => e.StudentId, "IX_Attendances_StudentId");
+
             entity.Property(e => e.AiProcessStatus).HasMaxLength(50);
 
             entity.HasOne(d => d.Session).WithMany(p => p.Attendances)
@@ -72,6 +116,21 @@ public partial class ApplicationDbContext : DbContext
                 .HasForeignKey(d => d.StudentId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Attendances_Student");
+        });
+
+        modelBuilder.Entity<AttendanceSkillScore>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+
+            entity.HasIndex(e => e.AttendanceId, "IX_AttendanceSkillScores_AttendanceId");
+
+            entity.Property(e => e.SkillName).HasMaxLength(100);
+            entity.Property(e => e.Feedback).HasMaxLength(1000);
+
+            entity.HasOne(d => d.Attendance).WithMany(p => p.SkillScores)
+                .HasForeignKey(d => d.AttendanceId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("FK_AttendanceSkillScores_Attendances");
         });
 
         modelBuilder.Entity<Banner>(entity =>
@@ -104,6 +163,8 @@ public partial class ApplicationDbContext : DbContext
                 .HasForeignKey(d => d.TeacherId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Classes_Teacher");
+                
+            entity.Property(e => e.Status).HasDefaultValue(ClassStatus.Active);
         });
 
         modelBuilder.Entity<Course>(entity =>
@@ -124,6 +185,8 @@ public partial class ApplicationDbContext : DbContext
         modelBuilder.Entity<Enrollment>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK__Enrollme__3214EC07EA03FFEB");
+
+            entity.HasIndex(e => new { e.StudentId, e.ClassId }, "UQ_Enrollment_Student_Class").IsUnique();
 
             entity.Property(e => e.EnrollDate)
                 .HasDefaultValueSql("(getdate())")
@@ -240,6 +303,13 @@ public partial class ApplicationDbContext : DbContext
                 .HasConstraintName("FK_MaintLogs_Reporter");
         });
 
+        modelBuilder.Entity<PayRateConfig>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+
+            entity.Property(e => e.RatePerSession).HasColumnType("decimal(18, 2)");
+        });
+
         modelBuilder.Entity<Payment>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK__Payments__3214EC073957C8E5");
@@ -256,6 +326,22 @@ public partial class ApplicationDbContext : DbContext
                 .HasForeignKey(d => d.InvoiceId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Payments_Invoice");
+        });
+
+        modelBuilder.Entity<PayrollRecord>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+
+            entity.Property(e => e.SessionEarnings).HasColumnType("decimal(18, 2)");
+            entity.Property(e => e.Bonuses).HasColumnType("decimal(18, 2)");
+            entity.Property(e => e.Deductions).HasColumnType("decimal(18, 2)");
+            entity.Property(e => e.TotalPay).HasColumnType("decimal(18, 2)");
+            entity.Property(e => e.Status).HasMaxLength(50);
+
+            entity.HasOne(d => d.Teacher).WithMany(p => p.PayrollRecords)
+                .HasForeignKey(d => d.TeacherId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("FK_PayrollRecords_Users_TeacherId");
         });
 
         modelBuilder.Entity<Post>(entity =>
@@ -291,16 +377,40 @@ public partial class ApplicationDbContext : DbContext
                 .IsUnicode(false);
         });
 
+        modelBuilder.Entity<Room>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK_Rooms");
+
+            entity.Property(e => e.Name).HasMaxLength(100);
+            entity.Property(e => e.Capacity).HasDefaultValue(30);
+        });
+
         modelBuilder.Entity<Session>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK__Sessions__3214EC074B24E950");
 
+            entity.HasIndex(e => e.Date, "IX_Sessions_Date");
+            entity.HasIndex(e => new { e.ClassId, e.Date }, "IX_Sessions_ClassId_Date");
+
             entity.Property(e => e.Topic).HasMaxLength(200);
+            entity.Property(e => e.PayrollStatus)
+                .HasDefaultValue(AttendanceIntegrityRules.PayrollStatusPending);
+            entity.Property(e => e.SessionRateApplied)
+                .HasColumnType("decimal(18, 2)")
+                .HasDefaultValue(0m);
 
             entity.HasOne(d => d.Class).WithMany(p => p.Sessions)
                 .HasForeignKey(d => d.ClassId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Sessions_Classes");
+
+            entity.HasOne(d => d.SubstituteTeacher).WithMany()
+                .HasForeignKey(d => d.SubstituteTeacherId)
+                .HasConstraintName("FK_Sessions_Users_Substitute");
+
+            entity.HasOne(d => d.Room).WithMany(p => p.Sessions)
+                .HasForeignKey(d => d.RoomId)
+                .HasConstraintName("FK_Sessions_Rooms");
         });
 
         modelBuilder.Entity<StudentProfile>(entity =>
@@ -318,6 +428,20 @@ public partial class ApplicationDbContext : DbContext
                 .HasForeignKey<StudentProfile>(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_StudentProfiles_Users");
+        });
+
+        modelBuilder.Entity<TeacherProfile>(entity =>
+        {
+            entity.HasKey(e => e.UserId);
+
+            entity.Property(e => e.UserId).ValueGeneratedNever();
+            entity.Property(e => e.BaseSalary).HasColumnType("decimal(18, 2)");
+            entity.Property(e => e.CustomSessionRate).HasColumnType("decimal(18, 2)");
+
+            entity.HasOne(d => d.User).WithOne(p => p.TeacherProfile)
+                .HasForeignKey<TeacherProfile>(d => d.UserId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("FK_TeacherProfiles_Users_UserId");
         });
 
         modelBuilder.Entity<User>(entity =>

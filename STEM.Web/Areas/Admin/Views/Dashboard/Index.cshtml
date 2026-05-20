@@ -74,17 +74,7 @@
                         <a asp-area="Admin" asp-controller="Finance" asp-action="Index" class="admin-btn-secondary !h-10">Tài chính</a>
                     </div>
 
-                    <div class="mt-8 grid grid-cols-6 items-end gap-3">
-                        @foreach (var point in Model.RevenueSeries)
-                        {
-                            <div class="flex flex-col items-center gap-2">
-                                <div class="flex h-48 w-full items-end rounded-[12px] border border-[#dce6f5] bg-[#f5f7fb] p-2">
-                                    <div class="w-full rounded-[8px] bg-gradient-to-t from-[#1a3a6e] to-[#2d5fa8]" style="height:@(point.HeightPercent)%;min-height:4px;" title="@point.AmountText"></div>
-                                </div>
-                                <p class="text-xs font-medium text-[#42493d]">@point.Label</p>
-                            </div>
-                        }
-                    </div>
+                    <div id="revenue-chart" class="mt-4 -ml-2 -mb-2"></div>
                 </div>
             </div>
         </div>
@@ -187,3 +177,75 @@
         </div>
     </div>
 </section>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            var options = {
+                series: [{
+                    name: 'Doanh thu',
+                    data: [@string.Join(",", Model.RevenueSeries.Select(x => x.Amount.ToString(System.Globalization.CultureInfo.InvariantCulture)))]
+                }],
+                chart: {
+                    height: 250,
+                    type: 'area',
+                    fontFamily: 'Inter, sans-serif',
+                    toolbar: { show: false },
+                    zoom: { enabled: false }
+                },
+                colors: ['#f97316'],
+                fill: {
+                    type: 'gradient',
+                    gradient: {
+                        shadeIntensity: 1,
+                        opacityFrom: 0.45,
+                        opacityTo: 0.05,
+                        stops: [0, 90, 100]
+                    }
+                },
+                dataLabels: { enabled: false },
+                stroke: {
+                    curve: 'smooth',
+                    width: 3
+                },
+                xaxis: {
+                    categories: [@Html.Raw(string.Join(",", Model.RevenueSeries.Select(x => $"'{x.Label}'")))],
+                    axisBorder: { show: false },
+                    axisTicks: { show: false },
+                    labels: {
+                        style: { colors: '#6b7c99', fontSize: '12px' }
+                    }
+                },
+                yaxis: {
+                    labels: {
+                        formatter: function (value) {
+                            if (value >= 1000000) {
+                                return (value / 1000000).toFixed(value % 1000000 === 0 ? 0 : 1) + 'M';
+                            } else if (value >= 1000) {
+                                return (value / 1000).toFixed(value % 1000 === 0 ? 0 : 1) + 'K';
+                            }
+                            return value;
+                        },
+                        style: { colors: '#6b7c99', fontSize: '12px' }
+                    }
+                },
+                grid: {
+                    borderColor: '#e4ecf7',
+                    strokeDashArray: 4,
+                    yaxis: { lines: { show: true } }
+                },
+                tooltip: {
+                    y: {
+                        formatter: function (val) {
+                            return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val);
+                        }
+                    }
+                }
+            };
+
+            var chart = new ApexCharts(document.querySelector("#revenue-chart"), options);
+            chart.render();
+        });
+    </script>
+}

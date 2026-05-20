@@ -95,7 +95,7 @@ public class GeminiAiService : IAIService
         }
         catch (GeminiRateLimitException ex)
         {
-            return AIRequestResult<RefineNoteResult>.Fail(ex.UserMessage());
+            return AIRequestResult<RefineNoteResult>.Fail(BuildRateLimitUserMessage(ex));
         }
         catch (OperationCanceledException)
         {
@@ -160,7 +160,7 @@ public class GeminiAiService : IAIService
         }
         catch (GeminiRateLimitException ex)
         {
-            return AIRequestResult<VideoAnalysisResult>.Fail(ex.UserMessage());
+            return AIRequestResult<VideoAnalysisResult>.Fail(BuildRateLimitUserMessage(ex));
         }
         catch (TaskCanceledException ex) when (!ct.IsCancellationRequested)
         {
@@ -203,6 +203,17 @@ public class GeminiAiService : IAIService
 
         var response = await _httpClient.SendAsync(request, ct);
         var body = await response.Content.ReadAsStringAsync(ct);
+
+        if (response.StatusCode == HttpStatusCode.TooManyRequests)
+        {
+            int? retrySeconds = TryParseRetrySeconds(body);
+            bool isQuotaExhausted = IsQuotaExhausted(body);
+
+            _logger.LogWarning("[AI:Upload] 429 - {Kind}. RetryAfter={Retry}s",
+                isQuotaExhausted ? "Quota exhausted" : "Rate limited", retrySeconds);
+
+            throw new GeminiRateLimitException(retrySeconds, isQuotaExhausted);
+        }
 
         if (!response.IsSuccessStatusCode)
         {
@@ -396,7 +407,7 @@ public class GeminiAiService : IAIService
         {
             // Parse thời gian retry từ message của Gemini: "Please retry in 37.87s"
             int? retrySeconds = TryParseRetrySeconds(responseText);
-            bool isQuotaExhausted = responseText.Contains("limit: 0");
+            bool isQuotaExhausted = IsQuotaExhausted(responseText);
 
             _logger.LogWarning("[AI] 429 – {Kind}. RetryAfter={Retry}s",
                 isQuotaExhausted ? "Quota exhausted" : "Rate limited", retrySeconds);
@@ -413,6 +424,19 @@ public class GeminiAiService : IAIService
         }
 
         return responseText;
+    }
+
+    private static bool IsQuotaExhausted(string body)
+    {
+        if (string.IsNullOrWhiteSpace(body))
+        {
+            return false;
+        }
+
+        return body.Contains("limit: 0", StringComparison.OrdinalIgnoreCase) ||
+               body.Contains("quota", StringComparison.OrdinalIgnoreCase) ||
+               body.Contains("resource_exhausted", StringComparison.OrdinalIgnoreCase) ||
+               body.Contains("exceeded your current quota", StringComparison.OrdinalIgnoreCase);
     }
 
     /// <summary>Tìm "Please retry in X.XXs" trong body Gemini 429.</summary>
@@ -463,6 +487,21 @@ public class GeminiAiService : IAIService
 
     private string BuildGenerateUrl() =>
         $"{GeminiBaseUrl}/v1beta/models/{_options.TextModel}:generateContent?key={_options.ApiKey}";
+
+    private static string BuildRateLimitUserMessage(GeminiRateLimitException ex)
+    {
+        if (ex.IsQuotaExhausted)
+        {
+            return "Hệ thống AI đã chạm hạn mức sử dụng của project hiện tại. Nếu đang dùng free tier, thường phải chờ quota reset hoặc bật billing; đổi API key mới trong cùng project thường không giải quyết được.";
+        }
+
+        if (ex.RetrySeconds.HasValue)
+        {
+            return $"AI đang bận do chạm giới hạn tạm thời của Gemini. Vui lòng thử lại sau {ex.RetrySeconds} giây.";
+        }
+
+        return "AI đang bận do chạm giới hạn tạm thời của Gemini. Vui lòng thử lại sau ít phút.";
+    }
 
     private static string MapHttpError(HttpRequestException ex) => ex.StatusCode switch
     {

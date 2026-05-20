@@ -1,4 +1,4 @@
-﻿@model STEM.Web.Areas.Teacher.Models.TeacherDashboardViewModel
+@model STEM.Web.Areas.Teacher.Models.TeacherDashboardViewModel
 
 @{
     ViewData["Title"] = "Bảng điều khiển";
@@ -166,6 +166,41 @@
         </div>
 
         <div class="teacher-stack">
+            @if (Model.EstimatedCurrentMonthPay > 0 || Model.CurrentMonthValidSessions > 0)
+            {
+                <div class="teacher-card">
+                    <div class="teacher-card-section">
+                        <div class="teacher-toolbar">
+                            <div>
+                                <h2 class="teacher-section-title">Lương tạm tính</h2>
+                                <p class="teacher-section-subtitle">Tháng hiện tại</p>
+                            </div>
+                            <a asp-area="Teacher" asp-controller="Payroll" asp-action="Index" class="teacher-btn-secondary">Chi tiết</a>
+                        </div>
+                        <div class="mt-6 flex flex-col gap-4 rounded-xl border border-[#dce6f5] bg-[#f5f7fb] p-5">
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm font-semibold text-[#6b7c99]">Tổng thu nhập</span>
+                                <span class="text-2xl font-bold text-[#1a3a6e]">@Model.EstimatedCurrentMonthPay.ToString("N0") ₫</span>
+                            </div>
+                            <div class="teacher-divider"></div>
+                            <div class="flex flex-wrap gap-4 text-sm">
+                                <div class="flex flex-1 flex-col gap-1">
+                                    <span class="font-medium text-[#3a4f6e]">Hợp lệ</span>
+                                    <span class="font-bold text-[#456c3f]">@Model.CurrentMonthValidSessions buổi</span>
+                                </div>
+                                <div class="flex flex-1 flex-col gap-1">
+                                    <span class="font-medium text-[#3a4f6e]">Vi phạm</span>
+                                    <span class="font-bold text-[#ba1a1a]">@Model.CurrentMonthInvalidSessions buổi</span>
+                                </div>
+                                <div class="flex flex-1 flex-col gap-1">
+                                    <span class="font-medium text-[#3a4f6e]">Bảng giá</span>
+                                    <span class="font-bold text-[#0f1e38]">@(Model.HasSalaryTierConfigured ? "Đã cấu hình" : "Mặc định")</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
             <div class="teacher-card">
                 <div class="teacher-card-section">
                     <div class="teacher-toolbar">

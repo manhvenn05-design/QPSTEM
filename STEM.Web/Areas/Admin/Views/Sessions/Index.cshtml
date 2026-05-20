@@ -1,4 +1,4 @@
-﻿@model STEM.Web.Areas.Admin.Models.SessionManagementViewModel
+@model STEM.Web.Areas.Admin.Models.SessionManagementViewModel
 
 @{
     ViewData["Title"] = "Buổi học";
@@ -11,6 +11,10 @@
         </div>
 
         <div class="admin-actions">
+            <a asp-area="Admin" asp-controller="Sessions" asp-action="Generate" class="admin-btn-secondary">
+                <span class="material-symbols-outlined text-[18px]">calendar_add_on</span>
+                <span>Sinh lịch tự động</span>
+            </a>
             <a asp-area="Admin" asp-controller="Sessions" asp-action="Create" class="admin-btn-primary">
                 <span class="material-symbols-outlined text-[18px]">add</span>
                 <span>Thêm buổi học</span>
@@ -99,7 +103,7 @@
                                 <td>
                                     <div>
                                         <p class="font-semibold text-[#1a1c19]">@item.DateText</p>
-                                        <p class="mt-1 text-sm text-[#73796b]">@item.TimeRangeText</p>
+                                        <p class="mt-1 text-sm text-[#73796b]">@item.TimeRangeText &middot; @item.RoomName</p>
                                     </div>
                                 </td>
                                 <td>

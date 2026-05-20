@@ -64,6 +64,13 @@
                         <p class="admin-hint">Để trống nếu lớp vẫn đang mở.</p>
                         <span asp-validation-for="EndDate" class="admin-validation"></span>
                     </div>
+
+                    <div class="md:col-span-2">
+                        <label asp-for="Status" class="admin-label"></label>
+                        <select asp-for="Status" asp-items="Model.StatusOptions" class="admin-select">
+                        </select>
+                        <span asp-validation-for="Status" class="admin-validation"></span>
+                    </div>
                 </div>
             </div>
         </div>

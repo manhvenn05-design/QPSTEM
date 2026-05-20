@@ -28,6 +28,7 @@ public class SessionManagementItemViewModel
     public string ClassCode { get; set; } = string.Empty;
     public string CourseName { get; set; } = string.Empty;
     public string TeacherName { get; set; } = string.Empty;
+    public string RoomName { get; set; } = string.Empty;
     public string DateText { get; set; } = string.Empty;
     public string TimeRangeText { get; set; } = string.Empty;
     public string TopicText { get; set; } = string.Empty;
@@ -44,6 +45,9 @@ public class CreateSessionViewModel : IValidatableObject
     [Required(ErrorMessage = "Vui lòng chọn lớp học.")]
     [Display(Name = "Lớp học")]
     public int? ClassId { get; set; }
+
+    [Display(Name = "Phòng học")]
+    public int? RoomId { get; set; }
 
     [Required(ErrorMessage = "Vui lòng nhập thứ tự buổi học.")]
     [Range(1, 1000, ErrorMessage = "Thứ tự buổi học phải lớn hơn 0.")]
@@ -74,6 +78,10 @@ public class CreateSessionViewModel : IValidatableObject
     public IFormFile? MaterialFile { get; set; }
 
     public IReadOnlyList<SelectListItem> ClassOptions { get; set; } = [];
+    public IReadOnlyList<SelectListItem> RoomOptions { get; set; } = [];
+
+    /// <summary>Hint hiển thị trạng thái lớp: số buổi đã học, số học viên...</summary>
+    public string? ClassHint { get; set; }
 
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {
@@ -89,6 +97,11 @@ public class CreateSessionViewModel : IValidatableObject
 public class EditSessionViewModel : CreateSessionViewModel
 {
     public int Id { get; set; }
+    
+    [Display(Name = "Giáo viên dạy thay (Nếu có)")]
+    public int? SubstituteTeacherId { get; set; }
+    
+    public IReadOnlyList<SelectListItem> SubstituteTeacherOptions { get; set; } = [];
 }
 
 public class SessionDetailsViewModel
@@ -98,6 +111,7 @@ public class SessionDetailsViewModel
     public string ClassCode { get; set; } = string.Empty;
     public string CourseName { get; set; } = string.Empty;
     public string TeacherName { get; set; } = string.Empty;
+    public string RoomName { get; set; } = string.Empty;
     public string? TeacherEmail { get; set; }
     public DateOnly ClassStartDate { get; set; }
     public DateOnly? ClassEndDate { get; set; }

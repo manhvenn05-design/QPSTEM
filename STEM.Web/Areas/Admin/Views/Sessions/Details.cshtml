@@ -1,4 +1,4 @@
-﻿@model STEM.Web.Areas.Admin.Models.SessionDetailsViewModel
+@model STEM.Web.Areas.Admin.Models.SessionDetailsViewModel
 
 @{
     ViewData["Title"] = "Chi tiết buổi học";
@@ -40,6 +40,10 @@
                         <div class="admin-data-item">
                             <dt>Giáo viên</dt>
                             <dd>@Model.TeacherName @(string.IsNullOrWhiteSpace(Model.TeacherEmail) ? string.Empty : $"({Model.TeacherEmail})")</dd>
+                        </div>
+                        <div class="admin-data-item">
+                            <dt>Phòng học</dt>
+                            <dd>@Model.RoomName</dd>
                         </div>
                         <div class="admin-data-item">
                             <dt>Ngày học</dt>

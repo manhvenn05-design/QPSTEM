@@ -1,4 +1,4 @@
-﻿@model STEM.Web.Areas.Admin.Models.AttendanceDetailsViewModel
+@model STEM.Web.Areas.Admin.Models.AttendanceDetailsViewModel
 
 @{
     ViewData["Title"] = "Chi tiết điểm danh";
@@ -87,7 +87,7 @@
                 </div>
             </div>
 
-            @if (!string.IsNullOrWhiteSpace(Model.AiEvaluation) || !string.IsNullOrWhiteSpace(Model.VideoTranscript) || !string.IsNullOrWhiteSpace(Model.SoftSkillJson))
+            @if (!string.IsNullOrWhiteSpace(Model.AiEvaluation) || !string.IsNullOrWhiteSpace(Model.VideoTranscript) || Model.SkillScores.Count > 0)
             {
                 <details class="admin-card">
                     <summary class="admin-card-section cursor-pointer">
@@ -113,11 +113,18 @@
                                     <dd>@Model.VideoTranscript</dd>
                                 </div>
                             }
-                            @if (!string.IsNullOrWhiteSpace(Model.SoftSkillJson))
+                            @if (Model.SkillScores.Count > 0)
                             {
                                 <div class="admin-data-item">
-                                    <dt>Soft skill JSON</dt>
-                                    <dd>@Model.SoftSkillJson</dd>
+                                    <dt>Điểm kỹ năng mềm (AI)</dt>
+                                    <dd>
+                                        <ul class="list-disc pl-5">
+                                            @foreach (var skill in Model.SkillScores)
+                                            {
+                                                <li><strong>@skill.SkillName:</strong> @skill.Score/10 - @skill.Feedback</li>
+                                            }
+                                        </ul>
+                                    </dd>
                                 </div>
                             }
                         </dl>

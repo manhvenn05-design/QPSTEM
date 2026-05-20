@@ -116,8 +116,7 @@ public class CreateAttendanceViewModel
     [Display(Name = "Video transcript")]
     public string? VideoTranscript { get; set; }
 
-    [Display(Name = "Soft skill JSON")]
-    public string? SoftSkillJson { get; set; }
+    public IReadOnlyList<AttendanceSkillScoreItemViewModel> SkillScores { get; set; } = [];
 
     public string SessionSummary { get; set; } = string.Empty;
     public string StudentSummary { get; set; } = string.Empty;
@@ -151,5 +150,13 @@ public class AttendanceDetailsViewModel
     public string? TeacherRawNote { get; set; }
     public string? AiEvaluation { get; set; }
     public string? VideoTranscript { get; set; }
-    public string? SoftSkillJson { get; set; }
+    public IReadOnlyList<AttendanceSkillScoreItemViewModel> SkillScores { get; set; } = [];
+}
+
+public class AttendanceSkillScoreItemViewModel
+{
+    public int Id { get; set; }
+    public string SkillName { get; set; } = string.Empty;
+    public int Score { get; set; }
+    public string? Feedback { get; set; }
 }

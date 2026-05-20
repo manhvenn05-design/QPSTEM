@@ -101,6 +101,14 @@ public class CreateUserViewModel : IValidatableObject
     public IReadOnlyList<SelectListItem> RoleOptions { get; set; } = [];
     public IReadOnlyList<string> SuggestedUsernames { get; set; } = [];
     public bool IsStudentRoleSelected { get; set; }
+    public bool IsTeacherRoleSelected { get; set; }
+
+    [Display(Name = "Bậc lương (1-5)")]
+    [Range(1, 5, ErrorMessage = "Bậc lương phải từ 1 đến 5.")]
+    public int? SalaryTier { get; set; }
+
+    [Display(Name = "Lương khoán ca (VNĐ)")]
+    public decimal? CustomSessionRate { get; set; }
 
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {
@@ -185,6 +193,14 @@ public class EditUserViewModel : IValidatableObject
     public IReadOnlyList<SelectListItem> RoleOptions { get; set; } = [];
     public IReadOnlyList<string> SuggestedUsernames { get; set; } = [];
     public bool IsStudentRoleSelected { get; set; }
+    public bool IsTeacherRoleSelected { get; set; }
+
+    [Display(Name = "Bậc lương (1-5)")]
+    [Range(1, 5, ErrorMessage = "Bậc lương phải từ 1 đến 5.")]
+    public int? SalaryTier { get; set; }
+
+    [Display(Name = "Lương khoán ca (VNĐ)")]
+    public decimal? CustomSessionRate { get; set; }
 
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {
@@ -221,4 +237,8 @@ public class UserDetailsViewModel
     public string? GuardianName { get; set; }
     public string? GuardianPhone { get; set; }
     public string? MedicalNotes { get; set; }
+    
+    // Teacher Info
+    public int? SalaryTier { get; set; }
+    public decimal? CustomSessionRate { get; set; }
 }

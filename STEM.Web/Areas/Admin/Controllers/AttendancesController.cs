@@ -1,10 +1,11 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using STEM.Web.Areas.Admin.Models;
 using STEM.Web.Data;
 using STEM.Web.Models;
+using STEM.Web.Services;
 
 namespace STEM.Web.Areas.Admin.Controllers;
 
@@ -346,8 +347,7 @@ public class AttendancesController : Controller
             IsPresent = model.IsPresent,
             TeacherRawNote = NormalizeText(model.TeacherRawNote),
             AiEvaluation = NormalizeText(model.AiEvaluation),
-            VideoTranscript = NormalizeText(model.VideoTranscript),
-            SoftSkillJson = NormalizeText(model.SoftSkillJson)
+            VideoTranscript = NormalizeText(model.VideoTranscript)
         };
 
         _context.Attendances.Add(entity);
@@ -361,6 +361,7 @@ public class AttendancesController : Controller
     public async Task<IActionResult> Edit(int id)
     {
         var entity = await _context.Attendances
+            .Include(x => x.SkillScores)
             .AsNoTracking()
             .FirstOrDefaultAsync(x => x.Id == id);
 
@@ -379,7 +380,13 @@ public class AttendancesController : Controller
             TeacherRawNote = entity.TeacherRawNote,
             AiEvaluation = entity.AiEvaluation,
             VideoTranscript = entity.VideoTranscript,
-            SoftSkillJson = entity.SoftSkillJson
+            SkillScores = entity.SkillScores.Select(s => new AttendanceSkillScoreItemViewModel
+            {
+                Id = s.Id,
+                SkillName = s.SkillName,
+                Score = s.Score,
+                Feedback = s.Feedback
+            }).ToList()
         };
 
         await PopulateOptionsAsync(model, model.SessionId, model.StudentId);
@@ -411,7 +418,6 @@ public class AttendancesController : Controller
         entity.TeacherRawNote = NormalizeText(model.TeacherRawNote);
         entity.AiEvaluation = NormalizeText(model.AiEvaluation);
         entity.VideoTranscript = NormalizeText(model.VideoTranscript);
-        entity.SoftSkillJson = NormalizeText(model.SoftSkillJson);
 
         await _context.SaveChangesAsync();
 
@@ -423,6 +429,7 @@ public class AttendancesController : Controller
     public async Task<IActionResult> Details(int id)
     {
         var model = await _context.Attendances
+            .Include(x => x.SkillScores)
             .AsNoTracking()
             .Where(x => x.Id == id)
             .Select(x => new AttendanceDetailsViewModel
@@ -444,9 +451,15 @@ public class AttendancesController : Controller
                 PresenceBadgeClass = x.IsPresent ? "bg-[#edf7e8] text-[#456c3f]" : "bg-[#ffdad6] text-[#ba1a1a]",
                 ProductMediaUrls = x.ProductMediaUrls,
                 TeacherRawNote = x.TeacherRawNote,
-                AiEvaluation = x.AiEvaluation,
+                AiEvaluation = AiEvaluationFormatter.FormatForDisplay(x.AiEvaluation),
                 VideoTranscript = x.VideoTranscript,
-                SoftSkillJson = x.SoftSkillJson
+                SkillScores = x.SkillScores.Select(s => new AttendanceSkillScoreItemViewModel
+                {
+                    Id = s.Id,
+                    SkillName = s.SkillName,
+                    Score = s.Score,
+                    Feedback = s.Feedback
+                }).ToList()
             })
             .FirstOrDefaultAsync();
 
