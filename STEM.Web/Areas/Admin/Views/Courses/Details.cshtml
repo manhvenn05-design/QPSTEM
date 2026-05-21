@@ -1,4 +1,4 @@
-﻿@model STEM.Web.Areas.Admin.Models.CourseDetailsViewModel
+@model STEM.Web.Areas.Admin.Models.CourseDetailsViewModel
 
 @{
     ViewData["Title"] = "Chi tiết khóa học";
@@ -128,15 +128,15 @@
                     <h2 class="admin-section-title">Tổng quan</h2>
                     <div class="mt-5 grid gap-3">
                         <div class="rounded-xl border border-[#e3e9f2] bg-[#f8fbff] px-4 py-3">
-                            <div class="text-xs font-semibold uppercase tracking-[0.08em] text-[#6b7c99]">Nhóm môn học</div>
+                            <div class="text-xs font-semibold tracking-[0.08em] text-[#6b7c99]">Nhóm môn học</div>
                             <div class="mt-1 text-2xl font-semibold text-[#0f1e38]">@Model.DifficultyLabel</div>
                         </div>
                         <div class="rounded-xl border border-[#e3e9f2] bg-white px-4 py-3">
-                            <div class="text-xs font-semibold uppercase tracking-[0.08em] text-[#6b7c99]">Số lớp</div>
+                            <div class="text-xs font-semibold tracking-[0.08em] text-[#6b7c99]">Số lớp</div>
                             <div class="mt-1 text-2xl font-semibold text-[#0f1e38]">@Model.TotalClasses</div>
                         </div>
                         <div class="rounded-xl border border-[#e3e9f2] bg-white px-4 py-3">
-                            <div class="text-xs font-semibold uppercase tracking-[0.08em] text-[#6b7c99]">Học viên đã ghi danh</div>
+                            <div class="text-xs font-semibold tracking-[0.08em] text-[#6b7c99]">Học viên đã ghi danh</div>
                             <div class="mt-1 text-2xl font-semibold text-[#0f1e38]">@Model.TotalEnrollments</div>
                         </div>
                     </div>

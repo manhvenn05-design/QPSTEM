@@ -144,7 +144,6 @@
             font-weight: 700;
             letter-spacing: 0.12em;
             padding: 16px 14px 6px;
-            text-transform: uppercase;
         }
 
         .admin-header {
@@ -613,7 +612,6 @@
             font-weight: 700;
             line-height: 14px;
             letter-spacing: 0.06em;
-            text-transform: uppercase;
             white-space: normal;
         }
 
@@ -1606,6 +1604,31 @@
                         details.removeAttribute('open');
                     }
                 });
+            });
+
+            // Prevent double form submission globally
+            document.addEventListener('submit', (e) => {
+                const form = e.target;
+                if (!form || form.tagName !== 'FORM' || form.hasAttribute('data-allow-multiple')) return;
+                
+                // Allow validation to run if it exists (jquery unobtrusive)
+                if (window.$(form).data('validator') && !window.$(form).valid()) {
+                    return; // Let it fail validation, don't lock the form
+                }
+
+                if (form.dataset.submitted) {
+                    e.preventDefault();
+                    return;
+                }
+                
+                form.dataset.submitted = 'true';
+                const submitBtn = form.querySelector('button[type="submit"]');
+                if (submitBtn) {
+                    submitBtn.classList.add('opacity-70', 'pointer-events-none');
+                    if (!submitBtn.innerHTML.includes('material-symbols-outlined')) {
+                        submitBtn.innerHTML = '<span class="material-symbols-outlined animate-spin align-middle mr-1 text-[18px]">progress_activity</span> ' + submitBtn.innerHTML;
+                    }
+                }
             });
         })();
     </script>

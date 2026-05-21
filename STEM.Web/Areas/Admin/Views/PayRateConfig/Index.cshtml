@@ -1,4 +1,4 @@
-﻿@model STEM.Web.Areas.Admin.Controllers.PayRateConfigIndexViewModel
+@model STEM.Web.Areas.Admin.Controllers.PayRateConfigIndexViewModel
 
 @{
     ViewData["Title"] = "Thiết lập lương giáo viên";
@@ -58,7 +58,7 @@
         <div class="admin-card-section">
             <div class="flex items-center justify-between gap-3">
                 <div>
-                    <h2 class="admin-section-title">Khóa học đang thuộc nhóm nào</h2>
+                    <h2 class="admin-section-title">Phân loại nhóm môn học</h2>
                     <p class="admin-section-subtitle">Lọc nhanh theo nhóm môn để rà lại toàn bộ cấu hình khóa học phục vụ tính lương.</p>
                 </div>
                 <a asp-area="Admin" asp-controller="Courses" asp-action="Create" asp-route-returnUrl="@payRateReturnUrl" class="admin-btn-secondary">Thêm khóa học mới</a>
@@ -95,13 +95,9 @@
                             @foreach (var course in Model.Courses)
                             {
                                 var isConfigured = course.DifficultyLevel is >= 1 and <= 3;
-                                var badgeClass = course.DifficultyLevel switch
-                                {
-                                    1 => "admin-tag admin-tag--success",
-                                    2 => "admin-tag bg-[#fff3e4] text-[#b86b17]",
-                                    3 => "admin-tag bg-[#eaf1ff] text-[#1a3a6e]",
-                                    _ => "admin-tag admin-tag--danger"
-                                };
+                                var badgeClass = isConfigured
+                                    ? "admin-tag admin-tag--success"
+                                    : "admin-tag admin-tag--danger";
                                 var courseFilterValue = isConfigured ? course.DifficultyLevel.ToString() : "unknown";
                                 <tr data-course-row data-course-filter-value="@courseFilterValue">
                                     <td>
@@ -218,7 +214,7 @@
 
             <div class="overflow-x-auto">
                 <table class="w-full text-left text-sm text-[#0f1e38]">
-                    <thead class="bg-[#f5f7fb] text-xs font-semibold uppercase tracking-wider text-[#6b7c99]">
+                    <thead class="bg-[#f5f7fb] text-xs font-semibold tracking-wider text-[#6b7c99]">
                         <tr>
                             <th class="border-b border-[#dce6f5] px-6 py-4">Bậc giáo viên</th>
                             <th class="border-b border-[#dce6f5] px-6 py-4">Môn cơ bản</th>
@@ -235,14 +231,17 @@
                                 {
                                     var configItem = Model.Configs.FirstOrDefault(c => c.TeacherTier == tier && c.CourseDifficulty == diff);
                                     var rateValue = configItem?.RatePerSession ?? 0;
+                                    var rateRaw = rateValue.ToString("0");
+                                    var rateDisplay = rateValue.ToString("N0", System.Globalization.CultureInfo.GetCultureInfo("vi-VN"));
                                     <td class="px-6 py-4">
                                         <div class="relative">
-                                            <input type="number"
-                                                   class="pay-rate-input w-full rounded-md border border-[#dce6f5] px-3 py-2 pr-10 text-right focus:border-[#1a3a6e] focus:outline-none focus:ring-1 focus:ring-[#1a3a6e]"
+                                            <input type="text"
+                                                   inputmode="numeric"
+                                                   class="pay-rate-input w-full rounded-md border border-[#dce6f5] px-3 py-2 pr-8 text-right focus:border-[#1a3a6e] focus:outline-none focus:ring-1 focus:ring-[#1a3a6e]"
                                                    data-tier="@tier"
                                                    data-diff="@diff"
-                                                   value="@rateValue.ToString("0")"
-                                                   min="0" step="10000" />
+                                                   data-raw-value="@rateRaw"
+                                                   value="@rateDisplay" />
                                             <span class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-[#6b7c99]">đ</span>
                                         </div>
                                     </td>
@@ -262,6 +261,47 @@
 
 @section Scripts {
     <script>
+        // ── Số có dấu chấm ngàn (vi-VN) ──────────────────────────────────────
+        function formatVND(raw) {
+            const n = parseInt(String(raw).replace(/\D/g, ''), 10);
+            if (isNaN(n)) return '';
+            return n.toLocaleString('vi-VN');
+        }
+
+        function getRawValue(input) {
+            return parseInt(input.value.replace(/\D/g, ''), 10) || 0;
+        }
+
+        function setupNumberInputs() {
+            document.querySelectorAll('.pay-rate-input').forEach((input) => {
+                // Format giá trị ban đầu
+                const raw = input.dataset.rawValue || input.value;
+                input.value = formatVND(raw);
+
+                // Khi đang gõ: chỉ cho phép chữ số, tự format
+                input.addEventListener('input', () => {
+                    const pos = input.selectionStart;
+                    const oldLen = input.value.length;
+                    const digits = input.value.replace(/\D/g, '');
+                    input.value = digits ? formatVND(digits) : '';
+                    // Giữ vị trí con trỏ tương đối
+                    const diff = input.value.length - oldLen;
+                    input.setSelectionRange(pos + diff, pos + diff);
+                });
+
+                // Khi focus: chọn toàn bộ để dễ gõ lại
+                input.addEventListener('focus', () => {
+                    input.select();
+                });
+
+                // Khi blur: re-format lại cho chắc
+                input.addEventListener('blur', () => {
+                    input.value = formatVND(getRawValue(input).toString());
+                });
+            });
+        }
+
+        // ── Hiển thị trạng thái lưu ───────────────────────────────────────────
         function showSaveStatus(type, message) {
             const box = document.getElementById('saveStatus');
             if (!box) return;
@@ -274,6 +314,7 @@
             box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
 
+        // ── Lưu bảng đơn giá ─────────────────────────────────────────────────
         async function saveMatrix() {
             const inputs = document.querySelectorAll('.pay-rate-input');
             const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
@@ -283,7 +324,7 @@
                 data.push({
                     teacherTier: parseInt(input.dataset.tier),
                     courseDifficulty: parseInt(input.dataset.diff),
-                    ratePerSession: parseFloat(input.value) || 0
+                    ratePerSession: getRawValue(input)   // gửi số nguyên, không có dấu
                 });
             });
 
@@ -349,5 +390,7 @@
 
         setupTableFilter('[data-course-filter]', '[data-course-row]', '[data-course-empty-state]', 'courseFilterValue');
         setupTableFilter('[data-teacher-filter]', '[data-teacher-row]', '[data-teacher-empty-state]', 'teacherFilterValue');
+
+        setupNumberInputs();
     </script>
 }

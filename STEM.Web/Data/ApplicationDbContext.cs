@@ -391,6 +391,7 @@ public partial class ApplicationDbContext : DbContext
 
             entity.HasIndex(e => e.Date, "IX_Sessions_Date");
             entity.HasIndex(e => new { e.ClassId, e.Date }, "IX_Sessions_ClassId_Date");
+            entity.HasIndex(e => new { e.ClassId, e.SessionNo }, "UQ_Sessions_ClassId_SessionNo").IsUnique();
 
             entity.Property(e => e.Topic).HasMaxLength(200);
             entity.Property(e => e.PayrollStatus)

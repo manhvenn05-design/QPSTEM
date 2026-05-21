@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
@@ -28,10 +28,10 @@ public class CoursesController : Controller
     {
         var filters = new[]
         {
-            new CourseFilterViewModel { Key = "all", Label = "Táº¥t cáº£" },
-            new CourseFilterViewModel { Key = "active", Label = "Äang diá»…n ra" },
-            new CourseFilterViewModel { Key = "upcoming", Label = "Sáº¯p khai giáº£ng" },
-            new CourseFilterViewModel { Key = "draft", Label = "ChÆ°a má»Ÿ lá»›p" }
+            new CourseFilterViewModel { Key = "all", Label = "Tất cả" },
+            new CourseFilterViewModel { Key = "active", Label = "Đang diễn ra" },
+            new CourseFilterViewModel { Key = "upcoming", Label = "Sắp khai giảng" },
+            new CourseFilterViewModel { Key = "draft", Label = "Chưa mở lớp" }
         };
         var difficultyFilters = new[]
         {
@@ -131,12 +131,12 @@ public class CoursesController : Controller
                 TotalClasses = x.Classes.Count,
                 TotalEnrollments = x.Classes.SelectMany(c => c.Enrollments).Count(),
                 StatusLabel = x.Classes.Any(c => c.StartDate <= today && (!c.EndDate.HasValue || c.EndDate.Value >= today))
-                    ? "Äang diá»…n ra"
+                    ? "Đang diễn ra"
                     : x.Classes.Any(c => c.StartDate > today)
-                        ? "Sáº¯p khai giáº£ng"
+                        ? "Sắp khai giảng"
                         : x.Classes.Any()
-                            ? "ÄÃ£ káº¿t thÃºc"
-                            : "ChÆ°a má»Ÿ lá»›p",
+                            ? "Đã kết thúc"
+                            : "Chưa mở lớp",
                 StatusBadgeClass = x.Classes.Any(c => c.StartDate <= today && (!c.EndDate.HasValue || c.EndDate.Value >= today))
                     ? "bg-[#edf7e8] text-[#5b8d3f]"
                     : x.Classes.Any(c => c.StartDate > today)
@@ -184,7 +184,7 @@ public class CoursesController : Controller
 
         if (await _context.Courses.AnyAsync(x => x.Code.ToLower() == normalizedCode.ToLower()))
         {
-            ModelState.AddModelError(nameof(model.Code), "MÃ£ khÃ³a há»c Ä‘Ã£ tá»“n táº¡i.");
+            ModelState.AddModelError(nameof(model.Code), "Mã khóa học đã tồn tại.");
         }
 
         if (!ModelState.IsValid)
@@ -231,7 +231,7 @@ public class CoursesController : Controller
                 await _fileStorage.DeleteFileAsync(uploadedImageUrl);
             }
 
-            ModelState.AddModelError(nameof(model.Code), "MÃ£ khÃ³a há»c Ä‘Ã£ tá»“n táº¡i.");
+            ModelState.AddModelError(nameof(model.Code), "Mã khóa học đã tồn tại.");
             return View(model);
         }
 
@@ -287,7 +287,7 @@ public class CoursesController : Controller
 
         if (await _context.Courses.AnyAsync(x => x.Id != model.Id && x.Code.ToLower() == normalizedCode.ToLower()))
         {
-            ModelState.AddModelError(nameof(model.Code), "MÃ£ khÃ³a há»c Ä‘Ã£ tá»“n táº¡i.");
+            ModelState.AddModelError(nameof(model.Code), "Mã khóa học đã tồn tại.");
         }
 
         if (!ModelState.IsValid)
@@ -333,7 +333,7 @@ public class CoursesController : Controller
                 course.ImageUrl = previousImageUrl;
             }
 
-            ModelState.AddModelError(nameof(model.Code), "MÃ£ khÃ³a há»c Ä‘Ã£ tá»“n táº¡i.");
+            ModelState.AddModelError(nameof(model.Code), "Mã khóa học đã tồn tại.");
             return View(model);
         }
 
@@ -362,20 +362,20 @@ public class CoursesController : Controller
 
         if (course == null)
         {
-            TempData["ErrorMessage"] = "KhÃ´ng tÃ¬m tháº¥y khÃ³a há»c cáº§n xÃ³a.";
+            TempData["ErrorMessage"] = "Không tìm thấy khóa học cần xóa.";
             return RedirectToAction(nameof(Index));
         }
 
         if (course.Classes.Count > 0 || course.Leads.Count > 0)
         {
             var hint = course.Classes.Count > 0
-                ? $"KhÃ³a há»c nÃ y Ä‘ang cÃ³ {course.Classes.Count} lá»›p há»c. VÃ o trang Lá»›p há»c, tÃ¬m theo mÃ£ \"{course.Code}\" vÃ  xÃ³a tá»«ng lá»›p trÆ°á»›c."
-                : "KhÃ³a há»c nÃ y Ä‘ang cÃ³ dá»¯ liá»‡u quan tÃ¢m (Leads) liÃªn quan.";
+                ? $"Khóa học này đang có {course.Classes.Count} lớp học. Vào trang Lớp học, tìm theo mã \"{course.Code}\" và xóa từng lớp trước."
+                : "Khóa học này đang có dữ liệu quan tâm (Leads) liên quan.";
             TempData["ErrorMessage"] = hint;
             return RedirectToAction(nameof(Index));
         }
 
-        // XÃ³a Leads trÆ°á»›c (khÃ´ng cÃ³ con)
+        // Xóa Leads trước (không có con)
         if (course.Leads.Count > 0)
         {
             _context.Leads.RemoveRange(course.Leads);
@@ -415,12 +415,12 @@ public class CoursesController : Controller
     private static CourseManagementItemViewModel MapCourseListItem(CourseListProjection course)
     {
         var statusLabel = course.HasActiveClass
-            ? "Äang diá»…n ra"
+            ? "Đang diễn ra"
             : course.HasUpcomingClass
-                ? "Sáº¯p khai giáº£ng"
+                ? "Sắp khai giảng"
                 : course.ClassCount == 0
-                    ? "ChÆ°a má»Ÿ lá»›p"
-                    : "ÄÃ£ káº¿t thÃºc";
+                    ? "Chưa mở lớp"
+                    : "Đã kết thúc";
 
         var statusBadgeClass = course.HasActiveClass
             ? "bg-[#edf7e8] text-[#5b8d3f]"
@@ -435,9 +435,9 @@ public class CoursesController : Controller
             Id = course.Id,
             Code = course.Code,
             Name = course.Name,
-            AgeRange = $"{course.TargetAgeMin}-{course.TargetAgeMax} tuá»•i",
-            PriceText = $"{course.Price:N0}Ä‘",
-            TotalSessionsText = $"{course.TotalSessions} buá»•i",
+            AgeRange = $"{course.TargetAgeMin}-{course.TargetAgeMax} tuổi",
+            PriceText = $"{course.Price:N0}đ",
+            TotalSessionsText = $"{course.TotalSessions} buổi",
             ClassCount = course.ClassCount,
             EnrollmentCount = course.EnrollmentCount,
             DifficultyLevel = course.DifficultyLevel,
@@ -478,10 +478,10 @@ public class CoursesController : Controller
 
     private static string GetDifficultyLabel(int difficultyLevel) => difficultyLevel switch
     {
-        1 => "MÃ´n cÆ¡ báº£n",
-        2 => "MÃ´n nÃ¢ng cao",
-        3 => "MÃ´n chuyÃªn sÃ¢u",
-        _ => "ChÆ°a phÃ¢n loáº¡i"
+        1 => "Môn cơ bản",
+        2 => "Môn nâng cao",
+        3 => "Môn chuyên sâu",
+        _ => "Chưa phân loại"
     };
 }
 
