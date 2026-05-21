@@ -43,6 +43,19 @@ public static class AttendanceIntegrityRules
         return SplitMediaUrls(rawValue).All(url => IsValidProductMediaUrl(url, cloudName));
     }
 
+    public static bool IsValidLocalMediaUrl(string? rawUrl)
+    {
+        if (string.IsNullOrWhiteSpace(rawUrl))
+            return false;
+
+        var url = rawUrl.Trim();
+        // Local upload path: /uploads/videos/...
+        return url.StartsWith("/uploads/videos/", StringComparison.OrdinalIgnoreCase)
+            && (url.EndsWith(".mp4", StringComparison.OrdinalIgnoreCase)
+             || url.EndsWith(".webm", StringComparison.OrdinalIgnoreCase)
+             || url.EndsWith(".mov", StringComparison.OrdinalIgnoreCase));
+    }
+
     public static IReadOnlyList<string> SplitMediaUrls(string? rawValue)
     {
         if (string.IsNullOrWhiteSpace(rawValue))
@@ -60,36 +73,31 @@ public static class AttendanceIntegrityRules
     public static bool IsValidProductMediaUrl(string? rawUrl, string? cloudName)
     {
         if (string.IsNullOrWhiteSpace(rawUrl))
-        {
             return false;
-        }
 
-        if (!Uri.TryCreate(rawUrl.Trim(), UriKind.Absolute, out var uri))
-        {
+        var url = rawUrl.Trim();
+
+        // ── Ưu tiên: local storage (/uploads/videos/...) ────────────────────
+        if (IsValidLocalMediaUrl(url))
+            return true;
+
+        // ── Legacy: Cloudinary URL ───────────────────────────────────────────
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
             return false;
-        }
 
         if (!string.Equals(uri.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase))
-        {
             return false;
-        }
 
         if (!string.Equals(uri.Host, "res.cloudinary.com", StringComparison.OrdinalIgnoreCase))
-        {
             return false;
-        }
 
         var path = uri.AbsolutePath;
         if (string.IsNullOrWhiteSpace(path))
-        {
             return false;
-        }
 
         if (!string.IsNullOrWhiteSpace(cloudName) &&
             !path.Contains($"/{cloudName.Trim('/')}/", StringComparison.OrdinalIgnoreCase))
-        {
             return false;
-        }
 
         return path.Contains("/qpstem/videos/", StringComparison.OrdinalIgnoreCase);
     }

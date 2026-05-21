@@ -4,8 +4,14 @@
     string sessionLabel = ViewBag.SessionLabel as string ?? "Giáo án";
     string topic = ViewBag.Topic as string ?? "";
 
-    bool isLocalPdf = materialUrl.StartsWith("/uploads/") || materialUrl.ToLower().EndsWith(".pdf");
+    // Xác định loại tài liệu
+    bool isLocalPdf  = materialUrl.StartsWith("/uploads/") && materialUrl.ToLower().EndsWith(".pdf");
+    bool isLocalFile = materialUrl.StartsWith("/uploads/");
     bool isGoogleSlides = materialUrl.Contains("docs.google.com/presentation");
+    bool isPdf = isLocalPdf || materialUrl.ToLower().EndsWith(".pdf");
+
+    // Với local file, dùng trực tiếp URL; không cần proxy
+    string pdfUrl = materialUrl;
 
     string iframeUrl = materialUrl;
     if (isGoogleSlides)
@@ -234,7 +240,7 @@
                 <div class="loader-text">Đang tải tài liệu…</div>
             </div>
 
-            @if (isLocalPdf)
+            @if (isPdf)
             {
                 <canvas id="slide-canvas"></canvas>
             }
@@ -259,14 +265,14 @@
         </div>
     </div>
 
-    @if (isLocalPdf)
+    @if (isPdf)
     {
         <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
         <script>
             pdfjsLib.GlobalWorkerOptions.workerSrc =
                 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
-            const PDF_URL = '@materialUrl';
+            const PDF_URL = '@pdfUrl';
             let pdfDoc = null;
             let currentPage = 1;
             let totalPages = 0;
@@ -351,7 +357,7 @@
             }
 
             // Load PDF
-            pdfjsLib.getDocument(PDF_URL).promise.then(doc => {
+            pdfjsLib.getDocument({ url: PDF_URL }).promise.then(doc => {
                 pdfDoc     = doc;
                 totalPages = doc.numPages;
                 buildDots(totalPages);

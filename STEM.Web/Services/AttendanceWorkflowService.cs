@@ -84,7 +84,9 @@ public sealed class AttendanceWorkflowService
     {
         var session = await _context.Sessions
             .Include(x => x.Class)
-            .ThenInclude(x => x.Enrollments)
+                .ThenInclude(x => x.Enrollments)
+            .Include(x => x.Class)
+                .ThenInclude(x => x.Course)
             .Include(x => x.Attendances)
             .FirstOrDefaultAsync(x => x.Id == sessionId, cancellationToken);
 
@@ -127,9 +129,15 @@ public sealed class AttendanceWorkflowService
                 }
                 else
                 {
+                    // Extract to local var — EF Core không thể translate navigation property lồng nhau
+                    var difficultyLevel = session.Class.Course?.DifficultyLevel;
+                    var salaryTier = teacherProfile.SalaryTier;
+
                     var payRate = await _context.Set<PayRateConfig>()
                         .AsNoTracking()
-                        .FirstOrDefaultAsync(x => x.TeacherTier == teacherProfile.SalaryTier && x.CourseDifficulty == session.Class.Course.DifficultyLevel, cancellationToken);
+                        .FirstOrDefaultAsync(
+                            x => x.TeacherTier == salaryTier && x.CourseDifficulty == difficultyLevel,
+                            cancellationToken);
                     
                     if (payRate != null)
                     {

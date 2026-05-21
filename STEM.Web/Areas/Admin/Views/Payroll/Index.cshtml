@@ -1,4 +1,4 @@
-﻿@model STEM.Web.Areas.Admin.Models.PayrollManagementViewModel
+@model STEM.Web.Areas.Admin.Models.PayrollManagementViewModel
 
 @{
     ViewData["Title"] = "Bảng lương";
@@ -27,7 +27,7 @@
 
             <form asp-area="Admin" asp-controller="Payroll" asp-action="Approve" method="post" class="flex items-center gap-3"
                   data-confirm-title="Chốt kỳ lương"
-                  data-confirm-message="Khi chốt, các bản ghi lương của kỳ này sẽ chuyển sang Approved và giáo viên không thể tiếp tục chỉnh sửa attendance thuộc tháng đó. Bạn có chắc chắn không?"
+                  data-confirm-message="Khi chốt, các bản ghi lương của kỳ này sẽ chuyển sang trạng thái Đã chốt và giáo viên không thể tiếp tục chỉnh sửa attendance thuộc tháng đó. Bạn có chắc chắn không?"
                   data-confirm-submit-text="Chốt kỳ lương">
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="year" value="@Model.Year" />
@@ -86,7 +86,7 @@
         <article class="admin-stat-card">
             <span class="admin-stat-label">Tổng chi dự kiến</span>
             <div class="admin-stat-value">@Model.TotalPayout.ToString("N0") đ</div>
-            <p class="admin-kicker">Draft chưa chốt: @Model.DraftPayout.ToString("N0") đ</p>
+            <p class="admin-kicker">Nháp chưa chốt: @Model.DraftPayout.ToString("N0") đ</p>
         </article>
     </div>
 
@@ -108,8 +108,8 @@
                 }
             </div>
             <div class="flex flex-wrap gap-2">
-                <span class="admin-tag admin-tag--neutral">Draft: @draftTeachers</span>
-                <span class="admin-tag admin-tag--success">Approved: @Model.ApprovedTeachers</span>
+                <span class="admin-tag admin-tag--neutral">Nháp: @draftTeachers</span>
+                <span class="admin-tag admin-tag--success">Đã chốt: @Model.ApprovedTeachers</span>
             </div>
         </div>
     </div>
@@ -121,7 +121,7 @@
                     <h2 class="admin-section-title">Chi tiết theo giáo viên</h2>
                     <p class="admin-section-subtitle">Dữ liệu draft có thể tạo lại. Bản ghi đã chốt sẽ khóa khỏi thao tác cập nhật từ giáo viên.</p>
                 </div>
-                <div class="text-sm text-[#6b7c99]">Tổng draft chưa chốt: @Model.DraftPayout.ToString("N0") đ</div>
+                <div class="text-sm text-[#6b7c99]">Tổng nháp chưa chốt: @Model.DraftPayout.ToString("N0") đ</div>
             </div>
 
             @if (!hasRecords)
@@ -155,6 +155,7 @@
                                 var badgeClass = isApproved
                                     ? "bg-[#edf7e8] text-[#456c3f]"
                                     : "bg-[#fff4e8] text-[#9b682f]";
+                                var statusLabel = isApproved ? "Đã chốt" : "Nháp";
 
                                 <tr>
                                     <td>
@@ -168,7 +169,7 @@
                                     <td>@record.Deductions.ToString("N0") đ</td>
                                     <td class="font-semibold text-[#0f1e38]">@record.TotalPay.ToString("N0") đ</td>
                                     <td>
-                                        <span class="inline-flex rounded-full px-3 py-1 text-xs font-semibold @badgeClass">@record.Status</span>
+                                        <span class="inline-flex rounded-full px-3 py-1 text-xs font-semibold @badgeClass">@statusLabel</span>
                                         @if (record.ApprovedAt.HasValue)
                                         {
                                             <div class="mt-1 text-xs text-[#6b7c99]">@record.ApprovedAt.Value.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</div>

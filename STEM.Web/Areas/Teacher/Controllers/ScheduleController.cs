@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using STEM.Web.Areas.Teacher.Models;
 using STEM.Web.Data;
+using STEM.Web.Services;
 
 namespace STEM.Web.Areas.Teacher.Controllers;
 
@@ -257,12 +258,16 @@ public class ScheduleController : Controller
             return NotFound("Không tìm thấy giáo án cho buổi học này.");
         }
 
-        ViewBag.MaterialUrl = session.TeachingMaterialUrl;
+        // Với local file (/uploads/...), URL đã public — truyền thẳng cho View
+        ViewBag.MaterialUrl  = session.TeachingMaterialUrl;
         ViewBag.SessionLabel = $"Buổi số {session.SessionNo:00}";
-        ViewBag.Topic = session.Topic;
-        
+        ViewBag.Topic        = session.Topic;
+
         return View();
     }
+
+    // PdfProxy đã không còn cần thiết vì file được lưu local trong wwwroot/uploads/
+    // và được ASP.NET Core static files middleware phục vụ trực tiếp mà không cần proxy.
 
     [HttpPost]
     [ValidateAntiForgeryToken]

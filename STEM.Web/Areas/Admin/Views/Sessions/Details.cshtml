@@ -59,7 +59,7 @@
                         </div>
                         <div class="admin-data-item md:col-span-2">
                             <dt>Link giáo án</dt>
-                            <dd>
+                            <dd class="break-all">
                                 @if (string.IsNullOrWhiteSpace(Model.TeachingMaterialUrl))
                                 {
                                     <text>Chưa gắn giáo án.</text>
@@ -72,11 +72,11 @@
                         </div>
                         <div class="admin-data-item md:col-span-2">
                             <dt>Media cả lớp</dt>
-                            <dd>@(string.IsNullOrWhiteSpace(Model.ClassMediaUrls) ? "Chưa cập nhật media lớp." : Model.ClassMediaUrls)</dd>
+                            <dd class="break-all">@(string.IsNullOrWhiteSpace(Model.ClassMediaUrls) ? "Chưa cập nhật media lớp." : Model.ClassMediaUrls)</dd>
                         </div>
                         <div class="admin-data-item md:col-span-2">
                             <dt>Ghi chú trợ giảng</dt>
-                            <dd>@(string.IsNullOrWhiteSpace(Model.AssistantNote) ? "Chưa có ghi chú vận hành." : Model.AssistantNote)</dd>
+                            <dd class="break-words whitespace-pre-wrap">@(string.IsNullOrWhiteSpace(Model.AssistantNote) ? "Chưa có ghi chú vận hành." : Model.AssistantNote)</dd>
                         </div>
                     </dl>
                 </div>
