@@ -6,11 +6,11 @@ namespace STEM.Web.Services;
 
 public sealed class PayrollCalculationService
 {
-    private const decimal ConsecutiveMissingEvidencePenalty = 100_000m;
-    private const decimal LowEvidenceRatioPenaltyRate = 0.20m;
-    private const decimal HighAttendanceBonus = 200_000m;
+    private const decimal FullAttendanceBonusPerSession = 20_000m;
+    private const decimal FullComplianceBonusPerSession = 30_000m;
+    private const decimal MissingNotePenaltyPerSession = 20_000m;
+    private const decimal NoVideoPenaltyPerSession = 50_000m;
     private const decimal ExcellentAiBonus = 300_000m;
-    private const decimal FullComplianceBonusRate = 0.10m;
     public const string PayrollDraftStatus = "Draft";
 
     private readonly ApplicationDbContext _context;
@@ -49,7 +49,8 @@ public sealed class PayrollCalculationService
                 AttendanceCount = x.Attendances.Count,
                 PresentCount = x.Attendances.Count(a => a.IsPresent),
                 StudentCount = x.Class.Enrollments.Count,
-                MediaReadyCount = x.Attendances.Count(a => !string.IsNullOrWhiteSpace(a.ProductMediaUrls) && !string.IsNullOrWhiteSpace(a.AiEvaluation)),
+                MediaReadyCount = x.Attendances.Count(a => a.IsPresent && !string.IsNullOrWhiteSpace(a.ProductMediaUrls) && !string.IsNullOrWhiteSpace(a.AiEvaluation)),
+                NoteReadyCount = x.Attendances.Count(a => a.IsPresent && !string.IsNullOrWhiteSpace(a.TeacherRawNote)),
                 ExcellentAiCount = x.Attendances.Count(a => !string.IsNullOrWhiteSpace(a.AiEvaluation))
             })
             .ToListAsync(cancellationToken);
@@ -175,9 +176,8 @@ public sealed class PayrollCalculationService
                 AttendanceCount = x.Attendances.Count,
                 PresentCount = x.Attendances.Count(a => a.IsPresent),
                 StudentCount = x.Class.Enrollments.Count,
-                MediaReadyCount = x.Attendances.Count(a =>
-                    !string.IsNullOrWhiteSpace(a.ProductMediaUrls) &&
-                    !string.IsNullOrWhiteSpace(a.AiEvaluation)),
+                MediaReadyCount = x.Attendances.Count(a => a.IsPresent && !string.IsNullOrWhiteSpace(a.ProductMediaUrls) && !string.IsNullOrWhiteSpace(a.AiEvaluation)),
+                NoteReadyCount = x.Attendances.Count(a => a.IsPresent && !string.IsNullOrWhiteSpace(a.TeacherRawNote)),
                 ExcellentAiCount = 0
             })
             .ToListAsync(cancellationToken);
@@ -247,21 +247,21 @@ public sealed class PayrollCalculationService
     {
         decimal bonuses = 0m;
 
-        bonuses += teacherSessions
-            .GroupBy(x => x.ClassId)
-            .Count(group => group.Sum(x => x.StudentCount) > 0 &&
-                            group.Sum(x => x.PresentCount) / (decimal)group.Sum(x => x.StudentCount) > 0.95m)
-            * HighAttendanceBonus;
+        // Thưởng chuyên cần: 20k/buổi nếu tất cả học sinh đi học
+        var fullAttendanceSessions = validSessions.Count(x => x.StudentCount > 0 && x.PresentCount == x.StudentCount);
+        bonuses += fullAttendanceSessions * FullAttendanceBonusPerSession;
 
+        // Thưởng tuân thủ báo cáo: 30k/buổi nếu TẤT CẢ học sinh có mặt đều có nhận xét TỐT và có video được phân tích AI
+        var fullComplianceSessions = validSessions.Count(x => 
+            x.PresentCount > 0 && 
+            x.NoteReadyCount == x.PresentCount && 
+            x.MediaReadyCount == x.PresentCount);
+        bonuses += fullComplianceSessions * FullComplianceBonusPerSession;
+
+        // Thưởng thêm AI xuất sắc nếu có (giữ nguyên quy tắc cũ cho video xuất sắc)
         if (validSessions.Sum(x => x.ExcellentAiCount) >= 5)
         {
             bonuses += ExcellentAiBonus;
-        }
-
-        if (teacherSessions.Count > 0 &&
-            teacherSessions.All(x => string.Equals(x.PayrollStatus, AttendanceIntegrityRules.PayrollStatusValid, StringComparison.OrdinalIgnoreCase)))
-        {
-            bonuses += sessionEarnings * FullComplianceBonusRate;
         }
 
         return bonuses;
@@ -271,33 +271,20 @@ public sealed class PayrollCalculationService
     {
         decimal deductions = 0m;
 
-        foreach (var classGroup in teacherSessions.GroupBy(x => x.ClassId))
+        foreach (var session in teacherSessions)
         {
-            var ordered = classGroup.OrderBy(x => x.SessionDate).ToList();
-            for (var i = 1; i < ordered.Count; i++)
-            {
-                if (ordered[i - 1].MediaReadyCount == 0 && ordered[i].MediaReadyCount == 0)
-                {
-                    deductions += ConsecutiveMissingEvidencePenalty;
-                }
-            }
-        }
+            if (session.PresentCount == 0) continue;
 
-        foreach (var courseGroup in teacherSessions.GroupBy(x => x.CourseId))
-        {
-            if (courseGroup.Count() == 0)
+            // Phạt nếu có học sinh không được nhận xét
+            if (session.NoteReadyCount < session.PresentCount)
             {
-                continue;
+                deductions += MissingNotePenaltyPerSession;
             }
 
-            var evidenceRatio = courseGroup.Count(x => x.MediaReadyCount > 0) / (decimal)courseGroup.Count();
-            if (evidenceRatio < 0.8m)
+            // Phạt nếu buổi học KHÔNG có ít nhất 1 video được phân tích
+            if (session.MediaReadyCount == 0)
             {
-                var validCourseSessions = validSessions.Count(x => x.CourseId == courseGroup.Key);
-                if (validSessions.Count > 0)
-                {
-                    deductions += sessionEarnings * (validCourseSessions / (decimal)validSessions.Count) * LowEvidenceRatioPenaltyRate;
-                }
+                deductions += NoVideoPenaltyPerSession;
             }
         }
 
@@ -350,6 +337,7 @@ public sealed class PayrollCalculationService
         public int PresentCount { get; set; }
         public int StudentCount { get; set; }
         public int MediaReadyCount { get; set; }
+        public int NoteReadyCount { get; set; }
         public int ExcellentAiCount { get; set; }
         public decimal SessionRateApplied { get; set; }
     }

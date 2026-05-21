@@ -159,24 +159,24 @@
                                 <div class="teacher-field relative">
                                     <div class="mb-2 flex items-center justify-between">
                                         <label asp-for="Rows[@i].TeacherRawNote">Ghi chú giáo viên</label>
-                                        <button type="button" id="btn-refine-@(i)" class="text-xs font-semibold text-[#1a3a6e] hover:text-[#0f2347] transition-colors" onclick="refineNote(@i)" disabled="@Model.IsReadOnly">
+                                        <button type="button" id="btn-refine-@(i)" class="text-xs font-semibold text-[#1a3a6e] hover:text-[#0f2347] transition-colors disabled:opacity-50" onclick="refineNote(@i)" disabled="@(Model.IsReadOnly || !Model.Rows[i].IsPresent)">
                                             Nhờ AI viết lại
                                         </button>
                                     </div>
-                                    <textarea asp-for="Rows[@i].TeacherRawNote" rows="3" placeholder="Ghi chú ngắn về tiến độ, thái độ hoặc điều cần lưu ý." class="transition-all duration-300 w-full" style="min-height: 80px; max-height: 300px; resize: vertical; overflow-y: auto;" oninput="this.style.height=''; this.style.height=this.scrollHeight + 'px';" onchange="autoSaveBoard();" readonly="@Model.IsReadOnly"></textarea>
+                                    <textarea asp-for="Rows[@i].TeacherRawNote" rows="3" placeholder="Ghi chú ngắn về tiến độ, thái độ hoặc điều cần lưu ý." class="transition-all duration-300 w-full disabled:opacity-50 disabled:bg-[#f5f7fb]" style="min-height: 80px; max-height: 300px; resize: vertical; overflow-y: auto;" oninput="this.style.height=''; this.style.height=this.scrollHeight + 'px';" onchange="autoSaveBoard();" readonly="@Model.IsReadOnly" disabled="@(!Model.Rows[i].IsPresent)"></textarea>
                                     <span asp-validation-for="Rows[@i].TeacherRawNote" class="teacher-field-error"></span>
                                 </div>
 
                                 <div class="teacher-field relative mt-4">
                                     <label class="font-medium text-[#1a1c19]">Tải lên video sản phẩm</label>
 
-                                    <div class="mt-2 flex cursor-pointer justify-center rounded-lg border-2 border-dashed border-[#c2c9b9] bg-[#f8faf7] px-6 py-6 transition-colors hover:border-[#0f2347] hover:bg-[#f2f7f0]" id="upload-area-@(i)" onclick="openUploadPicker(@i)" ondragover="handleUploadDragOver(event)" ondragleave="handleUploadDragLeave(event)" ondrop="handleUploadDrop(event, @i)">
+                                    <div class="mt-2 flex cursor-pointer justify-center rounded-lg border-2 border-dashed border-[#c2c9b9] bg-[#f8faf7] transition-colors hover:border-[#0f2347] hover:bg-[#f2f7f0] px-6 py-6 @(!Model.Rows[i].IsPresent ? "opacity-50 pointer-events-none" : "")" id="upload-area-@(i)" onclick="openUploadPicker(@i)" ondragover="handleUploadDragOver(event)" ondragleave="handleUploadDragLeave(event)" ondrop="handleUploadDrop(event, @i)">
                                         <div class="text-center">
                                             <span class="material-symbols-outlined text-[36px] text-[#73796b]">cloud_upload</span>
                                             <div class="mt-2 flex justify-center text-sm leading-6 text-[#42493f]">
                                                 <label for="file-upload-@(i)" class="relative cursor-pointer rounded-md font-semibold text-[#0f2347] hover:text-[#2d4f19]" onclick="event.stopPropagation()">
                                                     <span>Tải video từ máy</span>
-                                                    <input id="file-upload-@(i)" type="file" class="sr-only" accept="video/*" onchange="uploadVideoAsync(this.files?.[0], @i); this.value='';" disabled="@Model.IsReadOnly" />
+                                                    <input id="file-upload-@(i)" type="file" class="sr-only" accept="video/*" onchange="uploadVideoAsync(this.files?.[0], @i); this.value='';" disabled="@(Model.IsReadOnly || !Model.Rows[i].IsPresent)" />
                                                 </label>
                                                 <p class="pl-1">hoặc kéo thả vào đây</p>
                                             </div>
@@ -206,7 +206,7 @@
 
                                     <span asp-validation-for="Rows[@i].ProductMediaUrls" class="teacher-field-error"></span>
 
-                                    <button type="button" id="btn-ai-@(i)" class="mt-3 flex w-full items-center justify-center gap-2 rounded-lg bg-[#1a3a6e] px-4 py-2.5 text-sm font-bold text-white transition-all hover:bg-[#0f2347] active:scale-[0.98]" onclick="analyzeVideoInline(this, @i)" disabled="@Model.IsReadOnly">
+                                    <button type="button" id="btn-ai-@(i)" class="mt-3 flex w-full items-center justify-center gap-2 rounded-lg bg-[#1a3a6e] px-4 py-2.5 text-sm font-bold text-white transition-all hover:bg-[#0f2347] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed" onclick="analyzeVideoInline(this, @i)" disabled="@(Model.IsReadOnly || !Model.Rows[i].IsPresent)">
                                         <span class="material-symbols-outlined text-[20px] ai-action-icon">auto_awesome</span>
                                         <span class="ai-action-label">Đánh giá video (AI)</span>
                                     </button>
@@ -421,17 +421,57 @@
             if (status === 'Present') {
                 isPresent.value = 'true';
                 isExcused.value = 'false';
+                toggleInputs(index, true);
                 return;
             }
 
             if (status === 'Excused') {
                 isPresent.value = 'false';
                 isExcused.value = 'true';
+                toggleInputs(index, false);
                 return;
             }
 
             isPresent.value = 'false';
             isExcused.value = 'false';
+            toggleInputs(index, false);
+        }
+
+        function toggleInputs(index, isPresent) {
+            if (isReadOnlyBoard()) return;
+            const disabled = !isPresent;
+            
+            const txtNote = document.getElementById(`Rows_${index}__TeacherRawNote`);
+            if (txtNote) {
+                txtNote.disabled = disabled;
+                if (disabled) txtNote.value = '';
+            }
+            
+            const btnRefine = document.getElementById(`btn-refine-${index}`);
+            if (btnRefine) btnRefine.disabled = disabled;
+
+            const fileUpload = document.getElementById(`file-upload-${index}`);
+            if (fileUpload) {
+                fileUpload.disabled = disabled;
+                if (disabled) fileUpload.value = '';
+            }
+
+            const btnAi = document.getElementById(`btn-ai-${index}`);
+            if (btnAi) btnAi.disabled = disabled;
+            
+            const uploadArea = document.getElementById(`upload-area-${index}`);
+            if (uploadArea) {
+                if (disabled) {
+                    uploadArea.classList.add('opacity-50', 'pointer-events-none');
+                } else {
+                    uploadArea.classList.remove('opacity-50', 'pointer-events-none');
+                }
+            }
+            if (disabled) {
+                document.getElementById(`Rows_${index}__ProductMediaUrls`).value = '';
+                resetAiResult(index);
+                hideVideoPreview(index);
+            }
         }
 
         function findRowIndexByStudentId(studentId) {

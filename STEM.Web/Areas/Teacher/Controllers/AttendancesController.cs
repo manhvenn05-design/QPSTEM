@@ -235,6 +235,12 @@ public class AttendancesController : Controller
             var normalizedTeacherNote = NormalizeText(row.TeacherRawNote);
             var normalizedMediaUrls = NormalizeText(row.ProductMediaUrls);
 
+            if (!row.IsPresent)
+            {
+                normalizedTeacherNote = null;
+                normalizedMediaUrls = null;
+            }
+
             if (attendance == null)
             {
                 var newAttendance = new Attendance
@@ -250,13 +256,18 @@ public class AttendancesController : Controller
                 _context.Attendances.Add(newAttendance);
                 existingAttendances.Add(newAttendance);
                 continue;
-            }
-
             attendance.IsPresent = row.IsPresent;
             attendance.IsExcused = row.IsExcused;
             attendance.TeacherRawNote = normalizedTeacherNote;
 
-            if (!string.Equals(attendance.ProductMediaUrls, normalizedMediaUrls, StringComparison.Ordinal))
+            if (!row.IsPresent)
+            {
+                attendance.ProductMediaUrls = null;
+                attendance.AiEvaluation = null;
+                attendance.VideoTranscript = null;
+                attendance.AiProcessStatus = null;
+            }
+            else if (!string.Equals(attendance.ProductMediaUrls, normalizedMediaUrls, StringComparison.Ordinal))
             {
                 attendance.ProductMediaUrls = normalizedMediaUrls;
                 attendance.AiEvaluation = null;
