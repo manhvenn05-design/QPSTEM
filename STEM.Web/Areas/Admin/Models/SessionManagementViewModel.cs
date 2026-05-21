@@ -83,6 +83,11 @@ public class CreateSessionViewModel : IValidatableObject
     /// <summary>Hint hiển thị trạng thái lớp: số buổi đã học, số học viên...</summary>
     public string? ClassHint { get; set; }
 
+    [Display(Name = "Giáo viên dạy thay (Nếu có)")]
+    public int? SubstituteTeacherId { get; set; }
+    
+    public IReadOnlyList<SelectListItem> SubstituteTeacherOptions { get; set; } = [];
+
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {
         if (StartTime.HasValue && EndTime.HasValue && EndTime.Value <= StartTime.Value)
@@ -97,11 +102,6 @@ public class CreateSessionViewModel : IValidatableObject
 public class EditSessionViewModel : CreateSessionViewModel
 {
     public int Id { get; set; }
-    
-    [Display(Name = "Giáo viên dạy thay (Nếu có)")]
-    public int? SubstituteTeacherId { get; set; }
-    
-    public IReadOnlyList<SelectListItem> SubstituteTeacherOptions { get; set; } = [];
 }
 
 public class SessionDetailsViewModel

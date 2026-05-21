@@ -12,17 +12,20 @@
         </div>
 
         <div class="teacher-actions">
-            @if (!string.IsNullOrWhiteSpace(Model.TeachingMaterialUrl))
+            @if (!Model.IsSubstituteAssignedToOther)
             {
-                <a asp-area="Teacher" asp-controller="Schedule" asp-action="Viewer" asp-route-id="@Model.SessionId" class="teacher-btn-secondary !text-[#f97316] !border-[#f97316] hover:!bg-[#fff7ed]">
-                    <span class="material-symbols-outlined text-[18px]">smart_display</span>
-                    <span>Trình chiếu</span>
+                @if (!string.IsNullOrWhiteSpace(Model.TeachingMaterialUrl))
+                {
+                    <a asp-area="Teacher" asp-controller="Schedule" asp-action="Viewer" asp-route-id="@Model.SessionId" class="teacher-btn-secondary !text-[#f97316] !border-[#f97316] hover:!bg-[#fff7ed]">
+                        <span class="material-symbols-outlined text-[18px]">smart_display</span>
+                        <span>Trình chiếu</span>
+                    </a>
+                }
+                <a asp-area="Teacher" asp-controller="Attendances" asp-action="Board" asp-route-sessionId="@Model.SessionId" class="teacher-btn-primary">
+                    <span class="material-symbols-outlined text-[18px]">fact_check</span>
+                    <span>Điểm danh</span>
                 </a>
             }
-            <a asp-area="Teacher" asp-controller="Attendances" asp-action="Board" asp-route-sessionId="@Model.SessionId" class="teacher-btn-primary">
-                <span class="material-symbols-outlined text-[18px]">fact_check</span>
-                <span>Điểm danh</span>
-            </a>
         </div>
     </div>
 
@@ -58,29 +61,38 @@
                     <h2 class="teacher-section-title">Cập nhật sau buổi học</h2>
                     <p class="teacher-section-subtitle mt-1">Lưu lại hình ảnh/video của lớp và ghi chú về buổi học, trợ giảng.</p>
                     
-                    <form asp-area="Teacher" asp-controller="Schedule" asp-action="UpdateNotes" method="post" class="mt-6">
-                        @Html.AntiForgeryToken()
-                        <input type="hidden" name="SessionId" value="@Model.SessionId" />
-                        
-                        <div class="space-y-4">
-                            <div>
-                                <label for="ClassMediaUrls" class="block text-sm font-medium text-[#1a1c19] mb-1">Media cả lớp</label>
-                                <textarea id="ClassMediaUrls" name="ClassMediaUrls" class="w-full rounded-md border border-[#c2c9b9] bg-white px-3 py-2 text-sm text-[#1a1c19] outline-none transition-colors focus:border-[#f97316] focus:ring-1 focus:ring-[#f97316]" rows="3" placeholder="Dán URL ảnh hoặc video của học sinh/lớp học...">@Model.ClassMediaUrls</textarea>
+                    @if (Model.IsSubstituteAssignedToOther)
+                    {
+                        <div class="mt-4 p-4 bg-[#fff7ed] border border-[#ffedd5] rounded-lg text-[#c2410c] text-sm font-medium">
+                            Buổi học này đã được giao cho giáo viên khác dạy thay. Chỉ người dạy thay mới có quyền cập nhật nhận xét và tải media lên.
+                        </div>
+                    }
+                    else
+                    {
+                        <form asp-area="Teacher" asp-controller="Schedule" asp-action="UpdateNotes" method="post" class="mt-6">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="SessionId" value="@Model.SessionId" />
+                            
+                            <div class="space-y-4">
+                                <div>
+                                    <label for="ClassMediaUrls" class="block text-sm font-medium text-[#1a1c19] mb-1">Media cả lớp</label>
+                                    <textarea id="ClassMediaUrls" name="ClassMediaUrls" class="w-full rounded-md border border-[#c2c9b9] bg-white px-3 py-2 text-sm text-[#1a1c19] outline-none transition-colors focus:border-[#f97316] focus:ring-1 focus:ring-[#f97316]" rows="3" placeholder="Dán URL ảnh hoặc video của học sinh/lớp học...">@Model.ClassMediaUrls</textarea>
+                                </div>
+                                
+                                <div>
+                                    <label for="AssistantNote" class="block text-sm font-medium text-[#1a1c19] mb-1">Ghi chú trợ giảng (Nếu có)</label>
+                                    <textarea id="AssistantNote" name="AssistantNote" class="w-full rounded-md border border-[#c2c9b9] bg-white px-3 py-2 text-sm text-[#1a1c19] outline-none transition-colors focus:border-[#f97316] focus:ring-1 focus:ring-[#f97316]" rows="3" placeholder="Nhận xét trợ giảng, ghi chú lưu ý buổi học...">@Model.AssistantNote</textarea>
+                                </div>
                             </div>
                             
-                            <div>
-                                <label for="AssistantNote" class="block text-sm font-medium text-[#1a1c19] mb-1">Ghi chú trợ giảng (Nếu có)</label>
-                                <textarea id="AssistantNote" name="AssistantNote" class="w-full rounded-md border border-[#c2c9b9] bg-white px-3 py-2 text-sm text-[#1a1c19] outline-none transition-colors focus:border-[#f97316] focus:ring-1 focus:ring-[#f97316]" rows="3" placeholder="Nhận xét trợ giảng, ghi chú lưu ý buổi học...">@Model.AssistantNote</textarea>
+                            <div class="mt-4 flex justify-end">
+                                <button type="submit" class="teacher-btn-primary">
+                                    <span class="material-symbols-outlined text-[18px]">save</span>
+                                    <span>Lưu cập nhật</span>
+                                </button>
                             </div>
-                        </div>
-                        
-                        <div class="mt-4 flex justify-end">
-                            <button type="submit" class="teacher-btn-primary">
-                                <span class="material-symbols-outlined text-[18px]">save</span>
-                                <span>Lưu cập nhật</span>
-                            </button>
-                        </div>
-                    </form>
+                        </form>
+                    }
                 </div>
             </div>
 
@@ -137,8 +149,11 @@
                 <div class="teacher-card-section">
                     <h2 class="teacher-section-title">Thao tác</h2>
                     <div class="teacher-stack mt-6">
-                        <a asp-area="Teacher" asp-controller="Attendances" asp-action="Board" asp-route-sessionId="@Model.SessionId" class="teacher-btn-primary w-full">Mở sổ điểm danh</a>
-                        <a asp-area="Teacher" asp-controller="Equipment" asp-action="Borrow" asp-route-sessionId="@Model.SessionId" class="teacher-btn-secondary w-full">Mượn thiết bị</a>
+                        @if (!Model.IsSubstituteAssignedToOther)
+                        {
+                            <a asp-area="Teacher" asp-controller="Attendances" asp-action="Board" asp-route-sessionId="@Model.SessionId" class="teacher-btn-primary w-full">Mở sổ điểm danh</a>
+                            <a asp-area="Teacher" asp-controller="Equipment" asp-action="Borrow" asp-route-sessionId="@Model.SessionId" class="teacher-btn-secondary w-full">Mượn thiết bị</a>
+                        }
                         <a asp-area="Teacher" asp-controller="Schedule" asp-action="Index" class="teacher-btn-secondary w-full">Quay lại lịch dạy</a>
                     </div>
                 </div>

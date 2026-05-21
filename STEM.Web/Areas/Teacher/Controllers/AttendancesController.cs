@@ -75,7 +75,7 @@ public class AttendancesController : Controller
 
         var baseQuery = _context.Sessions
             .AsNoTracking()
-            .Where(x => x.Class.TeacherId == teacherId.Value)
+            .Where(x => x.Class.TeacherId == teacherId.Value || x.SubstituteTeacherId == teacherId.Value)
             .Select(x => new SessionProjection
             {
                 SessionId = x.Id,
@@ -177,20 +177,27 @@ public class AttendancesController : Controller
 
         var session = await _context.Sessions
             .AsNoTracking()
-            .Where(x => x.Id == model.SessionId && x.Class.TeacherId == teacherId.Value)
+            .Where(x => x.Id == model.SessionId && (x.Class.TeacherId == teacherId.Value || x.SubstituteTeacherId == teacherId.Value))
             .Select(x => new
             {
                 x.Id,
                 x.ClassId,
                 x.Date,
                 x.StartTime,
-                x.EndTime
+                x.EndTime,
+                TeacherId = x.Class.TeacherId,
+                SubstituteTeacherId = x.SubstituteTeacherId
             })
             .FirstOrDefaultAsync();
 
         if (session == null)
         {
             return NotFound();
+        }
+
+        if (session.TeacherId == teacherId.Value && session.SubstituteTeacherId.HasValue && session.SubstituteTeacherId.Value != teacherId.Value)
+        {
+            return WriteDenied(model.SessionId, "Buổi này đã được giao cho giáo viên khác dạy thay.");
         }
 
         var editLockMessage = await _attendanceWorkflow.GetTeacherEditLockMessageAsync(
@@ -256,6 +263,8 @@ public class AttendancesController : Controller
                 _context.Attendances.Add(newAttendance);
                 existingAttendances.Add(newAttendance);
                 continue;
+            }
+
             attendance.IsPresent = row.IsPresent;
             attendance.IsExcused = row.IsExcused;
             attendance.TeacherRawNote = normalizedTeacherNote;
@@ -337,13 +346,15 @@ public class AttendancesController : Controller
 
         var session = await _context.Sessions
             .AsNoTracking()
-            .Where(x => x.Id == sessionId && x.Class.TeacherId == teacherId.Value)
+            .Where(x => x.Id == sessionId && (x.Class.TeacherId == teacherId.Value || x.SubstituteTeacherId == teacherId.Value))
             .Select(x => new
             {
                 x.Id,
                 x.Date,
                 x.StartTime,
                 x.EndTime,
+                TeacherId = x.Class.TeacherId,
+                SubstituteTeacherId = x.SubstituteTeacherId,
                 StudentIds = x.Class.Enrollments.Select(e => e.StudentId).ToList()
             })
             .FirstOrDefaultAsync();
@@ -351,6 +362,12 @@ public class AttendancesController : Controller
         if (session == null)
         {
             return NotFound();
+        }
+
+        if (session.TeacherId == teacherId.Value && session.SubstituteTeacherId.HasValue && session.SubstituteTeacherId.Value != teacherId.Value)
+        {
+            TempData["ErrorMessage"] = "Buổi này đã được giao cho giáo viên khác dạy thay.";
+            return RedirectToAction(nameof(Board), new { sessionId });
         }
 
         var editLockMessage = await _attendanceWorkflow.GetTeacherEditLockMessageAsync(
@@ -450,7 +467,7 @@ public class AttendancesController : Controller
     {
         var session = await _context.Sessions
             .AsNoTracking()
-            .Where(x => x.Id == sessionId && x.Class.TeacherId == teacherId)
+            .Where(x => x.Id == sessionId && (x.Class.TeacherId == teacherId || x.SubstituteTeacherId == teacherId))
             .Select(x => new
             {
                 x.Id,
@@ -464,7 +481,9 @@ public class AttendancesController : Controller
                 x.ClassId,
                 x.Class.ClassCode,
                 CourseName = x.Class.Course.Name,
-                StudentCount = x.Class.Enrollments.Count
+                StudentCount = x.Class.Enrollments.Count,
+                TeacherId = x.Class.TeacherId,
+                SubstituteTeacherId = x.SubstituteTeacherId
             })
             .FirstOrDefaultAsync();
 
@@ -554,6 +573,11 @@ public class AttendancesController : Controller
                 : row.IsPresent
                     ? "Đã được ghi nhận có mặt trong buổi học."
                     : row.IsExcused ? "Đã được ghi nhận vắng có phép trong buổi học." : "Đã được ghi nhận vắng trong buổi học.";
+        }
+
+        if (session.TeacherId == teacherId && session.SubstituteTeacherId.HasValue && session.SubstituteTeacherId.Value != teacherId)
+        {
+            editLockMessage = "Buổi này đã được giao cho giáo viên khác dạy thay.";
         }
 
         return new TeacherAttendanceBoardViewModel

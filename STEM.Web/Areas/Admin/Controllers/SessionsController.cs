@@ -267,7 +267,8 @@ public class SessionsController : Controller
             StartTime = model.StartTime!.Value,
             EndTime = model.EndTime!.Value,
             Topic = NormalizeText(model.Topic),
-            TeachingMaterialUrl = teachingMaterialUrl
+            TeachingMaterialUrl = teachingMaterialUrl,
+            SubstituteTeacherId = model.SubstituteTeacherId
         };
 
         _context.Sessions.Add(entity);
@@ -304,7 +305,6 @@ public class SessionsController : Controller
         };
 
         await PopulateOptionsAsync(model);
-        await PopulateEditOptionsAsync(model);
         return View(model);
     }
 
@@ -313,7 +313,6 @@ public class SessionsController : Controller
     public async Task<IActionResult> Edit(EditSessionViewModel model)
     {
         await PopulateOptionsAsync(model);
-        await PopulateEditOptionsAsync(model);
 
         var entity = await _context.Sessions.FirstOrDefaultAsync(x => x.Id == model.Id);
         if (entity == null)
@@ -455,10 +454,7 @@ public class SessionsController : Controller
             .OrderBy(x => x.Name)
             .Select(x => new SelectListItem($"{x.Name} (Sức chứa: {x.Capacity})", x.Id.ToString()))
             .ToListAsync();
-    }
 
-    private async Task PopulateEditOptionsAsync(EditSessionViewModel model)
-    {
         var teachersRole = await _context.Roles.FirstOrDefaultAsync(r => r.Name == "Teacher");
         if (teachersRole != null)
         {

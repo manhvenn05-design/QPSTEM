@@ -271,7 +271,7 @@ public sealed class PayrollCalculationService
     {
         decimal deductions = 0m;
 
-        foreach (var session in teacherSessions)
+        foreach (var session in validSessions)
         {
             if (session.PresentCount == 0) continue;
 

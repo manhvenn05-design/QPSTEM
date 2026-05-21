@@ -103,6 +103,8 @@ public class TeacherScheduleItemViewModel
     public string StatusBadgeClass { get; set; } = string.Empty;
     public string TeacherName { get; set; } = string.Empty;
     public string? RoomName { get; set; }
+    public bool IsSubstituteAssignedToOther { get; set; }
+    public bool IsSubstituteAssignedToMe { get; set; }
 }
 
 public class TeacherScheduleDetailsViewModel
@@ -123,6 +125,7 @@ public class TeacherScheduleDetailsViewModel
     public int EquipmentBorrowCount { get; set; }
     public IReadOnlyList<TeacherScheduleStudentItemViewModel> Students { get; set; } = [];
     public IReadOnlyList<TeacherScheduleEquipmentItemViewModel> Equipments { get; set; } = [];
+    public bool IsSubstituteAssignedToOther { get; set; }
 }
 
 public class TeacherUpdateSessionNotesViewModel

@@ -57,7 +57,7 @@ public class ScheduleController : Controller
 
         var query = _context.Sessions
             .AsNoTracking()
-            .Where(x => x.Class.TeacherId == teacherId.Value)
+            .Where(x => x.Class.TeacherId == teacherId.Value || x.SubstituteTeacherId == teacherId.Value)
             .Select(x => new
             {
                 x.Id,
@@ -70,7 +70,9 @@ public class ScheduleController : Controller
                 ClassCode = x.Class.ClassCode,
                 CourseName = x.Class.Course.Name,
                 StudentCount = x.Class.Enrollments.Count,
-                AttendanceCount = x.Attendances.Count
+                AttendanceCount = x.Attendances.Count,
+                TeacherId = x.Class.TeacherId,
+                SubstituteTeacherId = x.SubstituteTeacherId
             });
 
         if (!string.IsNullOrWhiteSpace(searchTerm))
@@ -98,7 +100,7 @@ public class ScheduleController : Controller
 
         var calendarRawSessions = await _context.Sessions
             .AsNoTracking()
-            .Where(x => x.Class.TeacherId == teacherId.Value && x.Date >= weekStartDateOnly && x.Date <= weekEndDateOnly)
+            .Where(x => (x.Class.TeacherId == teacherId.Value || x.SubstituteTeacherId == teacherId.Value) && x.Date >= weekStartDateOnly && x.Date <= weekEndDateOnly)
             .Select(x => new
             {
                 x.Id,
@@ -113,7 +115,9 @@ public class ScheduleController : Controller
                 TeacherName  = x.Class.Teacher.FullName,
                 RoomName     = x.Room != null ? x.Room.Name : null,
                 StudentCount = x.Class.Enrollments.Count,
-                AttendanceCount = x.Attendances.Count
+                AttendanceCount = x.Attendances.Count,
+                TeacherId = x.Class.TeacherId,
+                SubstituteTeacherId = x.SubstituteTeacherId
             })
             .OrderBy(x => x.Date)
             .ThenBy(x => x.StartTime)
@@ -147,8 +151,10 @@ public class ScheduleController : Controller
                 AttendancePercent = x.StudentCount == 0 ? 0 : (int)Math.Round((double)x.AttendanceCount * 100 / x.StudentCount),
                 HasTeachingMaterial = !string.IsNullOrWhiteSpace(x.TeachingMaterialUrl),
                 TeachingMaterialUrl = x.TeachingMaterialUrl ?? string.Empty,
-                StatusLabel = x.Date > today ? "Sắp tới" : x.Date < today ? "Đã dạy" : "Hôm nay",
-                StatusBadgeClass = x.Date > today
+                IsSubstituteAssignedToOther = x.TeacherId == teacherId.Value && x.SubstituteTeacherId.HasValue,
+                IsSubstituteAssignedToMe = x.SubstituteTeacherId == teacherId.Value,
+                StatusLabel = (x.TeacherId == teacherId.Value && x.SubstituteTeacherId.HasValue) ? "Đã giao dạy thay" : x.Date > today ? "Sắp tới" : x.Date < today ? "Đã dạy" : "Hôm nay",
+                StatusBadgeClass = (x.TeacherId == teacherId.Value && x.SubstituteTeacherId.HasValue) ? "teacher-tag teacher-tag--neutral" : x.Date > today
                     ? "teacher-tag teacher-tag--warning"
                     : x.Date < today
                         ? "teacher-tag teacher-tag--neutral"
@@ -172,8 +178,10 @@ public class ScheduleController : Controller
                 TeachingMaterialUrl  = x.TeachingMaterialUrl ?? string.Empty,
                 TeacherName          = x.TeacherName,
                 RoomName             = x.RoomName,
-                StatusLabel          = x.Date > today ? "Sắp tới" : x.Date < today ? "Đã dạy" : "Hôm nay",
-                StatusBadgeClass     = x.Date > today ? "upcoming" : x.Date < today ? "past" : "today"
+                IsSubstituteAssignedToOther = x.TeacherId == teacherId.Value && x.SubstituteTeacherId.HasValue,
+                IsSubstituteAssignedToMe = x.SubstituteTeacherId == teacherId.Value,
+                StatusLabel          = (x.TeacherId == teacherId.Value && x.SubstituteTeacherId.HasValue) ? "Giao dạy thay" : x.Date > today ? "Sắp tới" : x.Date < today ? "Đã dạy" : "Hôm nay",
+                StatusBadgeClass     = (x.TeacherId == teacherId.Value && x.SubstituteTeacherId.HasValue) ? "past" : x.Date > today ? "upcoming" : x.Date < today ? "past" : "today"
             }).ToList()
         };
 
@@ -192,14 +200,16 @@ public class ScheduleController : Controller
 
         var model = await _context.Sessions
             .AsNoTracking()
-            .Where(x => x.Id == id && x.Class.TeacherId == teacherId.Value)
+            .Where(x => x.Id == id && (x.Class.TeacherId == teacherId.Value || x.SubstituteTeacherId == teacherId.Value))
             .Select(x => new TeacherScheduleDetailsViewModel
             {
                 SessionId = x.Id,
                 SessionLabel = $"Buổi số {x.SessionNo:00}",
                 ClassCode = x.Class.ClassCode,
                 CourseName = x.Class.Course.Name,
-                TeacherName = x.Class.Teacher.FullName,
+                TeacherName = x.SubstituteTeacherId.HasValue
+                    ? x.SubstituteTeacher!.FullName + " (Dạy thay)"
+                    : x.Class.Teacher.FullName,
                 DateText = x.Date.ToString("dd/MM/yyyy"),
                 TimeRangeText = $"{x.StartTime:HH\\:mm} - {x.EndTime:HH\\:mm}",
                 Topic = string.IsNullOrWhiteSpace(x.Topic) ? "Chưa cập nhật chủ đề" : x.Topic,
@@ -209,6 +219,7 @@ public class ScheduleController : Controller
                 StudentCount = x.Class.Enrollments.Count,
                 AttendanceCount = x.Attendances.Count,
                 EquipmentBorrowCount = x.EquipmentBorrows.Count,
+                IsSubstituteAssignedToOther = x.Class.TeacherId == teacherId.Value && x.SubstituteTeacherId.HasValue,
                 Students = x.Class.Enrollments
                     .OrderBy(e => e.Student.FullName)
                     .Select(e => new TeacherScheduleStudentItemViewModel

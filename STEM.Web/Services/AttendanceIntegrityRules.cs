@@ -121,9 +121,7 @@ public static class AttendanceIntegrityRules
             return PayrollStatusInvalid;
         }
 
-        return attendanceCount >= studentCount &&
-               notedPresentAttendanceCount >= presentCount &&
-               mediaReadyAttendanceCount >= 1
+        return attendanceCount >= studentCount
             ? PayrollStatusValid
             : PayrollStatusInvalid;
     }
