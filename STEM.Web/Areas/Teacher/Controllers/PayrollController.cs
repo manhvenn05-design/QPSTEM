@@ -24,7 +24,6 @@ public class PayrollController : Controller
         _payrollService = payrollService;
     }
 
-    // GET /Teacher/Payroll
     [HttpGet]
     public async Task<IActionResult> Index(CancellationToken ct)
     {
@@ -67,13 +66,19 @@ public class PayrollController : Controller
             })
             .ToListAsync(ct);
 
-        // Ước tính tháng hiện tại
         var now = DateTime.UtcNow;
-        var estimate = await _payrollService.GetTeacherEstimateAsync(teacherId.Value, now.Year, now.Month, ct);
+        var today = DateOnly.FromDateTime(DateTime.Today);
+        var estimate = await _payrollService.GetTeacherEstimateAsync(teacherId.Value, now.Year, now.Month, today, ct);
+        var currentOfficialRecord = history.FirstOrDefault(x => x.Year == now.Year && x.Month == now.Month);
 
-        // Kiểm tra xem tháng hiện tại đã có official record chưa
-        var currentOfficialRecord = history
-            .FirstOrDefault(x => x.Year == now.Year && x.Month == now.Month);
+        if (currentOfficialRecord != null && !currentOfficialRecord.IsApproved)
+        {
+            currentOfficialRecord.TotalValidSessions = estimate.ValidSessions;
+            currentOfficialRecord.SessionEarnings = estimate.EstimatedSessionEarnings;
+            currentOfficialRecord.Bonuses = estimate.EstimatedBonuses;
+            currentOfficialRecord.Deductions = estimate.EstimatedDeductions;
+            currentOfficialRecord.TotalPay = estimate.EstimatedTotalPay;
+        }
 
         var (tier, tierLabel) = GetTierInfo(teacherProfile);
 
@@ -106,9 +111,8 @@ public class PayrollController : Controller
         return View(model);
     }
 
-    // GET /Teacher/Payroll/Period?year=&month=
     [HttpGet]
-    public async Task<IActionResult> Period(int year, int month, CancellationToken ct)
+    public async Task<IActionResult> Period(int? id, int? year, int? month, CancellationToken ct)
     {
         var teacherId = GetCurrentTeacherId();
         if (!teacherId.HasValue)
@@ -116,14 +120,25 @@ public class PayrollController : Controller
             return Challenge();
         }
 
-        if (year < 2020 || year > 2100 || month < 1 || month > 12)
+        var recordQuery = _context.PayrollRecords
+            .AsNoTracking()
+            .Where(x => x.TeacherId == teacherId.Value);
+
+        if (id.HasValue)
         {
-            return BadRequest("Kỳ lương không hợp lệ.");
+            recordQuery = recordQuery.Where(x => x.Id == id.Value);
+        }
+        else
+        {
+            if (!year.HasValue || !month.HasValue || year < 2020 || year > 2100 || month < 1 || month > 12)
+            {
+                return BadRequest("Kỳ lương không hợp lệ.");
+            }
+
+            recordQuery = recordQuery.Where(x => x.Year == year.Value && x.Month == month.Value);
         }
 
-        var record = await _context.PayrollRecords
-            .AsNoTracking()
-            .Where(x => x.TeacherId == teacherId.Value && x.Year == year && x.Month == month)
+        var record = await recordQuery
             .Select(x => new
             {
                 x.Id,
@@ -149,16 +164,23 @@ public class PayrollController : Controller
         var teacherProfile = await _context.Set<TeacherProfile>()
             .AsNoTracking()
             .FirstOrDefaultAsync(x => x.UserId == teacherId.Value, ct);
-
+        var payRates = teacherProfile == null
+            ? new List<PayRateConfig>()
+            : await _context.Set<PayRateConfig>().AsNoTracking().ToListAsync(ct);
         var (tier, tierLabel) = GetTierInfo(teacherProfile);
 
-        var periodStart = new DateOnly(year, month, 1);
+        var periodStart = new DateOnly(record.Year, record.Month, 1);
         var periodEnd = periodStart.AddMonths(1);
+        var today = DateOnly.FromDateTime(DateTime.Today);
+        var visiblePeriodEnd = periodEnd <= today.AddDays(1)
+            ? periodEnd
+            : today.AddDays(1);
 
         var sessions = await _context.Sessions
             .AsNoTracking()
-            .Where(x => x.Class.TeacherId == teacherId.Value &&
-                        x.Date >= periodStart && x.Date < periodEnd)
+            .Where(x => ((x.Class.TeacherId == teacherId.Value && x.SubstituteTeacherId == null) ||
+                         x.SubstituteTeacherId == teacherId.Value) &&
+                        x.Date >= periodStart && x.Date < visiblePeriodEnd)
             .OrderBy(x => x.Date)
             .ThenBy(x => x.StartTime)
             .Select(x => new
@@ -169,6 +191,7 @@ public class PayrollController : Controller
                 x.StartTime,
                 x.EndTime,
                 x.PayrollStatus,
+                x.SessionRateApplied,
                 ClassCode = x.Class.ClassCode,
                 CourseName = x.Class.Course.Name,
                 CourseDifficulty = x.Class.Course.DifficultyLevel
@@ -179,13 +202,22 @@ public class PayrollController : Controller
         var validCount = sessions.Count(s => string.Equals(s.PayrollStatus, AttendanceIntegrityRules.PayrollStatusValid, StringComparison.OrdinalIgnoreCase));
         var invalidCount = sessions.Count(s => string.Equals(s.PayrollStatus, AttendanceIntegrityRules.PayrollStatusInvalid, StringComparison.OrdinalIgnoreCase));
         var pendingCount = sessions.Count(s => string.Equals(s.PayrollStatus, AttendanceIntegrityRules.PayrollStatusPending, StringComparison.OrdinalIgnoreCase));
+        var isApproved = string.Equals(record.Status, AttendanceWorkflowService.PayrollRecordStatusApproved, StringComparison.OrdinalIgnoreCase);
+        var liveEstimate = isApproved
+            ? null
+            : await _payrollService.GetTeacherEstimateAsync(teacherId.Value, record.Year, record.Month, today, ct);
 
-        var bonusItems = record.Bonuses > 0
-            ? new List<TeacherPayrollBreakdownItem> { new() { Description = "Thưởng chuyên cần và chất lượng", Amount = record.Bonuses, Icon = "star", IsBonus = true } }
+        var sessionEarnings = liveEstimate?.EstimatedSessionEarnings ?? record.SessionEarnings;
+        var bonuses = liveEstimate?.EstimatedBonuses ?? record.Bonuses;
+        var deductions = liveEstimate?.EstimatedDeductions ?? record.Deductions;
+        var totalPay = liveEstimate?.EstimatedTotalPay ?? record.TotalPay;
+
+        var bonusItems = bonuses > 0
+            ? new List<TeacherPayrollBreakdownItem> { new() { Description = "Thưởng chuyên cần và chất lượng", Amount = bonuses, Icon = "star", IsBonus = true } }
             : new List<TeacherPayrollBreakdownItem>();
 
-        var deductionItems = record.Deductions > 0
-            ? new List<TeacherPayrollBreakdownItem> { new() { Description = "Khấu trừ vi phạm quy định", Amount = record.Deductions, Icon = "remove_circle", IsBonus = false } }
+        var deductionItems = deductions > 0
+            ? new List<TeacherPayrollBreakdownItem> { new() { Description = "Khấu trừ vi phạm quy định", Amount = deductions, Icon = "remove_circle", IsBonus = false } }
             : new List<TeacherPayrollBreakdownItem>();
 
         var model = new TeacherPayrollPeriodViewModel
@@ -201,12 +233,12 @@ public class PayrollController : Controller
             ValidSessions = validCount,
             InvalidSessions = invalidCount,
             PendingSessions = pendingCount,
-            SessionEarnings = record.SessionEarnings,
-            Bonuses = record.Bonuses,
-            Deductions = record.Deductions,
-            TotalPay = record.TotalPay,
+            SessionEarnings = sessionEarnings,
+            Bonuses = bonuses,
+            Deductions = deductions,
+            TotalPay = totalPay,
             Status = record.Status,
-            IsApproved = record.Status == AttendanceWorkflowService.PayrollRecordStatusApproved,
+            IsApproved = isApproved,
             CreatedAt = record.CreatedAt,
             ApprovedAt = record.ApprovedAt,
             BonusItems = bonusItems,
@@ -220,18 +252,19 @@ public class PayrollController : Controller
                 CourseDifficulty = s.CourseDifficulty,
                 CourseDifficultyLabel = GetDifficultyLabel(s.CourseDifficulty),
                 DateText = s.Date.ToString("dd/MM/yyyy"),
-                TimeText = $"{s.StartTime:HH\\:mm} – {s.EndTime:HH\\:mm}",
+                TimeText = $"{s.StartTime:HH\\:mm} - {s.EndTime:HH\\:mm}",
                 PayrollStatus = s.PayrollStatus ?? string.Empty,
                 PayrollStatusLabel = GetPayrollStatusLabel(s.PayrollStatus),
-                PayrollStatusBadgeClass = GetPayrollStatusBadge(s.PayrollStatus)
+                PayrollStatusBadgeClass = GetPayrollStatusBadge(s.PayrollStatus),
+                RateForSession = string.Equals(s.PayrollStatus, AttendanceIntegrityRules.PayrollStatusValid, StringComparison.OrdinalIgnoreCase)
+                    ? ResolveSessionRateDisplay(s.SessionRateApplied, s.CourseDifficulty, teacherProfile, payRates)
+                    : 0m
             }).ToList()
         };
 
         ViewData["Title"] = $"Chi tiết lương {model.PeriodLabel}";
         return View(model);
     }
-
-    // ── Helpers ──────────────────────────────────────────────────────────────────
 
     private int? GetCurrentTeacherId()
     {
@@ -241,9 +274,16 @@ public class PayrollController : Controller
 
     private static (int tier, string label) GetTierInfo(TeacherProfile? profile)
     {
-        if (profile == null) return (0, "Chưa cấu hình");
+        if (profile == null)
+        {
+            return (0, "Chưa cấu hình");
+        }
+
         if (profile.CustomSessionRate.HasValue)
+        {
             return (0, $"Theo thỏa thuận ({profile.CustomSessionRate.Value:N0} đ/buổi)");
+        }
+
         return profile.SalaryTier > 0
             ? (profile.SalaryTier, $"Bậc {profile.SalaryTier}")
             : (0, "Chưa cấu hình");
@@ -273,4 +313,29 @@ public class PayrollController : Controller
         _ => "teacher-tag teacher-tag--neutral"
     };
 
+    private static decimal ResolveSessionRateDisplay(
+        decimal sessionRateApplied,
+        int courseDifficulty,
+        TeacherProfile? teacherProfile,
+        IReadOnlyCollection<PayRateConfig> payRates)
+    {
+        if (sessionRateApplied > 0)
+        {
+            return sessionRateApplied;
+        }
+
+        if (teacherProfile?.CustomSessionRate.HasValue == true)
+        {
+            return teacherProfile.CustomSessionRate.Value;
+        }
+
+        if (teacherProfile == null)
+        {
+            return 0m;
+        }
+
+        return payRates.FirstOrDefault(x =>
+            x.TeacherTier == teacherProfile.SalaryTier &&
+            x.CourseDifficulty == courseDifficulty)?.RatePerSession ?? 0m;
+    }
 }

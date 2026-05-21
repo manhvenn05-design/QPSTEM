@@ -1,3 +1,5 @@
+﻿using System.Globalization;
+using System.Text;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -229,7 +231,7 @@ public class UsersController : Controller
     }
 
     [HttpGet]
-    public async Task<IActionResult> Edit(int id)
+    public async Task<IActionResult> Edit(int id, string? returnUrl = null)
     {
         var user = await _context.Users
             .AsNoTracking()
@@ -246,6 +248,7 @@ public class UsersController : Controller
         var model = new EditUserViewModel
         {
             Id = user.Id,
+            ReturnUrl = returnUrl,
             FullName = user.FullName,
             Username = user.Username,
             Email = user.Email,
@@ -372,6 +375,11 @@ public class UsersController : Controller
         }
 
         TempData["SuccessMessage"] = "Đã cập nhật người dùng.";
+        if (!string.IsNullOrWhiteSpace(model.ReturnUrl) && Url.IsLocalUrl(model.ReturnUrl))
+        {
+            return Redirect(model.ReturnUrl);
+        }
+
         return RedirectToAction(nameof(Index));
     }
 
@@ -402,7 +410,7 @@ public class UsersController : Controller
 
         if (hasRelatedData)
         {
-            TempData["ErrorMessage"] = $"Tài khoản \"{ user.FullName}\" đang có dữ liệu liên quan. Dùng \"Khóa tài khoản\" để vô hiệu hóa, hoặc \"Xóa toàn bộ dữ liệu\" nếu là tài khoản test.";
+            TempData["ErrorMessage"] = $"Tài khoản \"{user.FullName}\" đang có dữ liệu liên quan. Dùng \"Khóa tài khoản\" để vô hiệu hóa, hoặc \"Xóa toàn bộ dữ liệu\" nếu là tài khoản test.";
             return RedirectToAction(nameof(Index));
         }
 
@@ -422,7 +430,7 @@ public class UsersController : Controller
     }
 
     /// <summary>
-    /// Xóa toàn bộ người dùng và tất cả dữ liệu liên quan theo đúng thứ tự FK.
+    /// Xóa toàn bộ người dùng và tất cả dữ liệu liên quan theo đúng thứ tự khóa ngoại.
     /// Yêu cầu admin nhập lại username để xác nhận.
     /// </summary>
     [HttpPost]
@@ -451,7 +459,7 @@ public class UsersController : Controller
 
         try
         {
-            // ── Xóa theo đúng thứ tự FK: con trước, cha sau ──────────────────
+            // Xóa theo đúng thứ tự FK: con trước, cha sau
 
             // 1. MaintenanceLogs (ReportedBy NOT NULL)
             var maintenanceLogs = await _context.MaintenanceLogs
@@ -465,7 +473,7 @@ public class UsersController : Controller
                 .ToListAsync();
             _context.EquipmentBorrows.RemoveRange(equipmentBorrows);
 
-            // 3. Posts (AuthorId NOT NULL — giáo viên/admin viết bài CMS)
+            // 3. Posts (AuthorId NOT NULL - giáo viên/admin viết bài CMS)
             var posts = await _context.Posts
                 .Where(x => x.AuthorId == id)
                 .ToListAsync();
@@ -504,7 +512,7 @@ public class UsersController : Controller
                     .ToListAsync();
                 _context.Sessions.RemoveRange(classSessions);
 
-                // 4c. Payments → Invoices của lớp
+                // 4c. Payments -> Invoices của lớp
                 var classInvoiceIds = await _context.Invoices
                     .Where(x => x.ClassId != null && classIds.Contains(x.ClassId.Value))
                     .Select(x => x.Id)
@@ -536,7 +544,7 @@ public class UsersController : Controller
                 _context.Classes.RemoveRange(classes);
             }
 
-            // 5. Attendances (StudentId — nếu user là học sinh)
+            // 5. Attendances (StudentId - nếu user là học sinh)
             var studentAttendances = await _context.Attendances
                 .Where(x => x.StudentId == id)
                 .ToListAsync();
@@ -548,7 +556,7 @@ public class UsersController : Controller
                 .ToListAsync();
             _context.Enrollments.RemoveRange(enrollments);
 
-            // 7. Payments → Invoices (StudentId)
+            // 7. Payments -> Invoices (StudentId)
             var invoiceIds = await _context.Invoices
                 .Where(x => x.StudentId == id)
                 .Select(x => x.Id)
@@ -828,21 +836,15 @@ public class UsersController : Controller
             return "user";
         }
 
-        var normalized = fullName.Trim().ToLowerInvariant();
-        normalized = normalized
-            .Replace("à", "a").Replace("á", "a").Replace("ạ", "a").Replace("ả", "a").Replace("ã", "a")
-            .Replace("â", "a").Replace("ầ", "a").Replace("ấ", "a").Replace("ậ", "a").Replace("ẩ", "a").Replace("ẫ", "a")
-            .Replace("ă", "a").Replace("ằ", "a").Replace("ắ", "a").Replace("ặ", "a").Replace("ẳ", "a").Replace("ẵ", "a")
-            .Replace("è", "e").Replace("é", "e").Replace("ẹ", "e").Replace("ẻ", "e").Replace("ẽ", "e")
-            .Replace("ê", "e").Replace("ề", "e").Replace("ế", "e").Replace("ệ", "e").Replace("ể", "e").Replace("ễ", "e")
-            .Replace("ì", "i").Replace("í", "i").Replace("ị", "i").Replace("ỉ", "i").Replace("ĩ", "i")
-            .Replace("ò", "o").Replace("ó", "o").Replace("ọ", "o").Replace("ỏ", "o").Replace("õ", "o")
-            .Replace("ô", "o").Replace("ồ", "o").Replace("ố", "o").Replace("ộ", "o").Replace("ổ", "o").Replace("ỗ", "o")
-            .Replace("ơ", "o").Replace("ờ", "o").Replace("ớ", "o").Replace("ợ", "o").Replace("ở", "o").Replace("ỡ", "o")
-            .Replace("ù", "u").Replace("ú", "u").Replace("ụ", "u").Replace("ủ", "u").Replace("ũ", "u")
-            .Replace("ư", "u").Replace("ừ", "u").Replace("ứ", "u").Replace("ự", "u").Replace("ử", "u").Replace("ữ", "u")
-            .Replace("ỳ", "y").Replace("ý", "y").Replace("ỵ", "y").Replace("ỷ", "y").Replace("ỹ", "y")
-            .Replace("đ", "d");
+        var normalized = fullName
+            .Trim()
+            .ToLowerInvariant()
+            .Normalize(NormalizationForm.FormD);
+
+        normalized = new string(normalized
+            .Where(c => CharUnicodeInfo.GetUnicodeCategory(c) != UnicodeCategory.NonSpacingMark)
+            .ToArray())
+            .Replace('đ', 'd');
 
         var parts = normalized
             .Split(' ', StringSplitOptions.RemoveEmptyEntries)
@@ -863,3 +865,7 @@ public class UsersController : Controller
         return $"{parts[^1]}{string.Concat(parts.Take(parts.Length - 1).Select(x => x[0]))}";
     }
 }
+
+
+
+

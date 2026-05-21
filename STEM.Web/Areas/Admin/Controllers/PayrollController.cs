@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using STEM.Web.Areas.Admin.Models;
@@ -51,13 +51,16 @@ public class PayrollController : Controller
             })
             .ToListAsync(cancellationToken);
 
+        var approvedTeachers = records.Count(x =>
+            string.Equals(x.Status, AttendanceWorkflowService.PayrollRecordStatusApproved, StringComparison.OrdinalIgnoreCase));
+
         var model = new PayrollManagementViewModel
         {
             Year = selectedYear,
             Month = selectedMonth,
             PeriodLabel = $"Tháng {selectedMonth:00}/{selectedYear}",
             TotalTeachers = records.Count,
-            ApprovedTeachers = records.Count(x => string.Equals(x.Status, AttendanceWorkflowService.PayrollRecordStatusApproved, StringComparison.OrdinalIgnoreCase)),
+            ApprovedTeachers = approvedTeachers,
             TotalPayout = records.Sum(x => x.TotalPay),
             DraftPayout = records
                 .Where(x => !string.Equals(x.Status, AttendanceWorkflowService.PayrollRecordStatusApproved, StringComparison.OrdinalIgnoreCase))
@@ -73,8 +76,10 @@ public class PayrollController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Generate(int year, int month, CancellationToken cancellationToken = default)
     {
-        await _payrollCalculationService.GenerateMonthlyPayrollAsync(year, month, cancellationToken);
-        TempData["SuccessMessage"] = $"Đã tạo/cập nhật bảng lương cho tháng {month:00}/{year}.";
+        var records = await _payrollCalculationService.GenerateMonthlyPayrollAsync(year, month, cancellationToken);
+        TempData["SuccessMessage"] = records.Count == 0
+            ? $"Chưa tạo được bản ghi lương nào cho tháng {month:00}/{year}. Hãy kiểm tra dữ liệu giáo viên, buổi học và trạng thái payroll."
+            : $"Đã tạo/cập nhật {records.Count} bản ghi lương cho tháng {month:00}/{year}.";
         return RedirectToAction(nameof(Index), new { year, month });
     }
 
@@ -112,8 +117,8 @@ public class PayrollController : Controller
         record.TotalPay = Math.Max(0m, record.SessionEarnings + record.Bonuses - record.Deductions);
 
         await _context.SaveChangesAsync(cancellationToken);
-        
-        TempData["SuccessMessage"] = $"Đã cập nhật thưởng/phạt cho giáo viên.";
+
+        TempData["SuccessMessage"] = "Đã cập nhật thưởng/phạt cho giáo viên.";
         return RedirectToAction(nameof(Index), new { year, month });
     }
 }

@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Http;
 
 namespace STEM.Web.Areas.Admin.Models;
@@ -6,11 +6,13 @@ namespace STEM.Web.Areas.Admin.Models;
 public class CourseManagementViewModel
 {
     public string SelectedFilter { get; set; } = "all";
+    public string SelectedDifficulty { get; set; } = "all";
     public string SearchTerm { get; set; } = string.Empty;
     public int TotalCourses { get; set; }
     public int CurrentPage { get; set; } = 1;
     public int TotalPages { get; set; } = 1;
     public IReadOnlyList<CourseFilterViewModel> Filters { get; set; } = [];
+    public IReadOnlyList<CourseFilterViewModel> DifficultyFilters { get; set; } = [];
     public IReadOnlyList<CourseManagementItemViewModel> Courses { get; set; } = [];
 }
 
@@ -30,6 +32,8 @@ public class CourseManagementItemViewModel
     public string TotalSessionsText { get; set; } = string.Empty;
     public int ClassCount { get; set; }
     public int EnrollmentCount { get; set; }
+    public int DifficultyLevel { get; set; }
+    public string DifficultyLabel { get; set; } = string.Empty;
     public string StatusLabel { get; set; } = string.Empty;
     public string StatusBadgeClass { get; set; } = string.Empty;
     public string? ImageUrl { get; set; }
@@ -37,6 +41,8 @@ public class CourseManagementItemViewModel
 
 public class CreateCourseViewModel : IValidatableObject
 {
+    public string? ReturnUrl { get; set; }
+
     [Required(ErrorMessage = "Vui lòng nhập mã khóa học.")]
     [StringLength(20, ErrorMessage = "Mã khóa học tối đa 20 ký tự.")]
     [Display(Name = "Mã khóa học")]
@@ -62,6 +68,10 @@ public class CreateCourseViewModel : IValidatableObject
     [Range(1, 1000, ErrorMessage = "Tổng số buổi phải lớn hơn 0.")]
     [Display(Name = "Tổng số buổi")]
     public int TotalSessions { get; set; }
+
+    [Range(1, 3, ErrorMessage = "Nhóm môn học phải từ 1 đến 3.")]
+    [Display(Name = "Nhóm môn học")]
+    public int DifficultyLevel { get; set; } = 1;
 
     public string? ImageUrl { get; set; }
 
@@ -96,6 +106,8 @@ public class CourseDetailsViewModel
     public byte TargetAgeMax { get; set; }
     public decimal Price { get; set; }
     public int TotalSessions { get; set; }
+    public int DifficultyLevel { get; set; }
+    public string DifficultyLabel { get; set; } = string.Empty;
     public string? ImageUrl { get; set; }
     public string? Summary { get; set; }
     public int TotalClasses { get; set; }

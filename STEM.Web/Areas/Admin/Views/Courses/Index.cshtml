@@ -40,6 +40,23 @@
                            asp-controller="Courses"
                            asp-action="Index"
                            asp-route-filter="@filter.Key"
+                           asp-route-difficulty="@Model.SelectedDifficulty"
+                           asp-route-q="@Model.SearchTerm"
+                           class="@(isActive ? "admin-chip is-active" : "admin-chip")">
+                            @filter.Label
+                        </a>
+                    }
+                </div>
+
+                <div class="admin-chip-group">
+                    @foreach (var filter in Model.DifficultyFilters)
+                    {
+                        var isActive = filter.Key == Model.SelectedDifficulty;
+                        <a asp-area="Admin"
+                           asp-controller="Courses"
+                           asp-action="Index"
+                           asp-route-filter="@Model.SelectedFilter"
+                           asp-route-difficulty="@filter.Key"
                            asp-route-q="@Model.SearchTerm"
                            class="@(isActive ? "admin-chip is-active" : "admin-chip")">
                             @filter.Label
@@ -49,6 +66,7 @@
 
                 <div class="w-full lg:max-w-sm">
                     <input type="hidden" name="filter" value="@Model.SelectedFilter" />
+                    <input type="hidden" name="difficulty" value="@Model.SelectedDifficulty" />
                     <label class="relative block">
                         <span class="material-symbols-outlined pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[20px] text-[#73796b]">search</span>
                         <input type="text" name="q" value="@Model.SearchTerm" placeholder="Tìm kiếm khóa học..." class="admin-input pl-12" />
@@ -98,7 +116,7 @@
 
                                         <div>
                                             <p class="font-semibold text-[#1a1c19]">@course.Name</p>
-                                            <p class="mt-1 text-sm text-[#73796b]">@course.Code · @course.TotalSessionsText</p>
+                                            <p class="mt-1 text-sm text-[#73796b]">@course.Code · @course.TotalSessionsText · @course.DifficultyLabel</p>
                                         </div>
                                     </div>
                                 </td>
@@ -152,6 +170,7 @@
                    asp-controller="Courses"
                    asp-action="Index"
                    asp-route-filter="@Model.SelectedFilter"
+                   asp-route-difficulty="@Model.SelectedDifficulty"
                    asp-route-q="@Model.SearchTerm"
                    asp-route-page="@(Math.Max(1, Model.CurrentPage - 1))"
                    class="admin-page-link @(Model.CurrentPage == 1 ? "is-disabled" : string.Empty)">
@@ -162,6 +181,7 @@
                    asp-controller="Courses"
                    asp-action="Index"
                    asp-route-filter="@Model.SelectedFilter"
+                   asp-route-difficulty="@Model.SelectedDifficulty"
                    asp-route-q="@Model.SearchTerm"
                    asp-route-page="@(Math.Min(Model.TotalPages, Model.CurrentPage + 1))"
                    class="admin-page-link @(Model.CurrentPage == Model.TotalPages ? "is-disabled" : string.Empty)">
