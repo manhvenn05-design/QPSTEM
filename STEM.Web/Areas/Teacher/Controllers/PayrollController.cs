@@ -59,7 +59,7 @@ public class PayrollController : Controller
                 Bonuses = x.Bonuses,
                 Deductions = x.Deductions,
                 TotalPay = x.TotalPay,
-                Status = x.Status,
+                Status = x.Status == "Draft" ? "Nháp" : x.Status,
                 IsApproved = x.Status == AttendanceWorkflowService.PayrollRecordStatusApproved,
                 CreatedAt = x.CreatedAt,
                 ApprovedAt = x.ApprovedAt
@@ -150,6 +150,7 @@ public class PayrollController : Controller
                 x.Deductions,
                 x.TotalPay,
                 x.Status,
+                AdjustmentNotes = x.AdjustmentNotes ?? string.Empty,
                 x.CreatedAt,
                 x.ApprovedAt,
                 TeacherName = x.Teacher.FullName
@@ -176,6 +177,7 @@ public class PayrollController : Controller
                 Deductions = 0m,
                 TotalPay = 0m,
                 Status = "Nháp",
+                AdjustmentNotes = string.Empty,
                 CreatedAt = DateTime.UtcNow,
                 ApprovedAt = (DateTime?)null,
                 TeacherName = teacherName ?? string.Empty
@@ -215,7 +217,10 @@ public class PayrollController : Controller
                 x.SessionRateApplied,
                 ClassCode = x.Class.ClassCode,
                 CourseName = x.Class.Course.Name,
-                CourseDifficulty = x.Class.Course.DifficultyLevel
+                CourseDifficulty = x.Class.Course.DifficultyLevel,
+                PresentCount = x.Attendances.Count(a => a.IsPresent),
+                NoteReadyCount = x.Attendances.Count(a => a.IsPresent && !string.IsNullOrWhiteSpace(a.TeacherRawNote)),
+                MediaReadyCount = x.Attendances.Count(a => a.IsPresent && !string.IsNullOrWhiteSpace(a.ProductMediaUrls) && !string.IsNullOrWhiteSpace(a.AiEvaluation))
             })
             .ToListAsync(ct);
 
@@ -234,13 +239,108 @@ public class PayrollController : Controller
         var deductions = liveEstimate?.EstimatedDeductions ?? record.Deductions;
         var totalPay = liveEstimate?.EstimatedTotalPay ?? record.TotalPay;
 
-        var bonusItems = bonuses > 0
-            ? new List<TeacherPayrollBreakdownItem> { new() { Description = "Thưởng chuyên cần và chất lượng", Amount = bonuses, Icon = "star", IsBonus = true } }
-            : new List<TeacherPayrollBreakdownItem>();
+        var bonusItems = new List<TeacherPayrollBreakdownItem>();
+        var deductionItems = new List<TeacherPayrollBreakdownItem>();
 
-        var deductionItems = deductions > 0
-            ? new List<TeacherPayrollBreakdownItem> { new() { Description = "Khấu trừ vi phạm quy định", Amount = deductions, Icon = "remove_circle", IsBonus = false } }
-            : new List<TeacherPayrollBreakdownItem>();
+        var validSessionsForBreakdown = sessions.Where(s => string.Equals(s.PayrollStatus, AttendanceIntegrityRules.PayrollStatusValid, StringComparison.OrdinalIgnoreCase)).ToList();
+
+        // Calculate specific items for Bonus
+        if (bonuses > 0)
+        {
+            var fullAttCount = validSessionsForBreakdown.Count(s => s.PresentCount > 0 && s.PresentCount == s.PresentCount); // Note: Simple heuristic for display
+            if (fullAttCount > 0)
+            {
+                bonusItems.Add(new TeacherPayrollBreakdownItem 
+                { 
+                    Description = $"Thưởng chuyên cần ({fullAttCount} buổi)", 
+                    Amount = fullAttCount * PayrollCalculationService.FullAttendanceBonusPerSession, 
+                    Icon = "star", 
+                    IsBonus = true 
+                });
+            }
+
+            var fullCompCount = validSessionsForBreakdown.Count(s => s.PresentCount > 0 && s.NoteReadyCount == s.PresentCount && s.MediaReadyCount == s.PresentCount);
+            if (fullCompCount > 0)
+            {
+                bonusItems.Add(new TeacherPayrollBreakdownItem 
+                { 
+                    Description = $"Thưởng báo cáo đầy đủ ({fullCompCount} buổi)", 
+                    Amount = fullCompCount * PayrollCalculationService.FullComplianceBonusPerSession, 
+                    Icon = "task_alt", 
+                    IsBonus = true 
+                });
+            }
+            
+            // Note: Excellent AI Bonus might be the remainder if we want to be exact, but let's just do a math check
+            var calculatedBonuses = (fullAttCount * PayrollCalculationService.FullAttendanceBonusPerSession) + (fullCompCount * PayrollCalculationService.FullComplianceBonusPerSession);
+            var missingBonus = bonuses - calculatedBonuses;
+            if (missingBonus > 0)
+            {
+                bonusItems.Add(new TeacherPayrollBreakdownItem 
+                { 
+                    Description = "Thưởng khác (hoặc được Admin điều chỉnh)", 
+                    Amount = missingBonus, 
+                    Icon = "card_giftcard", 
+                    IsBonus = true 
+                });
+            }
+        }
+
+        // Calculate specific items for Deduction
+        if (deductions > 0)
+        {
+            int missingNoteCount = validSessionsForBreakdown.Count(s => s.PresentCount > 0 && s.NoteReadyCount < s.PresentCount);
+            if (missingNoteCount > 0)
+            {
+                deductionItems.Add(new TeacherPayrollBreakdownItem 
+                { 
+                    Description = $"Thiếu nhận xét học sinh ({missingNoteCount} buổi)", 
+                    Amount = missingNoteCount * PayrollCalculationService.MissingNotePenaltyPerSession, 
+                    Icon = "remove_circle", 
+                    IsBonus = false 
+                });
+            }
+
+            int noMediaCount = validSessionsForBreakdown.Count(s => s.PresentCount > 0 && s.MediaReadyCount == 0);
+            if (noMediaCount > 0)
+            {
+                deductionItems.Add(new TeacherPayrollBreakdownItem 
+                { 
+                    Description = $"Thiếu minh chứng video/AI ({noMediaCount} buổi)", 
+                    Amount = noMediaCount * PayrollCalculationService.NoVideoPenaltyPerSession, 
+                    Icon = "videocam_off", 
+                    IsBonus = false 
+                });
+            }
+
+            var calculatedDeductions = (missingNoteCount * PayrollCalculationService.MissingNotePenaltyPerSession) + (noMediaCount * PayrollCalculationService.NoVideoPenaltyPerSession);
+            var missingDeduction = deductions - calculatedDeductions;
+            if (missingDeduction > 0)
+            {
+                var desc = missingDeduction == deductions ? "Khấu trừ vi phạm quy định" : "Khấu trừ khác (hoặc do Admin điều chỉnh)";
+                if (missingDeduction == deductions && !string.IsNullOrWhiteSpace(record.AdjustmentNotes))
+                {
+                     desc += $" (Ghi chú: {record.AdjustmentNotes})";
+                }
+                deductionItems.Add(new TeacherPayrollBreakdownItem 
+                { 
+                    Description = desc, 
+                    Amount = missingDeduction, 
+                    Icon = "warning", 
+                    IsBonus = false 
+                });
+            }
+        }
+        else if (!string.IsNullOrWhiteSpace(record.AdjustmentNotes))
+        {
+             deductionItems.Add(new TeacherPayrollBreakdownItem 
+             { 
+                 Description = $"Ghi chú điều chỉnh: {record.AdjustmentNotes}", 
+                 Amount = 0, 
+                 Icon = "info", 
+                 IsBonus = false 
+             });
+        }
 
         var model = new TeacherPayrollPeriodViewModel
         {
@@ -259,7 +359,7 @@ public class PayrollController : Controller
             Bonuses = bonuses,
             Deductions = deductions,
             TotalPay = totalPay,
-            Status = record.Status,
+            Status = record.Status == "Draft" ? "Nháp" : record.Status,
             IsApproved = isApproved,
             CreatedAt = record.CreatedAt,
             ApprovedAt = record.ApprovedAt,

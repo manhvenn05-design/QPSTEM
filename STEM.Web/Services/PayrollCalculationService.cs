@@ -6,11 +6,11 @@ namespace STEM.Web.Services;
 
 public sealed class PayrollCalculationService
 {
-    private const decimal FullAttendanceBonusPerSession = 20_000m;
-    private const decimal FullComplianceBonusPerSession = 30_000m;
-    private const decimal MissingNotePenaltyPerSession = 20_000m;
-    private const decimal NoVideoPenaltyPerSession = 50_000m;
-    private const decimal ExcellentAiBonus = 300_000m;
+    public const decimal FullAttendanceBonusPerSession = 20_000m;
+    public const decimal FullComplianceBonusPerSession = 30_000m;
+    public const decimal MissingNotePenaltyPerSession = 20_000m;
+    public const decimal NoVideoPenaltyPerSession = 50_000m;
+    public const decimal ExcellentAiBonus = 300_000m;
     public const string PayrollDraftStatus = "Draft";
 
     private readonly ApplicationDbContext _context;

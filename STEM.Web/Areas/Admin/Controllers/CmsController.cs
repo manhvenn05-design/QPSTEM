@@ -273,7 +273,10 @@ public class CmsController : Controller
             {
                 var newImageUrl = await _fileStorage.SaveFileAsync(
                     model.ThumbnailFile, "posts");
-                await _fileStorage.DeleteFileAsync(entity.ImageUrl);
+                if (!string.IsNullOrWhiteSpace(entity.ImageUrl))
+                {
+                    await _fileStorage.DeleteFileAsync(entity.ImageUrl);
+                }
                 entity.ImageUrl = newImageUrl;
             }
             catch (InvalidOperationException ex)
@@ -318,7 +321,10 @@ public class CmsController : Controller
         var entity = await _context.Posts.FirstOrDefaultAsync(x => x.Id == id);
         if (entity == null) return NotFound();
 
-        await _fileStorage.DeleteFileAsync(entity.ImageUrl);
+        if (!string.IsNullOrWhiteSpace(entity.ImageUrl))
+        {
+            await _fileStorage.DeleteFileAsync(entity.ImageUrl);
+        }
         _context.Posts.Remove(entity);
         await _context.SaveChangesAsync();
 
