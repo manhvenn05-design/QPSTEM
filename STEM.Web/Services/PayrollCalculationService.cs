@@ -88,7 +88,7 @@ public sealed class PayrollCalculationService
                 .Where(x => string.Equals(x.PayrollStatus, AttendanceIntegrityRules.PayrollStatusValid, StringComparison.OrdinalIgnoreCase))
                 .ToList();
 
-            var sessionEarnings = validSessions.Sum(session => session.SessionRateApplied);
+            var sessionEarnings = validSessions.Sum(session => ResolveSessionRate(session, teacherProfile, payRates));
 
             var bonuses = CalculateBonuses(teacherGroup.ToList(), validSessions, sessionEarnings);
             var deductions = CalculateDeductions(teacherGroup.ToList(), validSessions, sessionEarnings);
@@ -141,10 +141,14 @@ public sealed class PayrollCalculationService
         int teacherId,
         int year,
         int month,
+        DateOnly? asOfDate = null,
         CancellationToken cancellationToken = default)
     {
         var periodStart = new DateOnly(year, month, 1);
         var periodEnd = periodStart.AddMonths(1);
+        var effectivePeriodEnd = asOfDate.HasValue && asOfDate.Value.AddDays(1) < periodEnd
+            ? asOfDate.Value.AddDays(1)
+            : periodEnd;
 
         var payRates = await _context.Set<PayRateConfig>()
             .AsNoTracking()
@@ -157,7 +161,7 @@ public sealed class PayrollCalculationService
         var sessionRows = await _context.Sessions
             .AsNoTracking()
             .Where(x => (x.Class.TeacherId == teacherId && x.SubstituteTeacherId == null || x.SubstituteTeacherId == teacherId) &&
-                        x.Date >= periodStart && x.Date < periodEnd)
+                        x.Date >= periodStart && x.Date < effectivePeriodEnd)
             .Select(x => new PayrollSessionRow
             {
                 SessionId = x.Id,
@@ -181,7 +185,7 @@ public sealed class PayrollCalculationService
         var aiScores = await _context.Attendances
             .AsNoTracking()
             .Where(x => (x.Session.Class.TeacherId == teacherId && x.Session.SubstituteTeacherId == null || x.Session.SubstituteTeacherId == teacherId) &&
-                        x.Session.Date >= periodStart && x.Session.Date < periodEnd &&
+                        x.Session.Date >= periodStart && x.Session.Date < effectivePeriodEnd &&
                         !string.IsNullOrWhiteSpace(x.AiEvaluation))
             .Select(x => new { x.SessionId, x.AiEvaluation })
             .ToListAsync(cancellationToken);
@@ -200,11 +204,9 @@ public sealed class PayrollCalculationService
             .Where(x => string.Equals(x.PayrollStatus, AttendanceIntegrityRules.PayrollStatusValid, StringComparison.OrdinalIgnoreCase))
             .ToList();
 
-        decimal sessionEarnings = 0m;
-        if (teacherProfile != null)
-        {
-            sessionEarnings = validSessions.Sum(session => session.SessionRateApplied);
-        }
+        var sessionEarnings = teacherProfile == null
+            ? 0m
+            : validSessions.Sum(session => ResolveSessionRate(session, teacherProfile, payRates));
 
         var bonuses = CalculateBonuses(sessionRows, validSessions, sessionEarnings);
         var deductions = CalculateDeductions(sessionRows, validSessions, sessionEarnings);
@@ -313,6 +315,26 @@ public sealed class PayrollCalculationService
 
         var rawValue = parsed.Score.Replace("/100", string.Empty, StringComparison.OrdinalIgnoreCase).Trim();
         return int.TryParse(rawValue, out score);
+    }
+
+    private static decimal ResolveSessionRate(
+        PayrollSessionRow session,
+        TeacherProfile teacherProfile,
+        IReadOnlyCollection<PayRateConfig> payRates)
+    {
+        if (session.SessionRateApplied > 0)
+        {
+            return session.SessionRateApplied;
+        }
+
+        if (teacherProfile.CustomSessionRate.HasValue && teacherProfile.CustomSessionRate.Value > 0)
+        {
+            return teacherProfile.CustomSessionRate.Value;
+        }
+
+        return payRates.FirstOrDefault(x =>
+            x.TeacherTier == teacherProfile.SalaryTier &&
+            x.CourseDifficulty == session.CourseDifficulty)?.RatePerSession ?? 0m;
     }
 
     private sealed class PayrollSessionRow

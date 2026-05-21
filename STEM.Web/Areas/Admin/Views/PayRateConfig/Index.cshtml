@@ -1,59 +1,249 @@
-@model STEM.Web.Areas.Admin.Controllers.PayRateConfigIndexViewModel
+﻿@model STEM.Web.Areas.Admin.Controllers.PayRateConfigIndexViewModel
 
 @{
-    ViewData["Title"] = "Cấu hình đơn giá lương";
+    ViewData["Title"] = "Thiết lập lương giáo viên";
+    var payRateReturnUrl = Url.Action("Index", "PayRateConfig", new { area = "Admin" }) ?? "/Admin/PayRateConfig";
 }
 
 <section class="admin-page">
-    <div class="admin-header flex flex-wrap items-end justify-between gap-4 mb-6">
+    <div class="admin-page-header">
         <div>
-            <h1 class="admin-page-title">Cấu hình ma trận lương</h1>
-            <p class="admin-page-subtitle">Quản lý đơn giá theo cấp độ giảng viên và độ khó môn học (VNĐ/buổi).</p>
+            <h1 class="admin-page-title">Thiết lập lương giáo viên</h1>
+            <p class="admin-page-subtitle">Quản lý đơn giá theo bậc giáo viên, kiểm tra giáo viên nào đã có cấu hình lương và xác định nhóm môn học để tính lương đúng.</p>
         </div>
-        <div class="flex items-center gap-3">
+        <div class="admin-actions">
+            <a asp-area="Admin" asp-controller="Users" asp-action="Index" asp-route-role="teacher" class="admin-btn-secondary">Mở danh sách giáo viên</a>
+            <a asp-area="Admin" asp-controller="Courses" asp-action="Index" class="admin-btn-secondary">Mở danh sách khóa học</a>
             <button type="button" class="admin-btn-secondary" onclick="window.location.reload()">
                 <span class="material-symbols-outlined">refresh</span>
                 <span>Tải lại</span>
             </button>
             <button type="button" class="admin-btn-primary" onclick="saveMatrix()">
                 <span class="material-symbols-outlined">save</span>
-                <span>Lưu cấu hình</span>
+                <span>Lưu bảng đơn giá</span>
             </button>
+        </div>
+    </div>
+
+    @Html.AntiForgeryToken()
+
+    <div id="saveStatus" class="hidden"></div>
+
+    <div class="admin-stat-grid four-col">
+        <article class="admin-stat-card">
+            <span class="admin-stat-label">Giáo viên hiện có</span>
+            <div class="admin-stat-value">@Model.TotalTeachers</div>
+            <p class="admin-kicker">Tổng số giáo viên đang có trong hệ thống.</p>
+        </article>
+        <article class="admin-stat-card">
+            <span class="admin-stat-label">Đã gán bậc lương</span>
+            <div class="admin-stat-value">@Model.TeachersWithTier</div>
+            <p class="admin-kicker">Đang tính theo bảng đơn giá chung.</p>
+        </article>
+        <article class="admin-stat-card">
+            <span class="admin-stat-label">Giá khoán riêng</span>
+            <div class="admin-stat-value">@Model.TeachersWithCustomRate</div>
+            <p class="admin-kicker">Không tính theo bậc, dùng giá riêng theo buổi.</p>
+        </article>
+        <article class="admin-stat-card" style="border-left-color:#ba1a1a;">
+            <span class="admin-stat-label">Khóa học chưa phân nhóm</span>
+            <div class="admin-stat-value text-[#ba1a1a]">@Model.CoursesMissingDifficulty</div>
+            <p class="admin-kicker">Cần xử lý để tiền theo môn không bị sai.</p>
+        </article>
+    </div>
+
+
+
+    <div class="admin-card">
+        <div class="admin-card-section">
+            <div class="flex items-center justify-between gap-3">
+                <div>
+                    <h2 class="admin-section-title">Khóa học đang thuộc nhóm nào</h2>
+                    <p class="admin-section-subtitle">Lọc nhanh theo nhóm môn để rà lại toàn bộ cấu hình khóa học phục vụ tính lương.</p>
+                </div>
+                <a asp-area="Admin" asp-controller="Courses" asp-action="Create" asp-route-returnUrl="@payRateReturnUrl" class="admin-btn-secondary">Thêm khóa học mới</a>
+            </div>
+
+            @if (Model.Courses.Count == 0)
+            {
+                <div class="mt-6 rounded-lg border border-dashed border-[#dce6f5] bg-[#f8fbff] px-4 py-6 text-sm text-[#6b7c99]">
+                    Chưa có khóa học nào trong hệ thống.
+                </div>
+            }
+            else
+            {
+                <div class="mt-6 flex flex-wrap gap-2" data-course-filter-group>
+                    <button type="button" class="admin-chip is-active" data-course-filter="all">Tất cả</button>
+                    <button type="button" class="admin-chip" data-course-filter="1">Môn cơ bản</button>
+                    <button type="button" class="admin-chip" data-course-filter="2">Môn nâng cao</button>
+                    <button type="button" class="admin-chip" data-course-filter="3">Môn chuyên sâu</button>
+                    <button type="button" class="admin-chip" data-course-filter="unknown">Chưa phân nhóm</button>
+                </div>
+
+                <div class="mt-6 overflow-x-auto">
+                    <table class="admin-table min-w-full">
+                        <thead>
+                            <tr>
+                                <th>Khóa học</th>
+                                <th>Nhóm môn học</th>
+                                <th>Số lớp đang gắn</th>
+                                <th>Trạng thái</th>
+                                <th class="text-right">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody data-course-table-body>
+                            @foreach (var course in Model.Courses)
+                            {
+                                var isConfigured = course.DifficultyLevel is >= 1 and <= 3;
+                                var badgeClass = course.DifficultyLevel switch
+                                {
+                                    1 => "admin-tag admin-tag--success",
+                                    2 => "admin-tag bg-[#fff3e4] text-[#b86b17]",
+                                    3 => "admin-tag bg-[#eaf1ff] text-[#1a3a6e]",
+                                    _ => "admin-tag admin-tag--danger"
+                                };
+                                var courseFilterValue = isConfigured ? course.DifficultyLevel.ToString() : "unknown";
+                                <tr data-course-row data-course-filter-value="@courseFilterValue">
+                                    <td>
+                                        <div class="font-medium text-[#0f1e38]">@course.Name</div>
+                                        <div class="text-xs text-[#6b7c99]">@course.Code</div>
+                                    </td>
+                                    <td>@course.DifficultyLabel</td>
+                                    <td>@course.TotalClasses lớp</td>
+                                    <td>
+                                        <span class="@badgeClass">@(isConfigured ? "Đã phân nhóm" : "Chưa phân nhóm")</span>
+                                    </td>
+                                    <td class="text-right">
+                                        <a asp-area="Admin" asp-controller="Courses" asp-action="Edit" asp-route-id="@course.CourseId" asp-route-returnUrl="@payRateReturnUrl" class="admin-btn-secondary !h-10">Cập nhật khóa học</a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                    <div class="admin-empty hidden" data-course-empty-state>Không có khóa học nào phù hợp với bộ lọc đang chọn.</div>
+                </div>
+            }
         </div>
     </div>
 
     <div class="admin-card">
         <div class="admin-card-section">
+            <div class="flex items-center justify-between gap-3">
+                <div>
+                    <h2 class="admin-section-title">Tình trạng cấu hình của giáo viên</h2>
+                    <p class="admin-section-subtitle">Lọc giáo viên theo bậc lương hoặc giá khoán để kiểm tra nhanh trước khi tính lương.</p>
+                </div>
+                <a asp-area="Admin" asp-controller="Users" asp-action="Create" class="admin-btn-secondary">Thêm giáo viên mới</a>
+            </div>
+
+            @if (Model.Teachers.Count == 0)
+            {
+                <div class="mt-6 rounded-lg border border-dashed border-[#dce6f5] bg-[#f8fbff] px-4 py-6 text-sm text-[#6b7c99]">
+                    Chưa có giáo viên nào trong hệ thống. Hãy tạo tài khoản giáo viên trước, sau đó quay lại trang này để gán bậc lương.
+                </div>
+            }
+            else
+            {
+                <div class="mt-6 flex flex-wrap gap-2" data-teacher-filter-group>
+                    <button type="button" class="admin-chip is-active" data-teacher-filter="all">Tất cả</button>
+                    <button type="button" class="admin-chip" data-teacher-filter="custom">Giá khoán riêng</button>
+                    <button type="button" class="admin-chip" data-teacher-filter="tier-1">Bậc 1</button>
+                    <button type="button" class="admin-chip" data-teacher-filter="tier-2">Bậc 2</button>
+                    <button type="button" class="admin-chip" data-teacher-filter="tier-3">Bậc 3</button>
+                    <button type="button" class="admin-chip" data-teacher-filter="tier-4">Bậc 4</button>
+                    <button type="button" class="admin-chip" data-teacher-filter="tier-5">Bậc 5</button>
+                    <button type="button" class="admin-chip" data-teacher-filter="missing">Chưa cấu hình</button>
+                </div>
+
+                <div class="mt-6 overflow-x-auto">
+                    <table class="admin-table min-w-full">
+                        <thead>
+                            <tr>
+                                <th>Giáo viên</th>
+                                <th>Cách tính lương</th>
+                                <th>Thiết lập hiện tại</th>
+                                <th>Trạng thái</th>
+                                <th class="text-right">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody data-teacher-table-body>
+                            @foreach (var teacher in Model.Teachers)
+                            {
+                                var statusText = teacher.HasTeacherProfile ? "Đã cấu hình" : "Chưa cấu hình";
+                                var statusClass = teacher.HasTeacherProfile ? "admin-tag admin-tag--success" : "admin-tag admin-tag--danger";
+                                var payMode = teacher.CustomSessionRate.HasValue && teacher.CustomSessionRate.Value > 0
+                                    ? $"Giá khoán riêng {teacher.CustomSessionRate.Value:N0} đ/buổi"
+                                    : teacher.SalaryTier.HasValue
+                                        ? $"Theo bậc {teacher.SalaryTier.Value}"
+                                        : "Chưa chọn";
+                                var setupText = teacher.CustomSessionRate.HasValue && teacher.CustomSessionRate.Value > 0
+                                    ? "Bỏ qua bảng đơn giá chung"
+                                    : teacher.SalaryTier.HasValue
+                                        ? "Dùng bảng đơn giá chung theo bậc"
+                                        : "Chưa đủ dữ liệu để tính lương";
+                                var teacherFilterValue = teacher.CustomSessionRate.HasValue && teacher.CustomSessionRate.Value > 0
+                                    ? "custom"
+                                    : teacher.SalaryTier.HasValue
+                                        ? $"tier-{teacher.SalaryTier.Value}"
+                                        : "missing";
+                                <tr data-teacher-row data-teacher-filter-value="@teacherFilterValue">
+                                    <td>
+                                        <div class="font-medium text-[#0f1e38]">@teacher.FullName</div>
+                                        <div class="text-xs text-[#6b7c99]">@teacher.Username</div>
+                                    </td>
+                                    <td>@payMode</td>
+                                    <td>@setupText</td>
+                                    <td>
+                                        <span class="@statusClass">@statusText</span>
+                                    </td>
+                                    <td class="text-right">
+                                        <a asp-area="Admin" asp-controller="Users" asp-action="Edit" asp-route-id="@teacher.UserId" asp-route-returnUrl="@payRateReturnUrl" class="admin-btn-secondary !h-10">Cập nhật giáo viên</a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                    <div class="admin-empty hidden" data-teacher-empty-state>Không có giáo viên nào phù hợp với bộ lọc đang chọn.</div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="admin-card">
+        <div class="admin-card-section">
+            <div class="mb-6">
+                <h2 class="admin-section-title">Bảng đơn giá chung theo bậc</h2>
+                <p class="admin-section-subtitle">Giá mặc định cho mỗi buổi dạy. Khi giáo viên không có giá khoán riêng, hệ thống sẽ lấy giá từ bảng này.</p>
+            </div>
+
             <div class="overflow-x-auto">
                 <table class="w-full text-left text-sm text-[#0f1e38]">
                     <thead class="bg-[#f5f7fb] text-xs font-semibold uppercase tracking-wider text-[#6b7c99]">
                         <tr>
-                            <th class="border-b border-[#dce6f5] px-6 py-4">Hạng giáo viên</th>
-                            <th class="border-b border-[#dce6f5] px-6 py-4">Cơ bản (Level 1)</th>
-                            <th class="border-b border-[#dce6f5] px-6 py-4">Nâng cao (Level 2)</th>
-                            <th class="border-b border-[#dce6f5] px-6 py-4">Chuyên sâu (Level 3)</th>
+                            <th class="border-b border-[#dce6f5] px-6 py-4">Bậc giáo viên</th>
+                            <th class="border-b border-[#dce6f5] px-6 py-4">Môn cơ bản</th>
+                            <th class="border-b border-[#dce6f5] px-6 py-4">Môn nâng cao</th>
+                            <th class="border-b border-[#dce6f5] px-6 py-4">Môn chuyên sâu</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-[#dce6f5]" id="payRateMatrix">
                         @for (int tier = 1; tier <= 5; tier++)
                         {
                             <tr class="hover:bg-[#f8fafd] transition-colors">
-                                <td class="px-6 py-4 font-semibold text-[#1a3a6e] align-middle">
-                                    Tier @tier
-                                </td>
+                                <td class="px-6 py-4 font-semibold text-[#1a3a6e] align-middle">Bậc @tier</td>
                                 @for (int diff = 1; diff <= 3; diff++)
                                 {
                                     var configItem = Model.Configs.FirstOrDefault(c => c.TeacherTier == tier && c.CourseDifficulty == diff);
                                     var rateValue = configItem?.RatePerSession ?? 0;
                                     <td class="px-6 py-4">
                                         <div class="relative">
-                                            <input type="number" 
-                                                   class="pay-rate-input w-full rounded-md border border-[#dce6f5] px-3 py-2 text-right pr-8 focus:border-[#1a3a6e] focus:outline-none focus:ring-1 focus:ring-[#1a3a6e]"
-                                                   data-tier="@tier" 
-                                                   data-diff="@diff" 
-                                                   value="@rateValue.ToString("0")" 
+                                            <input type="number"
+                                                   class="pay-rate-input w-full rounded-md border border-[#dce6f5] px-3 py-2 pr-10 text-right focus:border-[#1a3a6e] focus:outline-none focus:ring-1 focus:ring-[#1a3a6e]"
+                                                   data-tier="@tier"
+                                                   data-diff="@diff"
+                                                   value="@rateValue.ToString("0")"
                                                    min="0" step="10000" />
-                                            <span class="absolute right-3 top-1/2 -translate-y-1/2 text-[#6b7c99] text-xs font-medium pointer-events-none">₫</span>
+                                            <span class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-[#6b7c99]">đ</span>
                                         </div>
                                     </td>
                                 }
@@ -63,11 +253,8 @@
                 </table>
             </div>
 
-            <div class="mt-6 flex items-start gap-3 rounded-xl bg-[#e8f0fb] p-4 text-[#1a3a6e]">
-                <span class="material-symbols-outlined mt-0.5 text-[20px]">info</span>
-                <div class="text-sm">
-                    <p><strong>Lưu ý:</strong> Bảng giá mới sẽ được áp dụng cho toàn bộ các buổi học <strong>chưa tính lương</strong> (hoặc tính lương dạng dự kiến). Các kỳ lương đã "chốt" trong quá khứ sẽ không bị ảnh hưởng bởi thay đổi này.</p>
-                </div>
+            <div class="mt-6 rounded-xl bg-[#e8f0fb] p-4 text-sm text-[#1a3a6e]">
+                Sau khi lưu bảng đơn giá, giá mới sẽ áp dụng cho các buổi chưa chốt lương. Các kỳ lương đã chốt trước đó sẽ không bị thay đổi ngược lại.
             </div>
         </div>
     </div>
@@ -75,15 +262,28 @@
 
 @section Scripts {
     <script>
+        function showSaveStatus(type, message) {
+            const box = document.getElementById('saveStatus');
+            if (!box) return;
+
+            box.className = type === 'success'
+                ? 'admin-alert admin-alert--success'
+                : 'admin-alert admin-alert--error';
+            box.textContent = message;
+            box.classList.remove('hidden');
+            box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
         async function saveMatrix() {
             const inputs = document.querySelectorAll('.pay-rate-input');
+            const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
             const data = [];
 
-            inputs.forEach(input => {
+            inputs.forEach((input) => {
                 data.push({
-                    TeacherTier: parseInt(input.dataset.tier),
-                    CourseDifficulty: parseInt(input.dataset.diff),
-                    RatePerSession: parseFloat(input.value) || 0
+                    teacherTier: parseInt(input.dataset.tier),
+                    courseDifficulty: parseInt(input.dataset.diff),
+                    ratePerSession: parseFloat(input.value) || 0
                 });
             });
 
@@ -92,21 +292,62 @@
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+                        'RequestVerificationToken': token || ''
                     },
                     body: JSON.stringify(data)
                 });
 
-                if (response.ok) {
-                    const result = await response.json();
-                    alert(result.message || 'Lưu cấu hình thành công!');
-                } else {
-                    alert('Có lỗi xảy ra khi lưu cấu hình.');
+                if (!response.ok) {
+                    showSaveStatus('error', 'Không lưu được bảng đơn giá. Vui lòng kiểm tra lại dữ liệu vừa nhập.');
+                    return;
                 }
+
+                const result = await response.json();
+                showSaveStatus('success', result.message || 'Đã lưu bảng đơn giá thành công.');
             } catch (error) {
                 console.error(error);
-                alert('Có lỗi xảy ra khi lưu cấu hình.');
+                showSaveStatus('error', 'Có lỗi xảy ra khi lưu bảng đơn giá.');
             }
         }
+
+        function setupTableFilter(buttonSelector, rowSelector, emptyStateSelector, attributeName) {
+            const buttons = document.querySelectorAll(buttonSelector);
+            const rows = document.querySelectorAll(rowSelector);
+            const emptyState = document.querySelector(emptyStateSelector);
+
+            if (!buttons.length || !rows.length) {
+                return;
+            }
+
+            const applyFilter = (value) => {
+                let visibleCount = 0;
+
+                rows.forEach((row) => {
+                    const matches = value === 'all' || row.dataset[attributeName] === value;
+                    row.classList.toggle('hidden', !matches);
+                    if (matches) {
+                        visibleCount += 1;
+                    }
+                });
+
+                if (emptyState) {
+                    emptyState.classList.toggle('hidden', visibleCount > 0);
+                }
+            };
+
+            buttons.forEach((button) => {
+                button.addEventListener('click', () => {
+                    buttons.forEach((item) => item.classList.remove('is-active'));
+                    button.classList.add('is-active');
+                    applyFilter(button.dataset.courseFilter || button.dataset.teacherFilter || 'all');
+                });
+            });
+
+            const activeButton = Array.from(buttons).find((button) => button.classList.contains('is-active')) ?? buttons[0];
+            applyFilter(activeButton.dataset.courseFilter || activeButton.dataset.teacherFilter || 'all');
+        }
+
+        setupTableFilter('[data-course-filter]', '[data-course-row]', '[data-course-empty-state]', 'courseFilterValue');
+        setupTableFilter('[data-teacher-filter]', '[data-teacher-row]', '[data-teacher-empty-state]', 'teacherFilterValue');
     </script>
 }

@@ -1,4 +1,4 @@
-@model STEM.Web.Areas.Admin.Models.CreateCourseViewModel
+﻿@model STEM.Web.Areas.Admin.Models.CreateCourseViewModel
 
 @{
     ViewData["Title"] = "Thêm khóa học";
@@ -8,23 +8,31 @@
     <div class="admin-page-header">
         <div>
             <h1 class="admin-page-title">Thêm khóa học mới</h1>
-            <p class="admin-page-subtitle">Tạo khóa học mới và thêm ảnh đại diện.</p>
+            <p class="admin-page-subtitle">Tạo khóa học mới, thiết lập nhóm môn học và nhập các thông tin vận hành cần thiết.</p>
         </div>
 
         <div class="admin-actions">
-            <a asp-area="Admin" asp-controller="Courses" asp-action="Index" class="admin-btn-secondary">Quay lại danh sách</a>
+            @if (!string.IsNullOrWhiteSpace(Model.ReturnUrl))
+            {
+                <a href="@Model.ReturnUrl" class="admin-btn-secondary">Quay lại cấu hình lương</a>
+            }
+            else
+            {
+                <a asp-area="Admin" asp-controller="Courses" asp-action="Index" class="admin-btn-secondary">Quay lại danh sách</a>
+            }
         </div>
     </div>
 
     <form asp-area="Admin" asp-controller="Courses" asp-action="Create" method="post" enctype="multipart/form-data" class="admin-page">
         @Html.AntiForgeryToken()
+        <input asp-for="ReturnUrl" type="hidden" />
         <div asp-validation-summary="ModelOnly" class="admin-alert admin-alert--error"></div>
 
         <div class="admin-card">
             <div class="admin-card-section">
                 <div class="mb-6">
                     <h2 class="admin-section-title">Thông tin khóa học</h2>
-                    <p class="admin-section-subtitle">Nhập mã khóa học, phạm vi độ tuổi, học phí, số buổi, ảnh đại diện và mô tả ngắn.</p>
+                    <p class="admin-section-subtitle">Nhập mã khóa học, phạm vi độ tuổi, học phí, số buổi, nhóm môn học, ảnh đại diện và mô tả ngắn.</p>
                 </div>
 
                 <div class="admin-field-grid two-col">
@@ -65,6 +73,21 @@
                     </div>
 
                     <div class="md:col-span-2">
+                        <label asp-for="DifficultyLevel" class="admin-label"></label>
+                        <select asp-for="DifficultyLevel" class="admin-select">
+                            <option value="1">Môn cơ bản</option>
+                            <option value="2">Môn nâng cao</option>
+                            <option value="3">Môn chuyên sâu</option>
+                        </select>
+                        <div class="mt-3 rounded-xl bg-[#f8fbff] p-4 text-sm leading-6 text-[#56657d]">
+                            <p><strong class="text-[#0f1e38]">Cơ bản:</strong> nhập môn, làm quen công cụ, nội dung nền tảng.</p>
+                            <p><strong class="text-[#0f1e38]">Nâng cao:</strong> đã cần nền tảng trước đó hoặc có project vừa phải.</p>
+                            <p><strong class="text-[#0f1e38]">Chuyên sâu:</strong> chuyên đề sâu, AI, Python ứng dụng, robotics nâng cao, luyện thi hoặc portfolio.</p>
+                        </div>
+                        <span asp-validation-for="DifficultyLevel" class="admin-validation"></span>
+                    </div>
+
+                    <div class="md:col-span-2">
                         <label asp-for="ImageFile" class="admin-label"></label>
                         <input asp-for="ImageFile" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" class="admin-input admin-file" />
                         <p class="admin-hint">Hỗ trợ JPG, PNG, WEBP. Dung lượng tối đa 5MB.</p>
@@ -82,7 +105,14 @@
 
         <div class="admin-actions justify-end">
             <button type="submit" class="admin-btn-primary min-w-[192px]">Lưu khóa học</button>
-            <a asp-area="Admin" asp-controller="Courses" asp-action="Index" class="admin-btn-secondary">Hủy</a>
+            @if (!string.IsNullOrWhiteSpace(Model.ReturnUrl))
+            {
+                <a href="@Model.ReturnUrl" class="admin-btn-secondary">Hủy</a>
+            }
+            else
+            {
+                <a asp-area="Admin" asp-controller="Courses" asp-action="Index" class="admin-btn-secondary">Hủy</a>
+            }
         </div>
     </form>
 </section>

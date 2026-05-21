@@ -1,4 +1,4 @@
-@model STEM.Web.Areas.Admin.Models.EditUserViewModel
+﻿@model STEM.Web.Areas.Admin.Models.EditUserViewModel
 
 @{
     ViewData["Title"] = "Cập nhật người dùng";
@@ -8,25 +8,33 @@
     <div class="admin-page-header">
         <div>
             <h1 class="admin-page-title">Cập nhật người dùng</h1>
-            <p class="admin-page-subtitle">Điều chỉnh thông tin, ảnh đại diện, quyền truy cập và đặt lại mật khẩu khi cần.</p>
+            <p class="admin-page-subtitle">Điều chỉnh thông tin tài khoản, quyền truy cập và cấu hình hồ sơ của giáo viên hoặc học sinh.</p>
         </div>
 
         <div class="admin-actions">
             <a asp-area="Admin" asp-controller="Users" asp-action="Details" asp-route-id="@Model.Id" class="admin-btn-secondary">Xem chi tiết</a>
-            <a asp-area="Admin" asp-controller="Users" asp-action="Index" class="admin-btn-secondary">Quay lại danh sách</a>
+            @if (!string.IsNullOrWhiteSpace(Model.ReturnUrl))
+            {
+                <a href="@Model.ReturnUrl" class="admin-btn-secondary">Quay lại cấu hình lương</a>
+            }
+            else
+            {
+                <a asp-area="Admin" asp-controller="Users" asp-action="Index" class="admin-btn-secondary">Quay lại danh sách</a>
+            }
         </div>
     </div>
 
     <form asp-area="Admin" asp-controller="Users" asp-action="Edit" method="post" enctype="multipart/form-data" class="admin-page">
         @Html.AntiForgeryToken()
         <input asp-for="Id" type="hidden" />
+        <input asp-for="ReturnUrl" type="hidden" />
         <div asp-validation-summary="ModelOnly" class="admin-alert admin-alert--error"></div>
 
         <div class="admin-card">
             <div class="admin-card-section">
                 <div class="mb-6">
                     <h2 class="admin-section-title">Thông tin tài khoản</h2>
-                    <p class="admin-section-subtitle">Sửa dữ liệu cơ bản và trạng thái của người dùng.</p>
+                    <p class="admin-section-subtitle">Sửa dữ liệu cơ bản, vai trò và trạng thái hoạt động của tài khoản.</p>
                 </div>
 
                 <div class="admin-field-grid two-col">
@@ -58,8 +66,19 @@
 
                     <div>
                         <label asp-for="RoleId" class="admin-label"></label>
-                        <select asp-for="RoleId" asp-items="Model.RoleOptions" class="admin-select">
+                        <select asp-for="RoleId" class="admin-select">
                             <option value="">Chọn vai trò</option>
+                            @foreach (var option in Model.RoleOptions)
+                            {
+                                var profileType = option.Text switch
+                                {
+                                    "Học sinh" => "student",
+                                    "Giáo viên" => "teacher",
+                                    _ => string.Empty
+                                };
+                                var isSelected = option.Value == Model.RoleId?.ToString();
+                                <option value="@option.Value" selected="@(isSelected ? "selected" : null)" data-profile="@profileType">@option.Text</option>
+                            }
                         </select>
                         <span asp-validation-for="RoleId" class="admin-validation"></span>
                     </div>
@@ -89,7 +108,7 @@
                                 </div>
                             </div>
                         }
-                        <p class="admin-hint">Nếu không chọn ảnh mới, hệ thống sẽ giữ ảnh hiện tại.</p>
+                        <p class="admin-hint">Nếu không chọn ảnh mới, hệ thống sẽ giữ lại ảnh hiện tại.</p>
                         <span asp-validation-for="AvatarFile" class="admin-validation"></span>
                     </div>
 
@@ -122,7 +141,7 @@
             <div class="admin-card-section">
                 <div class="mb-6">
                     <h2 class="admin-section-title">Thông tin học sinh</h2>
-                    <p class="admin-section-subtitle">Chỉ hiển thị khi người dùng mang vai trò học sinh.</p>
+                    <p class="admin-section-subtitle">Chỉ hiển thị khi tài khoản mang vai trò học sinh.</p>
                 </div>
 
                 <div class="admin-field-grid two-col">
@@ -156,20 +175,21 @@
         <div id="teacher-profile-card" class="admin-card @(Model.IsTeacherRoleSelected ? string.Empty : "hidden")">
             <div class="admin-card-section">
                 <div class="mb-6">
-                    <h2 class="admin-section-title">Thông tin bảng lương giáo viên</h2>
-                    <p class="admin-section-subtitle">Thiết lập bậc lương để tự động tính theo ma trận, hoặc nhập lương khoán để ghi đè.</p>
+                    <h2 class="admin-section-title">Thiết lập lương giáo viên</h2>
+                    <p class="admin-section-subtitle">Chọn bậc lương để tính theo ma trận đơn giá, hoặc nhập lương khoán để ghi đè cho giáo viên này.</p>
                 </div>
 
                 <div class="admin-field-grid two-col">
                     <div>
                         <label asp-for="SalaryTier" class="admin-label"></label>
                         <select asp-for="SalaryTier" class="admin-select">
-                            <option value="1">Tier 1 (Cơ bản)</option>
-                            <option value="2">Tier 2</option>
-                            <option value="3">Tier 3</option>
-                            <option value="4">Tier 4</option>
-                            <option value="5">Tier 5 (Chuyên gia)</option>
+                            <option value="1">Bậc 1</option>
+                            <option value="2">Bậc 2</option>
+                            <option value="3">Bậc 3</option>
+                            <option value="4">Bậc 4</option>
+                            <option value="5">Bậc 5</option>
                         </select>
+                        <p class="admin-hint mt-1">Dùng khi giáo viên nhận lương theo bảng đơn giá chung.</p>
                         <span asp-validation-for="SalaryTier" class="admin-validation"></span>
                     </div>
 
@@ -177,9 +197,9 @@
                         <label asp-for="CustomSessionRate" class="admin-label"></label>
                         <div class="relative">
                             <input asp-for="CustomSessionRate" type="number" step="10000" class="admin-input pr-12 text-right" placeholder="Ví dụ: 300000" />
-                            <span class="absolute right-3 top-1/2 -translate-y-1/2 text-[#6b7c99] text-sm pointer-events-none">VNĐ</span>
+                            <span class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-[#6b7c99]">VNĐ</span>
                         </div>
-                        <p class="admin-hint mt-1">Bỏ trống để tính theo ma trận Tier.</p>
+                        <p class="admin-hint mt-1">Để trống nếu muốn tính theo bậc lương ở bên trái.</p>
                         <span asp-validation-for="CustomSessionRate" class="admin-validation"></span>
                     </div>
                 </div>
@@ -188,7 +208,14 @@
 
         <div class="admin-actions justify-end">
             <button type="submit" class="admin-btn-primary min-w-[192px]">Lưu cập nhật</button>
-            <a asp-area="Admin" asp-controller="Users" asp-action="Index" class="admin-btn-secondary">Hủy</a>
+            @if (!string.IsNullOrWhiteSpace(Model.ReturnUrl))
+            {
+                <a href="@Model.ReturnUrl" class="admin-btn-secondary">Hủy</a>
+            }
+            else
+            {
+                <a asp-area="Admin" asp-controller="Users" asp-action="Index" class="admin-btn-secondary">Hủy</a>
+            }
         </div>
     </form>
 </section>
@@ -205,9 +232,16 @@
             if (!roleSelect) return;
 
             const updateProfileCards = () => {
-                const selectedText = roleSelect.options[roleSelect.selectedIndex]?.text?.trim().toLowerCase() ?? "";
-                if (studentCard) studentCard.classList.toggle("hidden", selectedText !== "học sinh");
-                if (teacherCard) teacherCard.classList.toggle("hidden", selectedText !== "giáo viên");
+                const selectedOption = roleSelect.options[roleSelect.selectedIndex];
+                const profileType = selectedOption?.dataset.profile ?? "";
+
+                if (studentCard) {
+                    studentCard.classList.toggle("hidden", profileType !== "student");
+                }
+
+                if (teacherCard) {
+                    teacherCard.classList.toggle("hidden", profileType !== "teacher");
+                }
             };
 
             roleSelect.addEventListener("change", updateProfileCards);

@@ -52,6 +52,10 @@
                             <dd>@($"{Model.Price:N0}đ")</dd>
                         </div>
                         <div class="admin-data-item">
+                            <dt>Nhóm môn học</dt>
+                            <dd>@Model.DifficultyLabel</dd>
+                        </div>
+                        <div class="admin-data-item">
                             <dt>Ảnh đại diện</dt>
                             <dd>@(string.IsNullOrWhiteSpace(Model.ImageUrl) ? "Chưa cập nhật" : Model.ImageUrl)</dd>
                         </div>
@@ -122,16 +126,20 @@
             <div class="admin-card">
                 <div class="admin-card-section">
                     <h2 class="admin-section-title">Tổng quan</h2>
-                    <dl class="mt-5 space-y-4">
-                        <div>
-                            <dt class="admin-label !mb-0">Số lớp</dt>
-                            <dd class="mt-1 text-[32px] font-semibold leading-10 text-[#1a1c19]">@Model.TotalClasses</dd>
+                    <div class="mt-5 grid gap-3">
+                        <div class="rounded-xl border border-[#e3e9f2] bg-[#f8fbff] px-4 py-3">
+                            <div class="text-xs font-semibold uppercase tracking-[0.08em] text-[#6b7c99]">Nhóm môn học</div>
+                            <div class="mt-1 text-2xl font-semibold text-[#0f1e38]">@Model.DifficultyLabel</div>
                         </div>
-                        <div>
-                            <dt class="admin-label !mb-0">Số học viên đã ghi danh</dt>
-                            <dd class="mt-1 text-[32px] font-semibold leading-10 text-[#1a1c19]">@Model.TotalEnrollments</dd>
+                        <div class="rounded-xl border border-[#e3e9f2] bg-white px-4 py-3">
+                            <div class="text-xs font-semibold uppercase tracking-[0.08em] text-[#6b7c99]">Số lớp</div>
+                            <div class="mt-1 text-2xl font-semibold text-[#0f1e38]">@Model.TotalClasses</div>
                         </div>
-                    </dl>
+                        <div class="rounded-xl border border-[#e3e9f2] bg-white px-4 py-3">
+                            <div class="text-xs font-semibold uppercase tracking-[0.08em] text-[#6b7c99]">Học viên đã ghi danh</div>
+                            <div class="mt-1 text-2xl font-semibold text-[#0f1e38]">@Model.TotalEnrollments</div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </aside>

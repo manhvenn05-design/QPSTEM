@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Rendering;
 
@@ -132,6 +132,7 @@ public class CreateUserViewModel : IValidatableObject
 public class EditUserViewModel : IValidatableObject
 {
     public int Id { get; set; }
+    public string? ReturnUrl { get; set; }
 
     [Required(ErrorMessage = "Vui lòng nhập họ và tên.")]
     [StringLength(100)]
@@ -242,3 +243,5 @@ public class UserDetailsViewModel
     public int? SalaryTier { get; set; }
     public decimal? CustomSessionRate { get; set; }
 }
+
+

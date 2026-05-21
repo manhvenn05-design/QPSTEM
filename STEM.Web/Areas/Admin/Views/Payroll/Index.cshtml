@@ -1,7 +1,10 @@
-@model STEM.Web.Areas.Admin.Models.PayrollManagementViewModel
+﻿@model STEM.Web.Areas.Admin.Models.PayrollManagementViewModel
 
 @{
     ViewData["Title"] = "Bảng lương";
+    var hasRecords = Model.Records.Count > 0;
+    var allApproved = hasRecords && Model.ApprovedTeachers == Model.TotalTeachers;
+    var draftTeachers = Model.TotalTeachers - Model.ApprovedTeachers;
 }
 
 <section class="admin-page">
@@ -12,21 +15,39 @@
         </div>
 
         <div class="admin-actions">
-            <form asp-area="Admin" asp-controller="Payroll" asp-action="Generate" method="post" class="flex items-center gap-3">
+            <form asp-area="Admin" asp-controller="Payroll" asp-action="Generate" method="post" class="flex items-center gap-3"
+                  data-confirm-title="Tạo/Cập nhật bảng lương"
+                  data-confirm-message="Hệ thống sẽ tính lại dữ liệu lương nháp cho toàn bộ giáo viên trong kỳ đang chọn. Bạn có muốn tiếp tục không?"
+                  data-confirm-submit-text="Tạo/Cập nhật">
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="year" value="@Model.Year" />
                 <input type="hidden" name="month" value="@Model.Month" />
                 <button type="submit" class="admin-btn-primary">Tạo/Cập nhật bảng lương</button>
             </form>
 
-            <form asp-area="Admin" asp-controller="Payroll" asp-action="Approve" method="post" class="flex items-center gap-3">
+            <form asp-area="Admin" asp-controller="Payroll" asp-action="Approve" method="post" class="flex items-center gap-3"
+                  data-confirm-title="Chốt kỳ lương"
+                  data-confirm-message="Khi chốt, các bản ghi lương của kỳ này sẽ chuyển sang Approved và giáo viên không thể tiếp tục chỉnh sửa attendance thuộc tháng đó. Bạn có chắc chắn không?"
+                  data-confirm-submit-text="Chốt kỳ lương">
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="year" value="@Model.Year" />
                 <input type="hidden" name="month" value="@Model.Month" />
-                <button type="submit" class="admin-btn-secondary">Chốt kỳ lương</button>
+                <button type="submit" class="admin-btn-secondary" disabled="@(!hasRecords || allApproved)">Chốt kỳ lương</button>
             </form>
         </div>
     </div>
+
+    @if (TempData["SuccessMessage"] is string successMessage)
+    {
+        <div class="admin-alert admin-alert--success">@successMessage</div>
+    }
+
+    @if (TempData["ErrorMessage"] is string errorMessage)
+    {
+        <div class="admin-alert admin-alert--error">@errorMessage</div>
+    }
+
+    
 
     <form method="get" asp-area="Admin" asp-controller="Payroll" asp-action="Index" class="admin-card">
         <div class="admin-card-section">
@@ -46,29 +67,49 @@
         </div>
     </form>
 
-    <div class="grid gap-4 xl:grid-cols-4">
-        <div class="admin-stat-card">
-            <div class="admin-card-section">
-                <p class="text-sm text-[#6b7c99]">Kỳ lương</p>
-                <p class="mt-2 text-2xl font-semibold text-[#0f1e38]">@Model.PeriodLabel</p>
+    <div class="admin-stat-grid four-col">
+        <article class="admin-stat-card">
+            <span class="admin-stat-label">Kỳ lương</span>
+            <div class="admin-stat-value">@Model.PeriodLabel</div>
+            <p class="admin-kicker">Kỳ đang thao tác.</p>
+        </article>
+        <article class="admin-stat-card">
+            <span class="admin-stat-label">Có bảng lương</span>
+            <div class="admin-stat-value">@Model.TotalTeachers</div>
+            <p class="admin-kicker">Số giáo viên đã có bản ghi payroll.</p>
+        </article>
+        <article class="admin-stat-card">
+            <span class="admin-stat-label">Đã chốt</span>
+            <div class="admin-stat-value">@Model.ApprovedTeachers</div>
+            <p class="admin-kicker">Còn @draftTeachers bản nháp cần rà soát.</p>
+        </article>
+        <article class="admin-stat-card">
+            <span class="admin-stat-label">Tổng chi dự kiến</span>
+            <div class="admin-stat-value">@Model.TotalPayout.ToString("N0") đ</div>
+            <p class="admin-kicker">Draft chưa chốt: @Model.DraftPayout.ToString("N0") đ</p>
+        </article>
+    </div>
+
+    <div class="admin-card">
+        <div class="admin-card-section flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+                <h2 class="admin-section-title">Trạng thái kỳ hiện tại</h2>
+                @if (!hasRecords)
+                {
+                    <p class="admin-section-subtitle">Chưa có bản ghi lương nào cho kỳ này. Hãy bấm <strong>Tạo/Cập nhật bảng lương</strong> để sinh dữ liệu.</p>
+                }
+                else if (allApproved)
+                {
+                    <p class="admin-section-subtitle">Toàn bộ bản ghi của kỳ này đã được chốt. Attendance tương ứng đã bị khóa chỉnh sửa từ phía giáo viên.</p>
+                }
+                else
+                {
+                    <p class="admin-section-subtitle">Kỳ này đang có <strong>@draftTeachers</strong> bản nháp. Bạn có thể điều chỉnh thưởng/phạt rồi chốt khi số liệu đã ổn.</p>
+                }
             </div>
-        </div>
-        <div class="admin-stat-card">
-            <div class="admin-card-section">
-                <p class="text-sm text-[#6b7c99]">Giáo viên có bảng lương</p>
-                <p class="mt-2 text-2xl font-semibold text-[#0f1e38]">@Model.TotalTeachers</p>
-            </div>
-        </div>
-        <div class="admin-stat-card">
-            <div class="admin-card-section">
-                <p class="text-sm text-[#6b7c99]">Đã chốt</p>
-                <p class="mt-2 text-2xl font-semibold text-[#0f1e38]">@Model.ApprovedTeachers</p>
-            </div>
-        </div>
-        <div class="admin-stat-card">
-            <div class="admin-card-section">
-                <p class="text-sm text-[#6b7c99]">Tổng chi dự kiến</p>
-                <p class="mt-2 text-2xl font-semibold text-[#0f1e38]">@Model.TotalPayout.ToString("N0") đ</p>
+            <div class="flex flex-wrap gap-2">
+                <span class="admin-tag admin-tag--neutral">Draft: @draftTeachers</span>
+                <span class="admin-tag admin-tag--success">Approved: @Model.ApprovedTeachers</span>
             </div>
         </div>
     </div>
@@ -78,12 +119,12 @@
             <div class="flex items-center justify-between gap-3">
                 <div>
                     <h2 class="admin-section-title">Chi tiết theo giáo viên</h2>
-                    <p class="admin-section-subtitle">Dữ liệu draft có thể được tạo lại, bản ghi đã chốt sẽ khóa khỏi thao tác cập nhật từ giáo viên.</p>
+                    <p class="admin-section-subtitle">Dữ liệu draft có thể tạo lại. Bản ghi đã chốt sẽ khóa khỏi thao tác cập nhật từ giáo viên.</p>
                 </div>
                 <div class="text-sm text-[#6b7c99]">Tổng draft chưa chốt: @Model.DraftPayout.ToString("N0") đ</div>
             </div>
 
-            @if (Model.Records.Count == 0)
+            @if (!hasRecords)
             {
                 <div class="mt-6 rounded-lg border border-dashed border-[#dce6f5] bg-[#f8fbff] px-4 py-6 text-sm text-[#6b7c99]">
                     Chưa có bản ghi lương cho kỳ này. Bấm <strong>Tạo/Cập nhật bảng lương</strong> để sinh dữ liệu.
@@ -110,7 +151,8 @@
                         <tbody>
                             @foreach (var record in Model.Records)
                             {
-                                var badgeClass = string.Equals(record.Status, STEM.Web.Services.AttendanceWorkflowService.PayrollRecordStatusApproved, StringComparison.OrdinalIgnoreCase)
+                                var isApproved = string.Equals(record.Status, STEM.Web.Services.AttendanceWorkflowService.PayrollRecordStatusApproved, StringComparison.OrdinalIgnoreCase);
+                                var badgeClass = isApproved
                                     ? "bg-[#edf7e8] text-[#456c3f]"
                                     : "bg-[#fff4e8] text-[#9b682f]";
 
@@ -136,15 +178,15 @@
                                         @(string.IsNullOrWhiteSpace(record.AdjustmentNotes) ? "-" : record.AdjustmentNotes)
                                     </td>
                                     <td class="text-right">
-                                        @if (!string.Equals(record.Status, STEM.Web.Services.AttendanceWorkflowService.PayrollRecordStatusApproved, StringComparison.OrdinalIgnoreCase))
+                                        @if (!isApproved)
                                         {
-                                            <button type="button" class="admin-btn-secondary py-1 px-2 text-xs" 
-                                                onclick="openEditDraftModal(this)"
-                                                data-id="@record.Id"
-                                                data-name="@record.TeacherName"
-                                                data-bonuses="@record.Bonuses"
-                                                data-deductions="@record.Deductions"
-                                                data-notes="@record.AdjustmentNotes">
+                                            <button type="button" class="admin-btn-secondary px-2 py-1 text-xs"
+                                                    onclick="openEditDraftModal(this)"
+                                                    data-id="@record.Id"
+                                                    data-name="@record.TeacherName"
+                                                    data-bonuses="@record.Bonuses"
+                                                    data-deductions="@record.Deductions"
+                                                    data-notes="@record.AdjustmentNotes">
                                                 Điều chỉnh
                                             </button>
                                         }
@@ -159,14 +201,13 @@
     </div>
 </section>
 
-<!-- Modal Cập nhật Draft -->
 <div id="editDraftModal" class="fixed inset-0 z-50 flex hidden items-center justify-center bg-[#0f1e38]/50 backdrop-blur-sm">
     <form asp-area="Admin" asp-controller="Payroll" asp-action="UpdateDraft" method="post" class="admin-card w-full max-w-lg">
         @Html.AntiForgeryToken()
         <input type="hidden" name="year" value="@Model.Year" />
         <input type="hidden" name="month" value="@Model.Month" />
         <input type="hidden" id="editDraftId" name="Id" value="" />
-        
+
         <div class="admin-card-section border-b border-[#dce6f5]">
             <h3 class="admin-section-title">Điều chỉnh bảng lương</h3>
             <p class="admin-section-subtitle">Giáo viên: <strong id="editDraftName"></strong></p>
@@ -200,7 +241,6 @@
             document.getElementById('editDraftBonuses').value = btn.dataset.bonuses;
             document.getElementById('editDraftDeductions').value = btn.dataset.deductions;
             document.getElementById('editDraftNotes').value = btn.dataset.notes;
-            
             document.getElementById('editDraftModal').classList.remove('hidden');
         }
 

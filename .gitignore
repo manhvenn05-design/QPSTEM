@@ -4,6 +4,7 @@ obj/
 .vscode/
 buildverify/
 tmp/
+artifacts/
 *.user
 *.suo
 stdout.log

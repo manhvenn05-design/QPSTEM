@@ -1,4 +1,4 @@
-@model STEM.Web.Areas.Admin.Models.EditCourseViewModel
+﻿@model STEM.Web.Areas.Admin.Models.EditCourseViewModel
 
 @{
     ViewData["Title"] = "Cập nhật khóa học";
@@ -8,18 +8,26 @@
     <div class="admin-page-header">
         <div>
             <h1 class="admin-page-title">Cập nhật khóa học</h1>
-            <p class="admin-page-subtitle">Chỉnh sửa dữ liệu khóa học và thay ảnh đại diện khi cần.</p>
+            <p class="admin-page-subtitle">Chỉnh sửa thông tin khóa học, nhóm môn học và hình ảnh khi cần.</p>
         </div>
 
         <div class="admin-actions">
             <a asp-area="Admin" asp-controller="Courses" asp-action="Details" asp-route-id="@Model.Id" class="admin-btn-secondary">Xem chi tiết</a>
-            <a asp-area="Admin" asp-controller="Courses" asp-action="Index" class="admin-btn-secondary">Quay lại danh sách</a>
+            @if (!string.IsNullOrWhiteSpace(Model.ReturnUrl))
+            {
+                <a href="@Model.ReturnUrl" class="admin-btn-secondary">Quay lại cấu hình lương</a>
+            }
+            else
+            {
+                <a asp-area="Admin" asp-controller="Courses" asp-action="Index" class="admin-btn-secondary">Quay lại danh sách</a>
+            }
         </div>
     </div>
 
     <form asp-area="Admin" asp-controller="Courses" asp-action="Edit" method="post" enctype="multipart/form-data" class="admin-page">
         @Html.AntiForgeryToken()
         <input asp-for="Id" type="hidden" />
+        <input asp-for="ReturnUrl" type="hidden" />
         <div asp-validation-summary="ModelOnly" class="admin-alert admin-alert--error"></div>
 
         <div class="admin-card">
@@ -67,6 +75,17 @@
                     </div>
 
                     <div class="md:col-span-2">
+                        <label asp-for="DifficultyLevel" class="admin-label"></label>
+                        <select asp-for="DifficultyLevel" class="admin-select">
+                            <option value="1">Môn cơ bản</option>
+                            <option value="2">Môn nâng cao</option>
+                            <option value="3">Môn chuyên sâu</option>
+                        </select>
+                        <p class="admin-hint mt-2">Nhóm môn học này sẽ được dùng khi hệ thống tra bảng đơn giá lương theo bậc giáo viên.</p>
+                        <span asp-validation-for="DifficultyLevel" class="admin-validation"></span>
+                    </div>
+
+                    <div class="md:col-span-2">
                         <label asp-for="ImageFile" class="admin-label"></label>
                         <input asp-for="ImageFile" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" class="admin-input admin-file" />
                         @if (!string.IsNullOrWhiteSpace(Model.CurrentImageUrl))
@@ -94,7 +113,14 @@
 
         <div class="admin-actions justify-end">
             <button type="submit" class="admin-btn-primary min-w-[192px]">Lưu cập nhật</button>
-            <a asp-area="Admin" asp-controller="Courses" asp-action="Index" class="admin-btn-secondary">Hủy</a>
+            @if (!string.IsNullOrWhiteSpace(Model.ReturnUrl))
+            {
+                <a href="@Model.ReturnUrl" class="admin-btn-secondary">Hủy</a>
+            }
+            else
+            {
+                <a asp-area="Admin" asp-controller="Courses" asp-action="Index" class="admin-btn-secondary">Hủy</a>
+            }
         </div>
     </form>
 </section>

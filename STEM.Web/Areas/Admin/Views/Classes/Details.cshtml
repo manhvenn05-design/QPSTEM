@@ -1,20 +1,20 @@
-@model STEM.Web.Areas.Admin.Models.ClassDetailsViewModel
+﻿@model STEM.Web.Areas.Admin.Models.ClassDetailsViewModel
 
 @{
-    ViewData["Title"] = "Chi tiết lớp học";
+    ViewData["Title"] = "Chi tiáº¿t lá»›p há»c";
 }
 
 <section class="admin-page">
     <div class="admin-page-header">
         <div>
-            <h1 class="admin-page-title">Chi tiết lớp học</h1>
-            <p class="admin-page-subtitle">Theo dõi lớp, thêm học viên và mở các buổi học liên quan.</p>
+            <h1 class="admin-page-title">Chi tiáº¿t lá»›p há»c</h1>
+            <p class="admin-page-subtitle">Theo dÃµi lá»›p, thÃªm há»c viÃªn vÃ  má»Ÿ cÃ¡c buá»•i há»c liÃªn quan.</p>
         </div>
 
         <div class="admin-actions">
-            <a asp-area="Admin" asp-controller="Sessions" asp-action="Create" asp-route-classId="@Model.Id" class="admin-btn-secondary">Thêm buổi học</a>
-            <a asp-area="Admin" asp-controller="Classes" asp-action="Edit" asp-route-id="@Model.Id" class="admin-btn-primary">Cập nhật</a>
-            <a asp-area="Admin" asp-controller="Classes" asp-action="Index" class="admin-btn-secondary">Quay lại</a>
+            <a asp-area="Admin" asp-controller="Sessions" asp-action="Create" asp-route-classId="@Model.Id" class="admin-btn-secondary">ThÃªm buá»•i há»c</a>
+            <a asp-area="Admin" asp-controller="Classes" asp-action="Edit" asp-route-id="@Model.Id" class="admin-btn-primary">Cáº­p nháº­t</a>
+            <a asp-area="Admin" asp-controller="Classes" asp-action="Index" class="admin-btn-secondary">Quay láº¡i</a>
         </div>
     </div>
 
@@ -32,32 +32,32 @@
         <div class="space-y-6">
             <div class="admin-card">
                 <div class="admin-card-section">
-                    <h2 class="admin-section-title">Thông tin lớp học</h2>
+                    <h2 class="admin-section-title">ThÃ´ng tin lá»›p há»c</h2>
 
                     <dl class="admin-data-grid two-col mt-6">
                         <div class="admin-data-item">
-                            <dt>Mã lớp</dt>
+                            <dt>MÃ£ lá»›p</dt>
                             <dd>@Model.ClassCode</dd>
                         </div>
                         <div class="admin-data-item">
-                            <dt>Khóa học</dt>
+                            <dt>KhÃ³a há»c</dt>
                             <dd>@Model.CourseName (@Model.CourseCode)</dd>
                         </div>
                         <div class="admin-data-item">
-                            <dt>Giáo viên phụ trách</dt>
+                            <dt>GiÃ¡o viÃªn phá»¥ trÃ¡ch</dt>
                             <dd>@Model.TeacherName</dd>
                         </div>
                         <div class="admin-data-item">
-                            <dt>Liên hệ giáo viên</dt>
-                            <dd>@(string.IsNullOrWhiteSpace(Model.TeacherEmail) ? Model.TeacherPhone ?? "Chưa cập nhật" : Model.TeacherEmail)</dd>
+                            <dt>LiÃªn há»‡ giÃ¡o viÃªn</dt>
+                            <dd>@(string.IsNullOrWhiteSpace(Model.TeacherEmail) ? Model.TeacherPhone ?? "ChÆ°a cáº­p nháº­t" : Model.TeacherEmail)</dd>
                         </div>
                         <div class="admin-data-item">
-                            <dt>Ngày bắt đầu</dt>
+                            <dt>NgÃ y báº¯t Ä‘áº§u</dt>
                             <dd>@Model.StartDate.ToString("dd/MM/yyyy")</dd>
                         </div>
                         <div class="admin-data-item">
-                            <dt>Ngày kết thúc</dt>
-                            <dd>@(Model.EndDate?.ToString("dd/MM/yyyy") ?? "Đang mở")</dd>
+                            <dt>NgÃ y káº¿t thÃºc</dt>
+                            <dd>@(Model.EndDate?.ToString("dd/MM/yyyy") ?? "Äang má»Ÿ")</dd>
                         </div>
                     </dl>
                 </div>
@@ -67,8 +67,8 @@
                 <div class="admin-card-section">
                     <div class="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
                         <div>
-                            <h2 class="admin-section-title">Thêm học viên vào lớp</h2>
-                            <p class="admin-section-subtitle">Tìm theo tên hoặc username rồi chọn nhiều học viên cùng lúc.</p>
+                            <h2 class="admin-section-title">ThÃªm há»c viÃªn vÃ o lá»›p</h2>
+                            <p class="admin-section-subtitle">TÃ¬m theo tÃªn hoáº·c username rá»“i chá»n nhiá»u há»c viÃªn cÃ¹ng lÃºc.</p>
                         </div>
 
                         <form method="get" class="flex w-full flex-col gap-3 xl:max-w-[420px]">
@@ -78,15 +78,15 @@
                                 <input name="studentSearch"
                                        value="@Model.StudentSearchTerm"
                                        class="admin-input pl-12"
-                                       placeholder="Tìm theo tên hoặc username" />
+                                       placeholder="TÃ¬m theo tÃªn hoáº·c username" />
                             </div>
-                            <button type="submit" class="admin-btn-secondary w-full justify-center">Lọc danh sách</button>
+                            <button type="submit" class="admin-btn-secondary w-full justify-center">Lá»c danh sÃ¡ch</button>
                         </form>
                     </div>
 
                     @if (Model.AvailableStudents.Count == 0)
                     {
-                        <div class="admin-empty">Không còn học viên phù hợp để thêm vào lớp này.</div>
+                        <div class="admin-empty">KhÃ´ng cÃ²n há»c viÃªn phÃ¹ há»£p Ä‘á»ƒ thÃªm vÃ o lá»›p nÃ y.</div>
                     }
                     else
                     {
@@ -95,10 +95,10 @@
                             <input type="hidden" name="id" value="@Model.Id" />
 
                             <div class="flex flex-wrap items-center justify-between gap-3">
-                                <p class="text-sm text-[#73796b]">@Model.AvailableStudentCount học viên đang hiển thị</p>
+                                <p class="text-sm text-[#73796b]">@Model.AvailableStudentCount há»c viÃªn Ä‘ang hiá»ƒn thá»‹</p>
                                 <label class="inline-flex items-center gap-2 text-sm font-medium text-[#42493d]">
                                     <input type="checkbox" data-select-all-students class="h-4 w-4 rounded border-[#c2c9b9] text-[#1a3a6e] focus:ring-[#1a3a6e]" />
-                                    <span>Chọn tất cả</span>
+                                    <span>Chá»n táº¥t cáº£</span>
                                 </label>
                             </div>
 
@@ -107,10 +107,10 @@
                                     <table class="admin-table min-w-full">
                                         <thead>
                                             <tr>
-                                                <th class="w-[64px]">Chọn</th>
-                                                <th>Học viên</th>
-                                                <th>Tên đăng nhập</th>
-                                                <th>Trường hiện tại</th>
+                                                <th class="w-[64px]">Chá»n</th>
+                                                <th>Há»c viÃªn</th>
+                                                <th>TÃªn Ä‘Äƒng nháº­p</th>
+                                                <th>TrÆ°á»ng hiá»‡n táº¡i</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -126,7 +126,7 @@
                                                     </td>
                                                     <td><strong>@student.FullName</strong></td>
                                                     <td>@student.Username</td>
-                                                    <td>@(string.IsNullOrWhiteSpace(student.SchoolName) ? "Chưa cập nhật" : student.SchoolName)</td>
+                                                    <td>@(string.IsNullOrWhiteSpace(student.SchoolName) ? "ChÆ°a cáº­p nháº­t" : student.SchoolName)</td>
                                                 </tr>
                                             }
                                         </tbody>
@@ -135,8 +135,8 @@
                             </div>
 
                             <div class="flex flex-wrap items-center justify-between gap-3">
-                                <p class="text-sm text-[#73796b]"><span data-selected-count>0</span> học viên đã chọn</p>
-                                <button type="submit" class="admin-btn-primary min-w-[220px] justify-center">Thêm học viên đã chọn</button>
+                                <p class="text-sm text-[#73796b]"><span data-selected-count>0</span> há»c viÃªn Ä‘Ã£ chá»n</p>
+                                <button type="submit" class="admin-btn-primary min-w-[220px] justify-center">ThÃªm há»c viÃªn Ä‘Ã£ chá»n</button>
                             </div>
                         </form>
                     }
@@ -145,12 +145,12 @@
 
             <div class="admin-card">
                 <div class="admin-card-section">
-                    <h2 class="admin-section-title">Học viên trong lớp</h2>
-                    <p class="admin-section-subtitle">Danh sách học viên đã ghi danh.</p>
+                    <h2 class="admin-section-title">Há»c viÃªn trong lá»›p</h2>
+                    <p class="admin-section-subtitle">Danh sÃ¡ch há»c viÃªn Ä‘Ã£ ghi danh.</p>
 
                     @if (Model.Students.Count == 0)
                     {
-                        <div class="admin-empty">Lớp này chưa có học viên nào.</div>
+                        <div class="admin-empty">Lá»›p nÃ y chÆ°a cÃ³ há»c viÃªn nÃ o.</div>
                     }
                     else
                     {
@@ -158,10 +158,10 @@
                             <table class="admin-table min-w-full">
                                 <thead>
                                     <tr>
-                                        <th>Học viên</th>
-                                        <th>Tên đăng nhập</th>
-                                        <th>Ngày ghi danh</th>
-                                        <th class="text-right">Thao tác</th>
+                                        <th>Há»c viÃªn</th>
+                                        <th>TÃªn Ä‘Äƒng nháº­p</th>
+                                        <th>NgÃ y ghi danh</th>
+                                        <th class="text-right">Thao tÃ¡c</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -180,9 +180,9 @@
                                                         <button type="submit"
                                                                 class="admin-btn-secondary !h-10"
                                                                 data-confirm-submit
-                                                                data-confirm-title="Gỡ học viên"
-                                                                data-confirm-message="Bạn có muốn gỡ học viên này khỏi lớp không?">
-                                                            Gỡ khỏi lớp
+                                                                data-confirm-title="Gá»¡ há»c viÃªn"
+                                                                data-confirm-message="Báº¡n cÃ³ muá»‘n gá»¡ há»c viÃªn nÃ y khá»i lá»›p khÃ´ng?">
+                                                            Gá»¡ khá»i lá»›p
                                                         </button>
                                                     </form>
                                                 </div>
@@ -200,18 +200,18 @@
                 <div class="admin-card-section">
                     <div class="flex items-center justify-between gap-4">
                         <div>
-                            <h2 class="admin-section-title">Buổi học đã tạo</h2>
-                            <p class="admin-section-subtitle">Tạo buổi mới hoặc mở nhanh sang điểm danh.</p>
+                            <h2 class="admin-section-title">Buá»•i há»c Ä‘Ã£ táº¡o</h2>
+                            <p class="admin-section-subtitle">Táº¡o buá»•i má»›i hoáº·c má»Ÿ nhanh sang Ä‘iá»ƒm danh.</p>
                         </div>
                         <div class="flex gap-2">
-                            <a asp-area="Admin" asp-controller="Sessions" asp-action="Generate" asp-route-classId="@Model.Id" class="admin-btn-primary !h-10">Sinh lịch tự động</a>
-                            <a asp-area="Admin" asp-controller="Sessions" asp-action="Create" asp-route-classId="@Model.Id" class="admin-btn-secondary !h-10">Thêm buổi học</a>
+                            <a asp-area="Admin" asp-controller="Sessions" asp-action="Generate" asp-route-classId="@Model.Id" class="admin-btn-primary !h-10">Sinh lá»‹ch tá»± Ä‘á»™ng</a>
+                            <a asp-area="Admin" asp-controller="Sessions" asp-action="Create" asp-route-classId="@Model.Id" class="admin-btn-secondary !h-10">ThÃªm buá»•i há»c</a>
                         </div>
                     </div>
 
                     @if (Model.Sessions.Count == 0)
                     {
-                        <div class="admin-empty">Lớp này chưa có buổi học nào.</div>
+                        <div class="admin-empty">Lá»›p nÃ y chÆ°a cÃ³ buá»•i há»c nÃ o.</div>
                     }
                     else
                     {
@@ -219,25 +219,25 @@
                             <table class="admin-table min-w-full">
                                 <thead>
                                     <tr>
-                                        <th>Buổi</th>
-                                        <th>Ngày học</th>
-                                        <th>Khung giờ</th>
-                                        <th>Chủ đề</th>
-                                        <th class="text-right">Thao tác</th>
+                                        <th>Buá»•i</th>
+                                        <th>NgÃ y há»c</th>
+                                        <th>Khung giá»</th>
+                                        <th>Chá»§ Ä‘á»</th>
+                                        <th class="text-right">Thao tÃ¡c</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     @foreach (var session in Model.Sessions)
                                     {
                                         <tr>
-                                            <td><strong>Buổi @session.SessionNo</strong></td>
+                                            <td><strong>Buá»•i @session.SessionNo</strong></td>
                                             <td>@session.Date.ToString("dd/MM/yyyy")</td>
                                             <td>@session.StartTime.ToString("HH:mm") - @session.EndTime.ToString("HH:mm")</td>
-                                            <td>@(string.IsNullOrWhiteSpace(session.Topic) ? "Chưa cập nhật" : session.Topic)</td>
+                                            <td>@(string.IsNullOrWhiteSpace(session.Topic) ? "ChÆ°a cáº­p nháº­t" : session.Topic)</td>
                                             <td>
                                                 <div class="flex justify-end gap-3">
-                                                    <a asp-area="Admin" asp-controller="Sessions" asp-action="Details" asp-route-id="@session.Id" class="admin-btn-secondary !h-10">Chi tiết</a>
-                                                    <a asp-area="Admin" asp-controller="Attendances" asp-action="Board" asp-route-sessionId="@session.Id" class="admin-btn-secondary !h-10">Điểm danh</a>
+                                                    <a asp-area="Admin" asp-controller="Sessions" asp-action="Details" asp-route-id="@session.Id" class="admin-btn-secondary !h-10">Chi tiáº¿t</a>
+                                                    <a asp-area="Admin" asp-controller="Attendances" asp-action="Board" asp-route-sessionId="@session.Id" class="admin-btn-secondary !h-10">Äiá»ƒm danh</a>
                                                 </div>
                                             </td>
                                         </tr>
@@ -253,10 +253,10 @@
         <aside class="space-y-6">
             <div class="admin-card">
                 <div class="admin-card-section">
-                    <h2 class="admin-section-title">Trạng thái</h2>
+                    <h2 class="admin-section-title">Tráº¡ng thÃ¡i</h2>
                     <div class="mt-5">
                         <span class="inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-semibold @Model.StatusBadgeClass">
-                            <span class="h-2 w-2 rounded-full @(Model.StatusLabel == "Đang mở" ? "bg-[#456c3f]" : Model.StatusLabel == "Tạm dừng" ? "bg-[#9b682f]" : Model.StatusLabel == "Đã hủy" ? "bg-[#b33a3a]" : "bg-[#42493d]")"></span>
+                            <span class="h-2 w-2 rounded-full @(Model.StatusLabel == "Äang má»Ÿ" ? "bg-[#456c3f]" : Model.StatusLabel == "Táº¡m dá»«ng" ? "bg-[#9b682f]" : Model.StatusLabel == "ÄÃ£ há»§y" ? "bg-[#b33a3a]" : "bg-[#42493d]")"></span>
                             @Model.StatusLabel
                         </span>
                     </div>
@@ -266,28 +266,28 @@
             <div class="admin-card">
                 <div class="admin-card-section">
                     <h2 class="admin-section-title">Tổng quan lớp</h2>
-                    <dl class="mt-5 space-y-4">
-                        <div>
-                            <dt class="admin-label !mb-0">Độ tuổi phù hợp</dt>
-                            <dd class="mt-1 text-[32px] font-semibold leading-10 text-[#1a1c19]">@Model.AgeRangeText</dd>
+                    <div class="mt-5 grid gap-3">
+                        <div class="rounded-xl border border-[#e3e9f2] bg-[#f8fbff] px-4 py-3">
+                            <div class="text-xs font-semibold uppercase tracking-[0.08em] text-[#6b7c99]">Độ tuổi phù hợp</div>
+                            <div class="mt-1 text-2xl font-semibold text-[#0f1e38]">@Model.AgeRangeText</div>
                         </div>
-                        <div>
-                            <dt class="admin-label !mb-0">Học phí khóa</dt>
-                            <dd class="mt-1 text-[32px] font-semibold leading-10 text-[#1a1c19]">@Model.PriceText</dd>
+                        <div class="rounded-xl border border-[#e3e9f2] bg-white px-4 py-3">
+                            <div class="text-xs font-semibold uppercase tracking-[0.08em] text-[#6b7c99]">Học phí khóa</div>
+                            <div class="mt-1 text-2xl font-semibold text-[#0f1e38]">@Model.PriceText</div>
                         </div>
-                        <div>
-                            <dt class="admin-label !mb-0">Tiến độ lịch học</dt>
-                            <dd class="mt-1 text-[32px] font-semibold leading-10 text-[#1a1c19]">@Model.SessionCount / @Model.TotalSessionsText</dd>
+                        <div class="rounded-xl border border-[#e3e9f2] bg-white px-4 py-3">
+                            <div class="text-xs font-semibold uppercase tracking-[0.08em] text-[#6b7c99]">Tiến độ lịch học</div>
+                            <div class="mt-1 text-2xl font-semibold text-[#0f1e38]">@Model.SessionCount / @Model.TotalSessionsText</div>
                         </div>
-                        <div>
-                            <dt class="admin-label !mb-0">Sĩ số hiện tại</dt>
-                            <dd class="mt-1 text-[32px] font-semibold leading-10 text-[#1a1c19]">@Model.EnrollmentCount học viên</dd>
+                        <div class="rounded-xl border border-[#e3e9f2] bg-white px-4 py-3">
+                            <div class="text-xs font-semibold uppercase tracking-[0.08em] text-[#6b7c99]">Sĩ số hiện tại</div>
+                            <div class="mt-1 text-2xl font-semibold text-[#0f1e38]">@Model.EnrollmentCount học viên</div>
                         </div>
-                        <div>
-                            <dt class="admin-label !mb-0">Kết quả lọc hiện tại</dt>
-                            <dd class="mt-1 text-[32px] font-semibold leading-10 text-[#1a1c19]">@Model.AvailableStudentCount học viên</dd>
+                        <div class="rounded-xl border border-[#e3e9f2] bg-white px-4 py-3">
+                            <div class="text-xs font-semibold uppercase tracking-[0.08em] text-[#6b7c99]">Kết quả lọc hiện tại</div>
+                            <div class="mt-1 text-2xl font-semibold text-[#0f1e38]">@Model.AvailableStudentCount học viên</div>
                         </div>
-                    </dl>
+                    </div>
                 </div>
             </div>
         </aside>
