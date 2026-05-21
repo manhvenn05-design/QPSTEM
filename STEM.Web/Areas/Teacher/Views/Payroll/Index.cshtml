@@ -21,9 +21,12 @@
                         <h2 class="teacher-section-title text-[#1a3a6e]">Lương tạm tính tháng @Model.CurrentMonthEstimate.Month.ToString("00")/@Model.CurrentMonthEstimate.Year</h2>
                         <p class="teacher-section-subtitle">Dữ liệu được cập nhật theo thời gian thực dựa trên các buổi dạy đã điểm danh hợp lệ.</p>
                     </div>
-                    <div class="text-right">
-                        <p class="text-sm font-semibold text-[#6b7c99] uppercase tracking-wider">Tổng thu nhập ước tính</p>
-                        <p class="text-3xl font-bold text-[#1a3a6e]">@Model.CurrentMonthEstimate.EstimatedTotalPay.ToString("N0") ₫</p>
+                    <div class="text-right flex flex-col items-end gap-2">
+                        <div>
+                            <p class="text-sm font-semibold text-[#6b7c99] uppercase tracking-wider">Tổng thu nhập ước tính</p>
+                            <p class="text-3xl font-bold text-[#1a3a6e]">@Model.CurrentMonthEstimate.EstimatedTotalPay.ToString("N0") ₫</p>
+                        </div>
+                        <a asp-area="Teacher" asp-controller="Payroll" asp-action="Period" asp-route-year="@Model.CurrentMonthEstimate.Year" asp-route-month="@Model.CurrentMonthEstimate.Month" class="teacher-btn-secondary !py-1.5 !px-3 !text-xs">Xem chi tiết</a>
                     </div>
                 </div>
             </div>

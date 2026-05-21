@@ -158,7 +158,28 @@ public class PayrollController : Controller
 
         if (record == null)
         {
-            return NotFound("Không tìm thấy bảng lương cho kỳ này.");
+            if (id.HasValue || !year.HasValue || !month.HasValue)
+            {
+                return NotFound("Không tìm thấy bảng lương cho kỳ này.");
+            }
+
+            // Mock draft record for real-time viewing before admin generates
+            var teacherName = await _context.Users.Where(x => x.Id == teacherId.Value).Select(x => x.FullName).FirstOrDefaultAsync(ct);
+            record = new
+            {
+                Id = 0,
+                Year = year.Value,
+                Month = month.Value,
+                TotalValidSessions = 0,
+                SessionEarnings = 0m,
+                Bonuses = 0m,
+                Deductions = 0m,
+                TotalPay = 0m,
+                Status = "Nháp",
+                CreatedAt = DateTime.UtcNow,
+                ApprovedAt = (DateTime?)null,
+                TeacherName = teacherName ?? string.Empty
+            };
         }
 
         var teacherProfile = await _context.Set<TeacherProfile>()
@@ -203,6 +224,7 @@ public class PayrollController : Controller
         var invalidCount = sessions.Count(s => string.Equals(s.PayrollStatus, AttendanceIntegrityRules.PayrollStatusInvalid, StringComparison.OrdinalIgnoreCase));
         var pendingCount = sessions.Count(s => string.Equals(s.PayrollStatus, AttendanceIntegrityRules.PayrollStatusPending, StringComparison.OrdinalIgnoreCase));
         var isApproved = string.Equals(record.Status, AttendanceWorkflowService.PayrollRecordStatusApproved, StringComparison.OrdinalIgnoreCase);
+        // Nếu là bản ghi đã duyệt, không lấy estimate thực tế. Nếu chưa duyệt hoặc mock (Id = 0), luôn tính lại realtime.
         var liveEstimate = isApproved
             ? null
             : await _payrollService.GetTeacherEstimateAsync(teacherId.Value, record.Year, record.Month, today, ct);

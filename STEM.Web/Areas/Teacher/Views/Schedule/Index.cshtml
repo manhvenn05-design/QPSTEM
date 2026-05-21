@@ -111,17 +111,15 @@
                             // ── Màu card theo trạng thái + substitute ──────────────────────
                             string cardStyle, borderColor, timeColor, badgeBg;
                             if (session.IsSubstituteAssignedToMe) {
-                                // Dạy thay: nền xanh dương đậm, viền trái 4px solid
-                                cardStyle   = "background:linear-gradient(135deg,#eff6ff 0%,#dbeafe 100%);border-left:4px solid #2563eb;box-shadow:0 2px 8px rgba(37,99,235,0.18);";
+                                cardStyle   = "background:#f0f7ff;border-left:4px solid #2563eb;";
                                 borderColor = "#2563eb";
                                 timeColor   = "#1d4ed8";
-                                badgeBg     = "background:#2563eb;color:#fff;";
+                                badgeBg     = "background:#dbeafe;color:#1e40af;";
                             } else if (session.IsSubstituteAssignedToOther) {
-                                // Đã giao thay: nền xám tím nhạt, viền nét đứt
-                                cardStyle   = "background:repeating-linear-gradient(135deg,#f5f3ff,#f5f3ff 6px,#ede9fe 6px,#ede9fe 12px);border-left:4px solid #7c3aed;opacity:0.85;";
-                                borderColor = "#7c3aed";
-                                timeColor   = "#6d28d9";
-                                badgeBg     = "background:#7c3aed;color:#fff;";
+                                cardStyle   = "background:#faf9fb;border-left:4px solid #9ca3af;opacity:0.80;";
+                                borderColor = "#9ca3af";
+                                timeColor   = "#6b7280";
+                                badgeBg     = "background:#f3f4f6;color:#6b7280;";
                             } else if (session.StatusBadgeClass == "today") {
                                 cardStyle   = "background:#f0fdf4;border-left:3px solid #16a34a;";
                                 borderColor = "#16a34a";
@@ -153,7 +151,7 @@
                                 : (session.StatusBadgeClass == "today" ? "Chưa điểm danh" : "—");
 
                             <button type="button"
-                                    class="popup-trigger pointer-events-auto z-10 mx-0.5 my-[2px] flex min-h-0 w-full flex-col overflow-hidden rounded-md text-left transition-shadow @(session.IsSubstituteAssignedToMe ? "shadow-md hover:shadow-lg" : session.IsSubstituteAssignedToOther ? "shadow-sm hover:shadow-md" : "shadow-sm hover:shadow-md")"
+                                    class="popup-trigger pointer-events-auto z-10 mx-0.5 my-[2px] flex min-h-0 w-full flex-col overflow-hidden rounded-md text-left shadow-sm hover:shadow-md transition-shadow"
                                     style="grid-column: @col; grid-row: @rowStart / @rowEnd; @cardStyle"
                                     data-session-id="@session.SessionId"
                                     data-day-label="@dayLabel, @session.Date.ToString("dd/MM/yyyy")"
@@ -169,20 +167,17 @@
                                     data-badge-bg="@badgeBg"
                                     data-att-label="@attLabel"
                                     data-detail-url="@Url.Action("Details", "Schedule", new { area = "Teacher", id = session.SessionId })">
-                                @if (session.IsSubstituteAssignedToMe || session.IsSubstituteAssignedToOther) {
-                                    <div class="flex items-center gap-1 px-2 py-0.5" style="background:@(session.IsSubstituteAssignedToMe ? "#2563eb" : "#7c3aed");">
-                                        <span class="material-symbols-outlined text-white text-[11px]">swap_horiz</span>
-                                        <span class="text-[10px] font-bold text-white tracking-wide truncate">
-                                            @(session.IsSubstituteAssignedToMe ? "⚡ BẠN DẠY THAY" : "🔒 ĐÃ GIAO DẠY THAY")
-                                        </span>
-                                    </div>
-                                }
                                 <div class="flex min-h-0 flex-1 flex-col overflow-hidden px-2 py-1.5">
+                                    @if (session.IsSubstituteAssignedToMe) {
+                                        <div class="mb-0.5 truncate text-[10px] font-semibold tracking-wide" style="color:#2563eb;">Dạy thay</div>
+                                    } else if (session.IsSubstituteAssignedToOther) {
+                                        <div class="mb-0.5 truncate text-[10px] font-medium" style="color:#9ca3af;">Đã giao dạy thay</div>
+                                    }
                                     <div class="truncate text-[11px] font-bold leading-tight" style="color:@timeColor">@session.ScheduleText</div>
-                                    <div class="truncate text-[12px] font-semibold leading-snug mt-0.5" style="color:@(session.IsSubstituteAssignedToMe ? "#1e3a8a" : session.IsSubstituteAssignedToOther ? "#4c1d95" : "#1c1c1e")">
+                                    <div class="truncate text-[12px] font-semibold leading-snug mt-0.5" style="color:@(session.IsSubstituteAssignedToOther ? "#6b7280" : "#1c1c1e")">
                                         @session.CourseName
                                     </div>
-                                    <div class="truncate text-[10px] leading-tight mt-0.5" style="color:@(session.IsSubstituteAssignedToMe ? "#3730a3" : session.IsSubstituteAssignedToOther ? "#5b21b6" : "#78716c")">
+                                    <div class="truncate text-[10px] leading-tight mt-0.5" style="color:@(session.IsSubstituteAssignedToOther ? "#9ca3af" : "#78716c")">
                                         Lớp @session.ClassCode &middot; @session.Topic
                                     </div>
                                     @if (!string.IsNullOrWhiteSpace(session.RoomName)) {
@@ -323,11 +318,11 @@
                                         }
                                         @if(session.IsSubstituteAssignedToMe)
                                         {
-                                            <span class="teacher-tag !text-[#1e40af] !bg-[#dbeafe] flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">swap_horiz</span> Bạn được phân dạy thay</span>
+                                            <span class="teacher-tag !text-[#1e40af] !bg-[#dbeafe]">Dạy thay</span>
                                         }
                                         @if(session.IsSubstituteAssignedToOther)
                                         {
-                                            <span class="teacher-tag !text-[#4b5563] !bg-[#f3f4f6] flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">swap_horiz</span> Đã giao cho giáo viên khác</span>
+                                            <span class="teacher-tag !text-[#6b7280] !bg-[#f3f4f6]">Đã giao dạy thay</span>
                                         }
                                     </div>
                                     <h2 class="teacher-section-title mt-4">@session.ClassCode · @session.CourseName</h2>

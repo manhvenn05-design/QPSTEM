@@ -259,20 +259,34 @@ public class ScheduleController : Controller
             return Challenge();
         }
 
-        var session = await _context.Sessions
+        var sessionData = await _context.Sessions
             .AsNoTracking()
-            .Where(x => x.Id == id && x.Class.TeacherId == teacherId.Value)
+            .Where(x => x.Id == id && (x.Class.TeacherId == teacherId.Value || x.SubstituteTeacherId == teacherId.Value))
+            .Select(x => new
+            {
+                x.Id,
+                x.SessionNo,
+                x.Topic,
+                x.TeachingMaterialUrl,
+                x.SubstituteTeacherId,
+                ClassTeacherId = x.Class.TeacherId
+            })
             .FirstOrDefaultAsync();
 
-        if (session == null || string.IsNullOrWhiteSpace(session.TeachingMaterialUrl))
+        if (sessionData == null || string.IsNullOrWhiteSpace(sessionData.TeachingMaterialUrl))
         {
             return NotFound("Không tìm thấy giáo án cho buổi học này.");
         }
 
-        // Với local file (/uploads/...), URL đã public — truyền thẳng cho View
-        ViewBag.MaterialUrl  = session.TeachingMaterialUrl;
-        ViewBag.SessionLabel = $"Buổi số {session.SessionNo:00}";
-        ViewBag.Topic        = session.Topic;
+        // Giáo viên chính đã giao thay → không được vào Viewer
+        if (sessionData.ClassTeacherId == teacherId.Value && sessionData.SubstituteTeacherId.HasValue && sessionData.SubstituteTeacherId.Value != teacherId.Value)
+        {
+            return NotFound("Buổi học này đã được giao cho giáo viên khác dạy thay.");
+        }
+
+        ViewBag.MaterialUrl  = sessionData.TeachingMaterialUrl;
+        ViewBag.SessionLabel = $"Buổi số {sessionData.SessionNo:00}";
+        ViewBag.Topic        = sessionData.Topic;
 
         return View();
     }
@@ -290,8 +304,28 @@ public class ScheduleController : Controller
             return Challenge();
         }
 
+        // Kiểm tra nhanh bằng projection trước khi load entity
+        var sessionCheck = await _context.Sessions
+            .AsNoTracking()
+            .Where(x => x.Id == model.SessionId && (x.Class.TeacherId == teacherId.Value || x.SubstituteTeacherId == teacherId.Value))
+            .Select(x => new { x.SubstituteTeacherId, ClassTeacherId = x.Class.TeacherId })
+            .FirstOrDefaultAsync();
+
+        if (sessionCheck == null)
+        {
+            return NotFound();
+        }
+
+        // Chặn giáo viên chính nếu đã giao thay
+        if (sessionCheck.ClassTeacherId == teacherId.Value && sessionCheck.SubstituteTeacherId.HasValue && sessionCheck.SubstituteTeacherId.Value != teacherId.Value)
+        {
+            TempData["ErrorMessage"] = "Buổi này đã được giao cho giáo viên khác dạy thay.";
+            return RedirectToAction(nameof(Details), new { id = model.SessionId });
+        }
+
+        // Load entity thực để cập nhật
         var session = await _context.Sessions
-            .Where(x => x.Id == model.SessionId && x.Class.TeacherId == teacherId.Value)
+            .Where(x => x.Id == model.SessionId)
             .FirstOrDefaultAsync();
 
         if (session == null)
