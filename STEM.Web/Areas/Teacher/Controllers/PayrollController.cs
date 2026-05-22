@@ -66,7 +66,7 @@ public class PayrollController : Controller
             })
             .ToListAsync(ct);
 
-        var now = DateTime.UtcNow;
+        var now = DateTime.Now;
         var today = DateOnly.FromDateTime(DateTime.Today);
         var estimate = await _payrollService.GetTeacherEstimateAsync(teacherId.Value, now.Year, now.Month, today, ct);
         var currentOfficialRecord = history.FirstOrDefault(x => x.Year == now.Year && x.Month == now.Month);
@@ -218,6 +218,7 @@ public class PayrollController : Controller
                 ClassCode = x.Class.ClassCode,
                 CourseName = x.Class.Course.Name,
                 CourseDifficulty = x.Class.Course.DifficultyLevel,
+                StudentCount = x.Class.Enrollments.Count,
                 PresentCount = x.Attendances.Count(a => a.IsPresent),
                 NoteReadyCount = x.Attendances.Count(a => a.IsPresent && !string.IsNullOrWhiteSpace(a.TeacherRawNote)),
                 MediaReadyCount = x.Attendances.Count(a => a.IsPresent && !string.IsNullOrWhiteSpace(a.ProductMediaUrls) && !string.IsNullOrWhiteSpace(a.AiEvaluation))
@@ -248,7 +249,7 @@ public class PayrollController : Controller
         // Calculate specific items for Bonus
         if (bonuses > 0)
         {
-            var fullAttCount = validSessionsForBreakdown.Count(s => s.PresentCount > 0 && s.PresentCount == s.PresentCount); // Note: Simple heuristic for display
+            var fullAttCount = validSessionsForBreakdown.Count(s => s.StudentCount > 0 && s.PresentCount == s.StudentCount);
             if (fullAttCount > 0)
             {
                 bonusItems.Add(new TeacherPayrollBreakdownItem 
