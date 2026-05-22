@@ -77,7 +77,7 @@ public sealed class AttendanceWorkflowService
                 cancellationToken);
 
         return hasApprovedPayroll
-            ? "Buoi hoc nay thuoc ky luong da duoc chot va khong con cho phep giao vien chinh sua."
+            ? "Buổi học này thuộc kỳ lương đã chốt va không còn cho phép chỉnh sửa."
             : null;
     }
 
@@ -100,7 +100,7 @@ public sealed class AttendanceWorkflowService
         var attendanceCount = session.Attendances.Count;
         var presentAttendances = session.Attendances.Where(x => x.IsPresent).ToList();
         var notedPresentCount = presentAttendances.Count(x => !string.IsNullOrWhiteSpace(x.TeacherRawNote));
-        var mediaReadyCount = session.Attendances.Count(x =>
+        var mediaReadyCount = presentAttendances.Count(x =>
             !string.IsNullOrWhiteSpace(x.ProductMediaUrls) &&
             !string.IsNullOrWhiteSpace(x.AiEvaluation));
 

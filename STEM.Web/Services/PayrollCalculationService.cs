@@ -285,7 +285,7 @@ public sealed class PayrollCalculationService
                 TeacherId = teacherId,
                 CanApprove = true,
                 PendingSessionCount = 0,
-                Message = "Du dieu kien chot luong."
+                Message = "Đủ điều kiến chốt lương."
             };
         }
 
@@ -432,7 +432,7 @@ public sealed class PayrollCalculationService
     {
         if (pendingSessions.Count == 0)
         {
-            return "Du dieu kien chot luong.";
+            return "Đủ điều kiện chốt lương.";
         }
 
         var preview = string.Join(", ", pendingSessions

@@ -136,7 +136,7 @@ public static class AttendanceIntegrityRules
             return PayrollStatusInvalid;
         }
 
-        if (mediaReadyAttendanceCount < presentCount)
+        if (mediaReadyAttendanceCount <= 0)
         {
             return PayrollStatusInvalid;
         }

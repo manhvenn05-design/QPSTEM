@@ -44,6 +44,7 @@
                             <select asp-for="ClassId" asp-items="Model.ClassOptions" class="admin-select">
                                 <option value="">Chưa gắn lớp</option>
                             </select>
+                            <p id="class-help-text" class="admin-section-subtitle text-sm"></p>
                             <span asp-validation-for="ClassId" class="admin-field-validation"></span>
                         </div>
 
@@ -77,4 +78,66 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        (() => {
+            const studentSelect = document.getElementById("StudentId");
+            const classSelect = document.getElementById("ClassId");
+            const classHelpText = document.getElementById("class-help-text");
+            if (!studentSelect || !classSelect || !classHelpText) {
+                return;
+            }
+
+            const endpoint = '@Url.Action("GetStudentClasses", "Finance", new { area = "Admin" })';
+
+            async function loadClasses(selectedClassId) {
+                const studentId = studentSelect.value;
+                classSelect.innerHTML = "";
+
+                const placeholder = document.createElement("option");
+                placeholder.value = "";
+                placeholder.textContent = "Chưa gắn lớp";
+                classSelect.appendChild(placeholder);
+                classSelect.disabled = true;
+                classHelpText.textContent = "";
+
+                if (!studentId) {
+                    classSelect.value = "";
+                    classHelpText.textContent = "Chọn học viên trước khi chọn lớp.";
+                    return;
+                }
+
+                const response = await fetch(`${endpoint}?studentId=${encodeURIComponent(studentId)}`, {
+                    headers: { "X-Requested-With": "XMLHttpRequest" }
+                });
+
+                if (!response.ok) {
+                    classSelect.value = "";
+                    classHelpText.textContent = "Không tải được danh sách lớp của học viên này.";
+                    return;
+                }
+
+                const classes = await response.json();
+                for (const item of classes) {
+                    const option = document.createElement("option");
+                    option.value = item.value;
+                    option.textContent = item.text;
+                    classSelect.appendChild(option);
+                }
+
+                classSelect.disabled = classes.length === 0;
+                classHelpText.textContent = classes.length === 0
+                    ? "Học viên này hiện chưa có ghi danh lớp nào."
+                    : `Có ${classes.length} lớp phù hợp với học viên đã chọn.`;
+
+                if (selectedClassId && classes.some(x => x.value === selectedClassId)) {
+                    classSelect.value = selectedClassId;
+                } else {
+                    classSelect.value = "";
+                }
+            }
+
+            studentSelect.addEventListener("change", () => loadClasses(""));
+            loadClasses(classSelect.value);
+        })();
+    </script>
 }

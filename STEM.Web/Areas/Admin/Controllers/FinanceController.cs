@@ -184,6 +184,18 @@ public class FinanceController : Controller
         return View(model);
     }
 
+    [HttpGet]
+    public async Task<IActionResult> GetStudentClasses(int? studentId)
+    {
+        if (!await IsValidStudentAsync(studentId))
+        {
+            return Json(Array.Empty<object>());
+        }
+
+        var classes = await GetStudentClassOptionsAsync(studentId!.Value);
+        return Json(classes.Select(x => new { value = x.Value, text = x.Text }));
+    }
+
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> CreateInvoice(CreateInvoiceViewModel model)
@@ -198,17 +210,17 @@ public class FinanceController : Controller
 
         if (!await IsValidStudentAsync(model.StudentId))
         {
-            ModelState.AddModelError(nameof(model.StudentId), "Há»c viÃªn khÃ´ng há»£p lá»‡.");
+            ModelState.AddModelError(nameof(model.StudentId), "Học viên không hợp lệ.");
         }
 
         if (model.ClassId.HasValue && !await IsValidClassAsync(model.ClassId))
         {
-            ModelState.AddModelError(nameof(model.ClassId), "Lá»›p há»c khÃ´ng há»£p lá»‡.");
+            ModelState.AddModelError(nameof(model.ClassId), "Lớp học không hợp lệ.");
         }
 
         if (model.StudentId.HasValue && model.ClassId.HasValue && !await IsStudentInClassAsync(model.StudentId.Value, model.ClassId.Value))
         {
-            ModelState.AddModelError(nameof(model.ClassId), "Há»c viÃªn khÃ´ng thuá»™c lá»›p Ä‘Ã£ chá»n.");
+            ModelState.AddModelError(nameof(model.ClassId), "Học viên không thuộc lớp đã chọn.");
         }
 
         if (!ModelState.IsValid)
@@ -284,23 +296,23 @@ public class FinanceController : Controller
 
         if (!await IsValidStudentAsync(model.StudentId))
         {
-            ModelState.AddModelError(nameof(model.StudentId), "Há»c viÃªn khÃ´ng há»£p lá»‡.");
+            ModelState.AddModelError(nameof(model.StudentId), "Học viên không hợp lệ.");
         }
 
         if (model.ClassId.HasValue && !await IsValidClassAsync(model.ClassId))
         {
-            ModelState.AddModelError(nameof(model.ClassId), "Lá»›p há»c khÃ´ng há»£p lá»‡.");
+            ModelState.AddModelError(nameof(model.ClassId), "Lớp học không hợp lệ.");
         }
 
         if (model.StudentId.HasValue && model.ClassId.HasValue && !await IsStudentInClassAsync(model.StudentId.Value, model.ClassId.Value))
         {
-            ModelState.AddModelError(nameof(model.ClassId), "Há»c viÃªn khÃ´ng thuá»™c lá»›p Ä‘Ã£ chá»n.");
+            ModelState.AddModelError(nameof(model.ClassId), "Học viên không thuộc lớp đã chọn.");
         }
 
         var paidAmount = entity.Payments.Sum(x => x.Amount);
         if (model.FinalAmount < paidAmount)
         {
-            ModelState.AddModelError(nameof(model.FinalAmount), "Tá»•ng tiá»n khÃ´ng Ä‘Æ°á»£c nhá» hÆ¡n sá»‘ tiá»n Ä‘Ã£ thu.");
+            ModelState.AddModelError(nameof(model.FinalAmount), "Tổng tiền không được nhỏ hơn số tiền đã thu.");
         }
 
         if (!ModelState.IsValid)
@@ -368,7 +380,7 @@ public class FinanceController : Controller
 
         if (entity.Status == InvoiceStatusVoided)
         {
-            TempData["ErrorMessage"] = "HÃ³a Ä‘Æ¡n nÃ y Ä‘Ã£ á»Ÿ tráº¡ng thÃ¡i Há»§y.";
+            TempData["ErrorMessage"] = "Hóa đơn này đã ở trạng thái Hủy.";
             return RedirectToAction(nameof(Index));
         }
 
@@ -409,7 +421,7 @@ public class FinanceController : Controller
 
         if (!await IsValidInvoiceAsync(model.InvoiceId))
         {
-            ModelState.AddModelError(nameof(model.InvoiceId), "HÃ³a Ä‘Æ¡n khÃ´ng há»£p lá»‡.");
+            ModelState.AddModelError(nameof(model.InvoiceId), "Hóa đơn không hợp lệ.");
         }
 
         if (model.Amount > model.InvoiceDueAmount)
@@ -479,7 +491,7 @@ public class FinanceController : Controller
 
         if (!await IsValidInvoiceAsync(model.InvoiceId))
         {
-            ModelState.AddModelError(nameof(model.InvoiceId), "HÃ³a Ä‘Æ¡n khÃ´ng há»£p lá»‡.");
+            ModelState.AddModelError(nameof(model.InvoiceId), "Hóa đơn không hợp lệ.");
         }
 
         if (model.Amount > model.InvoiceDueAmount)
@@ -645,7 +657,7 @@ public class FinanceController : Controller
     {
         model.StudentOptions = await _context.Users
             .AsNoTracking()
-            .Where(x => AppRoles.IsStudent(x.Role.Name))
+            .Where(x => x.Role.Name == AppRoles.Student || x.Role.Name == "Học sinh")
             .OrderBy(x => x.FullName)
             .Select(x => new SelectListItem
             {
@@ -654,13 +666,22 @@ public class FinanceController : Controller
             })
             .ToListAsync();
 
-        model.ClassOptions = await _context.Classes
+        model.ClassOptions = model.StudentId.HasValue
+            ? await GetStudentClassOptionsAsync(model.StudentId.Value)
+            : [];
+    }
+
+    private async Task<List<SelectListItem>> GetStudentClassOptionsAsync(int studentId)
+    {
+        return await _context.Enrollments
             .AsNoTracking()
-            .OrderByDescending(x => x.StartDate)
+            .Where(x => x.StudentId == studentId)
+            .OrderByDescending(x => x.Class.StartDate)
+            .ThenBy(x => x.Class.ClassCode)
             .Select(x => new SelectListItem
             {
-                Value = x.Id.ToString(),
-                Text = x.ClassCode
+                Value = x.ClassId.ToString(),
+                Text = x.Class.ClassCode
             })
             .ToListAsync();
     }
@@ -674,16 +695,16 @@ public class FinanceController : Controller
             .Select(x => new SelectListItem
             {
                 Value = x.Id.ToString(),
-                Text = $"{x.InvoiceNo} Â· {x.Student.FullName}"
+                Text = $"{x.InvoiceNo} · {x.Student.FullName}"
             })
             .ToListAsync();
 
         model.PaymentMethodOptions =
         [
-            new SelectListItem { Value = "Cash", Text = "Tiá»n máº·t" },
-            new SelectListItem { Value = "Banking", Text = "Chuyá»ƒn khoáº£n" },
-            new SelectListItem { Value = "Card", Text = "Tháº»" },
-            new SelectListItem { Value = "Other", Text = "KhÃ¡c" }
+            new SelectListItem { Value = "Cash", Text = "Tiền mặt" },
+            new SelectListItem { Value = "Banking", Text = "Chuyển khoản" },
+            new SelectListItem { Value = "Card", Text = "Thẻ" },
+            new SelectListItem { Value = "Other", Text = "Khác" }
         ];
     }
 
@@ -733,7 +754,9 @@ public class FinanceController : Controller
     private async Task<bool> IsValidStudentAsync(int? studentId)
     {
         return studentId.HasValue &&
-               await _context.Users.AnyAsync(x => x.Id == studentId.Value && AppRoles.IsStudent(x.Role.Name));
+               await _context.Users.AnyAsync(x =>
+                   x.Id == studentId.Value &&
+                   (x.Role.Name == AppRoles.Student || x.Role.Name == "Học sinh"));
     }
 
     private async Task<bool> IsValidClassAsync(int? classId)
@@ -754,17 +777,17 @@ public class FinanceController : Controller
 
     private static string FormatMoney(decimal amount)
     {
-        return $"{amount:N0}Ä‘";
+        return $"{amount:N0}đ";
     }
 
     private static string GetPaymentMethodLabel(string method)
     {
         return method switch
         {
-            "Cash" => "Tiá»n máº·t",
-            "Banking" => "Chuyá»ƒn khoáº£n",
-            "Card" => "Tháº»",
-            "Other" => "KhÃ¡c",
+            "Cash" => "Tiền mặt",
+            "Banking" => "Chuyển khoản",
+            "Card" => "Thẻ",
+            "Other" => "Khác",
             _ => method
         };
     }
