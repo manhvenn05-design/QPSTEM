@@ -407,7 +407,8 @@ public sealed class PayrollCalculationService
     {
         decimal deductions = 0m;
 
-        foreach (var session in validSessions)
+        foreach (var session in teacherSessions.Where(x =>
+                     !string.Equals(x.PayrollStatus, AttendanceIntegrityRules.PayrollStatusPending, StringComparison.OrdinalIgnoreCase)))
         {
             if (session.PresentCount == 0)
             {

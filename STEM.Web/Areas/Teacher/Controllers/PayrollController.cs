@@ -243,6 +243,7 @@ public class PayrollController : Controller
         var deductionItems = new List<TeacherPayrollBreakdownItem>();
 
         var validSessionsForBreakdown = sessions.Where(s => string.Equals(s.PayrollStatus, AttendanceIntegrityRules.PayrollStatusValid, StringComparison.OrdinalIgnoreCase)).ToList();
+        var completedSessionsForDeductions = sessions.Where(s => !string.Equals(s.PayrollStatus, AttendanceIntegrityRules.PayrollStatusPending, StringComparison.OrdinalIgnoreCase)).ToList();
 
         // Calculate specific items for Bonus
         if (bonuses > 0)
@@ -289,7 +290,7 @@ public class PayrollController : Controller
         // Calculate specific items for Deduction
         if (deductions > 0)
         {
-            int missingNoteCount = validSessionsForBreakdown.Count(s => s.PresentCount > 0 && s.NoteReadyCount < s.PresentCount);
+            int missingNoteCount = completedSessionsForDeductions.Count(s => s.PresentCount > 0 && s.NoteReadyCount < s.PresentCount);
             if (missingNoteCount > 0)
             {
                 deductionItems.Add(new TeacherPayrollBreakdownItem 
@@ -301,7 +302,7 @@ public class PayrollController : Controller
                 });
             }
 
-            int noMediaCount = validSessionsForBreakdown.Count(s => s.PresentCount > 0 && s.MediaReadyCount == 0);
+            int noMediaCount = completedSessionsForDeductions.Count(s => s.PresentCount > 0 && s.MediaReadyCount == 0);
             if (noMediaCount > 0)
             {
                 deductionItems.Add(new TeacherPayrollBreakdownItem 

@@ -224,6 +224,21 @@ public class AttendancesController : Controller
             ModelState.AddModelError(string.Empty, "Lớp này chưa có học viên để điểm danh.");
         }
 
+        var missingAttendanceSelections = model.Rows
+            .Select((row, index) => new { row, index })
+            .Where(x => validIdSet.Contains(x.row.StudentId) && !x.row.HasAttendance)
+            .ToList();
+
+        if (missingAttendanceSelections.Count > 0)
+        {
+            ModelState.AddModelError(string.Empty, $"Còn {missingAttendanceSelections.Count} học viên chưa được chọn trạng thái điểm danh.");
+
+            foreach (var item in missingAttendanceSelections)
+            {
+                ModelState.AddModelError($"Rows[{item.index}].HasAttendance", "Vui lòng chọn Có mặt, Vắng hoặc Vắng phép.");
+            }
+        }
+
         for (var i = 0; i < submittedRows.Count; i++)
         {
             if (!_attendanceWorkflow.IsValidProductMediaCollection(submittedRows[i].ProductMediaUrls))
