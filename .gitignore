@@ -11,3 +11,6 @@ stdout.log
 stderr.log
 error*.html
 TestGemini/
+STEM.Web/build_errors.txt
+STEM.Web/proxy_result.txt
+STEM.Web/response.txt
