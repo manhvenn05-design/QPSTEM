@@ -13,10 +13,12 @@ namespace STEM.Web.Areas.Teacher.Controllers;
 public class ScheduleController : Controller
 {
     private readonly ApplicationDbContext _context;
+    private readonly IFileStorageService _fileStorage;
 
-    public ScheduleController(ApplicationDbContext context)
+    public ScheduleController(ApplicationDbContext context, IFileStorageService fileStorage)
     {
         _context = context;
+        _fileStorage = fileStorage;
     }
 
     [HttpGet]
@@ -333,7 +335,22 @@ public class ScheduleController : Controller
             return NotFound();
         }
 
-        session.ClassMediaUrls = model.ClassMediaUrls;
+        var uploadedMediaUrls = new List<string>();
+
+        try
+        {
+            foreach (var file in Request.Form.Files.Where(x => string.Equals(x.Name, "ClassMediaFiles", StringComparison.Ordinal) && x.Length > 0))
+            {
+                uploadedMediaUrls.Add(await _fileStorage.SaveFileAsync(file, "session-media"));
+            }
+        }
+        catch (InvalidOperationException ex)
+        {
+            TempData["ErrorMessage"] = ex.Message;
+            return RedirectToAction(nameof(Details), new { id = model.SessionId });
+        }
+
+        session.ClassMediaUrls = MergeMediaUrls(model.ClassMediaUrls, uploadedMediaUrls);
         session.AssistantNote = model.AssistantNote;
         
         await _context.SaveChangesAsync();
@@ -352,5 +369,22 @@ public class ScheduleController : Controller
     {
         var diff = (7 + (date.DayOfWeek - DayOfWeek.Monday)) % 7;
         return date.AddDays(-1 * diff).Date;
+    }
+
+    private static string? MergeMediaUrls(string? rawUrls, IEnumerable<string> uploadedUrls)
+    {
+        var mergedUrls = new List<string>();
+
+        if (!string.IsNullOrWhiteSpace(rawUrls))
+        {
+            mergedUrls.AddRange(
+                rawUrls.Split(new[] { '\r', '\n', ',', ';' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
+        }
+
+        mergedUrls.AddRange(uploadedUrls.Where(x => !string.IsNullOrWhiteSpace(x)).Select(x => x.Trim()));
+
+        return mergedUrls.Count == 0
+            ? null
+            : string.Join(Environment.NewLine, mergedUrls.Distinct(StringComparer.OrdinalIgnoreCase));
     }
 }

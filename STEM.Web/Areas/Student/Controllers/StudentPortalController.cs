@@ -371,15 +371,19 @@ public class StudentPortalController : Controller
                 x.Session.Date,
                 x.TeacherRawNote,
                 x.AiEvaluation,
-                x.ProductMediaUrls
+                x.ProductMediaUrls,
+                x.Session.ClassMediaUrls
             })
             .ToListAsync();
 
         var items = attendances.Select(x =>
         {
-            var allUrls   = SplitMediaUrls(x.ProductMediaUrls);
-            var videoUrls = allUrls.Where(IsYouTubeUrl).ToList();
-            var imageUrls = allUrls.Where(u => !IsYouTubeUrl(u) && IsImageUrl(u)).ToList();
+            var allUrls = SplitMediaUrls(x.ProductMediaUrls)
+                .Concat(SplitMediaUrls(x.ClassMediaUrls))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+            var videoUrls = allUrls.Where(IsVideoUrl).ToList();
+            var imageUrls = allUrls.Where(u => !IsVideoUrl(u) && IsImageUrl(u)).ToList();
             var extUrls   = allUrls.Except(videoUrls).Except(imageUrls).ToList();
 
             return new StudentEvidenceItemViewModel

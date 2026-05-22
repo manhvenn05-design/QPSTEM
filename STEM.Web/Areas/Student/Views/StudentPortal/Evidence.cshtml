@@ -169,7 +169,7 @@
                             <div>
                                 <div class="mb-3 flex items-center gap-1.5">
                                     <span class="material-symbols-outlined text-[16px] text-[#73796b]">smart_display</span>
-                                    <span class="text-xs font-semibold uppercase tracking-wide text-[#73796b]">Video (@item.VideoUrls.Count)</span>
+                                    <span class="text-xs font-semibold uppercase tracking-wide text-[#73796b]">Video minh chứng buổi học (@item.VideoUrls.Count)</span>
                                 </div>
                                 <div class="grid gap-4 @(item.VideoUrls.Count > 1 ? "sm:grid-cols-2" : "")">
                                     @foreach (var videoUrl in item.VideoUrls)
@@ -222,7 +222,7 @@
                             <div>
                                 <div class="mb-3 flex items-center gap-1.5">
                                     <span class="material-symbols-outlined text-[16px] text-[#73796b]">photo_library</span>
-                                    <span class="text-xs font-semibold uppercase tracking-wide text-[#73796b]">Ảnh sản phẩm (@item.ImageUrls.Count)</span>
+                                    <span class="text-xs font-semibold uppercase tracking-wide text-[#73796b]">Ảnh minh chứng buổi học (@item.ImageUrls.Count)</span>
                                 </div>
                                 <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
                                     @foreach (var imgUrl in item.ImageUrls)
@@ -230,7 +230,7 @@
                                         <a href="@imgUrl" target="_blank" rel="noopener noreferrer"
                                            class="group relative aspect-square overflow-hidden rounded-lg border border-[#e3e3de] bg-[#f4f4ee]">
                                             <img src="@imgUrl"
-                                                 alt="Ảnh sản phẩm học tập"
+                                                 alt="Ảnh minh chứng buổi học"
                                                  class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                                                  loading="lazy"
                                                  onerror="this.parentElement.innerHTML='<div class=\'h-full flex items-center justify-center text-[#73796b]\' title=\'Không tải được ảnh\'><span class=\'material-symbols-outlined text-[32px]\'>broken_image</span></div>'" />
