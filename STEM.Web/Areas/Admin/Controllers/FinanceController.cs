@@ -31,11 +31,11 @@ public class FinanceController : Controller
     {
         var filters = new[]
         {
-            new FinanceFilterViewModel { Key = "all", Label = "Táº¥t cáº£" },
-            new FinanceFilterViewModel { Key = "unpaid", Label = "ChÆ°a thu" },
-            new FinanceFilterViewModel { Key = "partial", Label = "Thu má»™t pháº§n" },
-            new FinanceFilterViewModel { Key = "paid", Label = "ÄÃ£ thu Ä‘á»§" },
-            new FinanceFilterViewModel { Key = "voided", Label = "ÄÃ£ há»§y" }
+            new FinanceFilterViewModel { Key = "all", Label = "Tất cả" },
+            new FinanceFilterViewModel { Key = "unpaid", Label = "Chưa thu" },
+            new FinanceFilterViewModel { Key = "partial", Label = "Thu một phần" },
+            new FinanceFilterViewModel { Key = "paid", Label = "Đã thu đủ" },
+            new FinanceFilterViewModel { Key = "voided", Label = "Đã hủy" }
         };
 
         var normalizedFilter = NormalizeFilter(filter, filters.Select(x => x.Key));
@@ -145,7 +145,7 @@ public class FinanceController : Controller
                 StudentName = x.Student.FullName,
                 StudentUsername = x.Student.Username,
                 StudentEmail = x.Student.Email,
-                ClassCode = x.Class != null ? x.Class.ClassCode : "ChÆ°a gáº¯n lá»›p",
+                ClassCode = x.Class != null ? x.Class.ClassCode : "Chưa gắn lớp",
                 FinalAmount = x.FinalAmount,
                 Status = x.Status,
                 PaidAmount = x.Payments.Sum(p => (decimal?)p.Amount) ?? 0m,
@@ -193,7 +193,7 @@ public class FinanceController : Controller
 
         if (await _context.Invoices.AnyAsync(x => x.InvoiceNo.ToLower() == normalizedInvoiceNo.ToLower()))
         {
-            ModelState.AddModelError(nameof(model.InvoiceNo), "Sá»‘ hÃ³a Ä‘Æ¡n Ä‘Ã£ tá»“n táº¡i.");
+            ModelState.AddModelError(nameof(model.InvoiceNo), "Số hóa đơn đã tồn tại.");
         }
 
         if (!await IsValidStudentAsync(model.StudentId))
@@ -232,11 +232,11 @@ public class FinanceController : Controller
         }
         catch (DbUpdateException ex) when (IsDuplicateInvoiceNo(ex))
         {
-            ModelState.AddModelError(nameof(model.InvoiceNo), "Sá»‘ hÃ³a Ä‘Æ¡n Ä‘Ã£ tá»“n táº¡i.");
+            ModelState.AddModelError(nameof(model.InvoiceNo), "Số hóa đơn đã tồn tại.");
             return View(model);
         }
 
-        TempData["SuccessMessage"] = "ÄÃ£ táº¡o hÃ³a Ä‘Æ¡n má»›i.";
+        TempData["SuccessMessage"] = "Đã tạo hóa đơn mới.";
         return RedirectToAction(nameof(Index));
     }
 
@@ -279,7 +279,7 @@ public class FinanceController : Controller
         var normalizedInvoiceNo = model.InvoiceNo.Trim().ToUpperInvariant();
         if (await _context.Invoices.AnyAsync(x => x.Id != model.Id && x.InvoiceNo.ToLower() == normalizedInvoiceNo.ToLower()))
         {
-            ModelState.AddModelError(nameof(model.InvoiceNo), "Sá»‘ hÃ³a Ä‘Æ¡n Ä‘Ã£ tá»“n táº¡i.");
+            ModelState.AddModelError(nameof(model.InvoiceNo), "Số hóa đơn đã tồn tại.");
         }
 
         if (!await IsValidStudentAsync(model.StudentId))
@@ -320,11 +320,11 @@ public class FinanceController : Controller
         }
         catch (DbUpdateException ex) when (IsDuplicateInvoiceNo(ex))
         {
-            ModelState.AddModelError(nameof(model.InvoiceNo), "Sá»‘ hÃ³a Ä‘Æ¡n Ä‘Ã£ tá»“n táº¡i.");
+            ModelState.AddModelError(nameof(model.InvoiceNo), "Số hóa đơn đã tồn tại.");
             return View(model);
         }
 
-        TempData["SuccessMessage"] = "ÄÃ£ cáº­p nháº­t hÃ³a Ä‘Æ¡n.";
+        TempData["SuccessMessage"] = "Đã cập nhật hóa đơn.";
         return RedirectToAction(nameof(InvoiceDetails), new { id = model.Id });
     }
 
@@ -343,14 +343,14 @@ public class FinanceController : Controller
 
         if (entity.Payments.Count > 0)
         {
-            TempData["ErrorMessage"] = $"HÃ³a Ä‘Æ¡n \"{entity.InvoiceNo}\" Ä‘Ã£ cÃ³ {entity.Payments.Count} láº§n thanh toÃ¡n. KhÃ´ng thá»ƒ xÃ³a há»“ sÆ¡ tÃ i chÃ­nh. DÃ¹ng \"Há»§y hÃ³a Ä‘Æ¡n\" náº¿u khÃ´ng cÃ²n hiá»‡u lá»±c.";
+            TempData["ErrorMessage"] = $"Hóa đơn \"{entity.InvoiceNo}\" đã có {entity.Payments.Count} lần thanh toán. Không thể xóa hồ sơ tài chính. Dùng \"Hủy hóa đơn\" nếu không còn hiệu lực.";
             return RedirectToAction(nameof(Index));
         }
 
         _context.Invoices.Remove(entity);
         await _context.SaveChangesAsync();
 
-        TempData["SuccessMessage"] = "ÄÃ£ xÃ³a hÃ³a Ä‘Æ¡n.";
+        TempData["SuccessMessage"] = "Đã xóa hóa đơn.";
         return RedirectToAction(nameof(Index));
     }
 
@@ -362,7 +362,7 @@ public class FinanceController : Controller
 
         if (entity == null)
         {
-            TempData["ErrorMessage"] = "KhÃ´ng tÃ¬m tháº¥y hÃ³a Ä‘Æ¡n.";
+            TempData["ErrorMessage"] = "Không tìm thấy hóa đơn.";
             return RedirectToAction(nameof(Index));
         }
 
@@ -375,14 +375,14 @@ public class FinanceController : Controller
         var paymentCount = await _context.Payments.CountAsync(x => x.InvoiceId == id);
         if (paymentCount > 0)
         {
-            TempData["ErrorMessage"] = $"HÃ³a Ä‘Æ¡n \"{entity.InvoiceNo}\" Ä‘Ã£ phÃ¡t sinh thanh toÃ¡n nÃªn khÃ´ng Ä‘Æ°á»£c há»§y trá»±c tiáº¿p.";
+            TempData["ErrorMessage"] = $"Hóa đơn \"{entity.InvoiceNo}\" đã phát sinh thanh toán nên không được hủy trực tiếp.";
             return RedirectToAction(nameof(Index));
         }
 
         entity.Status = InvoiceStatusVoided;
         await _context.SaveChangesAsync();
 
-        TempData["SuccessMessage"] = $"ÄÃ£ há»§y hÃ³a Ä‘Æ¡n \"{entity.InvoiceNo}\". Há»“ sÆ¡ váº«n Ä‘Æ°á»£c lÆ°u láº¡i.";
+        TempData["SuccessMessage"] = $"Đã hủy hóa đơn \"{entity.InvoiceNo}\". Hồ sơ vẫn được lưu lại.";
         return RedirectToAction(nameof(Index));
     }
 
@@ -414,7 +414,7 @@ public class FinanceController : Controller
 
         if (model.Amount > model.InvoiceDueAmount)
         {
-            ModelState.AddModelError(nameof(model.Amount), "Sá»‘ tiá»n thanh toÃ¡n khÃ´ng Ä‘Æ°á»£c vÆ°á»£t quÃ¡ cÃ´ng ná»£ cÃ²n láº¡i.");
+            ModelState.AddModelError(nameof(model.Amount), "Số tiền thanh toán không được vượt quá công nợ còn lại.");
         }
 
         if (!ModelState.IsValid)
@@ -437,7 +437,7 @@ public class FinanceController : Controller
         SyncInvoiceStatus(invoice);
         await _context.SaveChangesAsync();
 
-        TempData["SuccessMessage"] = "ÄÃ£ ghi nháº­n thanh toÃ¡n.";
+        TempData["SuccessMessage"] = "Đã ghi nhận thanh toán.";
         return RedirectToAction(nameof(InvoiceDetails), new { id = entity.InvoiceId });
     }
 
@@ -484,7 +484,7 @@ public class FinanceController : Controller
 
         if (model.Amount > model.InvoiceDueAmount)
         {
-            ModelState.AddModelError(nameof(model.Amount), "Sá»‘ tiá»n thanh toÃ¡n khÃ´ng Ä‘Æ°á»£c vÆ°á»£t quÃ¡ cÃ´ng ná»£ cÃ²n láº¡i.");
+            ModelState.AddModelError(nameof(model.Amount), "Số tiền thanh toán không được vượt quá công nợ còn lại.");
         }
 
         if (!ModelState.IsValid)
@@ -508,7 +508,7 @@ public class FinanceController : Controller
 
         await _context.SaveChangesAsync();
 
-        TempData["SuccessMessage"] = "ÄÃ£ cáº­p nháº­t thanh toÃ¡n.";
+        TempData["SuccessMessage"] = "Đã cập nhật thanh toán.";
         return RedirectToAction(nameof(PaymentDetails), new { id = model.Id });
     }
 
@@ -524,7 +524,7 @@ public class FinanceController : Controller
                 InvoiceId = x.InvoiceId,
                 InvoiceNo = x.Invoice.InvoiceNo,
                 StudentName = x.Invoice.Student.FullName,
-                ClassCode = x.Invoice.Class != null ? x.Invoice.Class.ClassCode : "ChÆ°a gáº¯n lá»›p",
+                ClassCode = x.Invoice.Class != null ? x.Invoice.Class.ClassCode : "Chưa gắn lớp",
                 Amount = x.Amount,
                 AmountText = FormatMoney(x.Amount),
                 PaymentMethod = GetPaymentMethodLabel(x.PaymentMethod),
@@ -559,7 +559,7 @@ public class FinanceController : Controller
         SyncInvoiceStatus(invoice);
         await _context.SaveChangesAsync();
 
-        TempData["SuccessMessage"] = "ÄÃ£ xÃ³a thanh toÃ¡n.";
+        TempData["SuccessMessage"] = "Đã xóa thanh toán.";
         return RedirectToAction(nameof(InvoiceDetails), new { id = invoiceId });
     }
 
@@ -581,7 +581,7 @@ public class FinanceController : Controller
             InvoiceNo = item.InvoiceNo,
             StudentName = item.StudentName,
             StudentUsername = item.StudentUsername,
-            ClassCode = item.ClassCode ?? "ChÆ°a gáº¯n lá»›p",
+            ClassCode = item.ClassCode ?? "Chưa gắn lớp",
             FinalAmount = item.FinalAmount,
             PaidAmount = item.PaidAmount,
             DueAmount = dueAmount,
@@ -633,11 +633,11 @@ public class FinanceController : Controller
     {
         return status switch
         {
-            InvoiceStatusUnpaid => ("ChÆ°a thu", "bg-[#ffdad6] text-[#ba1a1a]"),
-            InvoiceStatusPartial => ("Thu má»™t pháº§n", "bg-[#fff4e8] text-[#9b682f]"),
-            InvoiceStatusPaid => ("ÄÃ£ thu Ä‘á»§", "bg-[#edf7e8] text-[#456c3f]"),
-            InvoiceStatusVoided => ("ÄÃ£ há»§y", "bg-[#eeeee9] text-[#42493d]"),
-            _ => ($"Tráº¡ng thÃ¡i {status}", "bg-[#eeeee9] text-[#42493d]")
+            InvoiceStatusUnpaid => ("Chưa thu", "bg-[#ffdad6] text-[#ba1a1a]"),
+            InvoiceStatusPartial => ("Thu một phần", "bg-[#fff4e8] text-[#9b682f]"),
+            InvoiceStatusPaid => ("Đã thu đủ", "bg-[#edf7e8] text-[#456c3f]"),
+            InvoiceStatusVoided => ("Đã hủy", "bg-[#eeeee9] text-[#42493d]"),
+            _ => ($"Trạng thái {status}", "bg-[#eeeee9] text-[#42493d]")
         };
     }
 

@@ -180,9 +180,7 @@
                                                         <span class="material-symbols-outlined text-[18px]">payments</span>
                                                         <span>Thu tiền</span>
                                                     </a>
-                                                    @* Phân cách — hành động hủy/xóa *@
                                                     <div class="my-1 border-t border-[#e8ece3]"></div>
-                                                    @* Hủy hóa đơn — an toàn, giữ hồ sơ *@
                                                     <form asp-area="Admin" asp-controller="Finance" asp-action="VoidInvoice" asp-route-id="@invoice.Id" method="post" data-confirm-title="Hủy hóa đơn" data-confirm-message="Hủy hóa đơn này? Hồ sơ tài chính vẫn được giữ lại, chỉ đánh dấu là 'Đã hủy'." data-confirm-submit-text="Xác nhận hủy">
                                                         @Html.AntiForgeryToken()
                                                         <button type="submit" class="admin-menu-item admin-menu-item--danger w-full text-left">
@@ -190,7 +188,6 @@
                                                             <span>Hủy hóa đơn</span>
                                                         </button>
                                                     </form>
-                                                    @* Xóa — chỉ khi chưa có thanh toán *@
                                                     <form asp-area="Admin" asp-controller="Finance" asp-action="DeleteInvoice" asp-route-id="@invoice.Id" method="post" data-confirm-title="Xóa hóa đơn" data-confirm-message="Chỉ xóa được nếu chưa có lần thanh toán nào. Nếu đã thu tiền hãy dùng 'Hủy hóa đơn'." data-confirm-submit-text="Xóa hóa đơn">
                                                         @Html.AntiForgeryToken()
                                                         <button type="submit" class="admin-menu-item admin-menu-item--danger w-full text-left">

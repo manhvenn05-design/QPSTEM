@@ -7,6 +7,8 @@ public class PayrollManagementViewModel
     public string PeriodLabel { get; set; } = string.Empty;
     public int TotalTeachers { get; set; }
     public int ApprovedTeachers { get; set; }
+    public int ReadyToApproveTeachers { get; set; }
+    public int BlockedTeachers { get; set; }
     public decimal TotalPayout { get; set; }
     public decimal DraftPayout { get; set; }
     public IReadOnlyList<PayrollRecordItemViewModel> Records { get; set; } = [];
@@ -27,6 +29,9 @@ public class PayrollRecordItemViewModel
     public string Status { get; set; } = string.Empty;
     public DateTime? ApprovedAt { get; set; }
     public string? AdjustmentNotes { get; set; }
+    public bool CanApprove { get; set; }
+    public int PendingSessionCount { get; set; }
+    public string ApprovalHint { get; set; } = string.Empty;
 }
 
 public class UpdateDraftViewModel

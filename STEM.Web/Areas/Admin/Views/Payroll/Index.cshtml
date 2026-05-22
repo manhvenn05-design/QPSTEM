@@ -5,34 +5,46 @@
     var hasRecords = Model.Records.Count > 0;
     var allApproved = hasRecords && Model.ApprovedTeachers == Model.TotalTeachers;
     var draftTeachers = Model.TotalTeachers - Model.ApprovedTeachers;
+    var hasApprovedRecords = Model.ApprovedTeachers > 0;
+    var hasReadyDraftTeachers = Model.ReadyToApproveTeachers > 0;
 }
 
 <section class="admin-page">
     <div class="admin-page-header">
         <div>
             <h1 class="admin-page-title">Bảng lương giáo viên</h1>
-            <p class="admin-page-subtitle">Sinh bảng lương theo kỳ, rà soát tổng tiền và chốt để khóa chỉnh sửa attendance của tháng tương ứng.</p>
+            <p class="admin-page-subtitle">Tạo bảng lương theo kỳ, rà soát tổng tiền, chốt từng giáo viên hoặc chốt hàng loạt, và cho phép hủy chốt khi cần điều chỉnh.</p>
         </div>
 
         <div class="admin-actions">
             <form asp-area="Admin" asp-controller="Payroll" asp-action="Generate" method="post" class="flex items-center gap-3"
-                  data-confirm-title="Tạo/Cập nhật bảng lương"
-                  data-confirm-message="Hệ thống sẽ tính lại dữ liệu lương nháp cho toàn bộ giáo viên trong kỳ đang chọn. Bạn có muốn tiếp tục không?"
-                  data-confirm-submit-text="Tạo/Cập nhật">
+                  data-confirm-title="Tạo/cập nhật bảng lương"
+                  data-confirm-message="Hệ thống sẽ tính lại dữ liệu lương nháp cho toàn bộ giáo viên trong kỳ đang chọn."
+                  data-confirm-submit-text="Tạo/cập nhật">
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="year" value="@Model.Year" />
                 <input type="hidden" name="month" value="@Model.Month" />
-                <button type="submit" class="admin-btn-primary">Tạo/Cập nhật bảng lương</button>
+                <button type="submit" class="admin-btn-primary">Tạo/cập nhật bảng lương</button>
             </form>
 
             <form asp-area="Admin" asp-controller="Payroll" asp-action="Approve" method="post" class="flex items-center gap-3"
-                  data-confirm-title="Chốt kỳ lương"
-                  data-confirm-message="Khi chốt, các bản ghi lương của kỳ này sẽ chuyển sang trạng thái Đã chốt và giáo viên không thể tiếp tục chỉnh sửa attendance thuộc tháng đó. Bạn có chắc chắn không?"
-                  data-confirm-submit-text="Chốt kỳ lương">
+                  data-confirm-title="Chốt tất cả giáo viên hợp lệ"
+                  data-confirm-message="Hệ thống chỉ chốt các giáo viên không còn buổi Pending. Giáo viên đang thiếu attendance sẽ bị bỏ qua."
+                  data-confirm-submit-text="Chốt tất cả hợp lệ">
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="year" value="@Model.Year" />
                 <input type="hidden" name="month" value="@Model.Month" />
-                <button type="submit" class="admin-btn-secondary" disabled="@(!hasRecords || allApproved)">Chốt kỳ lương</button>
+                <button type="submit" class="admin-btn-secondary" disabled="@(!hasRecords || !hasReadyDraftTeachers)">Chốt tất cả hợp lệ</button>
+            </form>
+
+            <form asp-area="Admin" asp-controller="Payroll" asp-action="Unapprove" method="post" class="flex items-center gap-3"
+                  data-confirm-title="Hủy chốt toàn bộ"
+                  data-confirm-message="Tất cả bản ghi đã chốt trong kỳ này sẽ quay về trạng thái Nháp."
+                  data-confirm-submit-text="Hủy chốt toàn bộ">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="year" value="@Model.Year" />
+                <input type="hidden" name="month" value="@Model.Month" />
+                <button type="submit" class="admin-btn-secondary" disabled="@(!hasApprovedRecords)">Hủy chốt tất cả</button>
             </form>
         </div>
     </div>
@@ -46,8 +58,6 @@
     {
         <div class="admin-alert admin-alert--error">@errorMessage</div>
     }
-
-    
 
     <form method="get" asp-area="Admin" asp-controller="Payroll" asp-action="Index" class="admin-card">
         <div class="admin-card-section">
@@ -76,7 +86,7 @@
         <article class="admin-stat-card">
             <span class="admin-stat-label">Có bảng lương</span>
             <div class="admin-stat-value">@Model.TotalTeachers</div>
-            <p class="admin-kicker">Số giáo viên đã có bản ghi payroll.</p>
+            <p class="admin-kicker">Số giáo viên đã có payroll record.</p>
         </article>
         <article class="admin-stat-card">
             <span class="admin-stat-label">Đã chốt</span>
@@ -84,9 +94,9 @@
             <p class="admin-kicker">Còn @draftTeachers bản nháp cần rà soát.</p>
         </article>
         <article class="admin-stat-card">
-            <span class="admin-stat-label">Tổng chi dự kiến</span>
-            <div class="admin-stat-value">@Model.TotalPayout.ToString("N0") đ</div>
-            <p class="admin-kicker">Nháp chưa chốt: @Model.DraftPayout.ToString("N0") đ</p>
+            <span class="admin-stat-label">Có thể chốt ngay</span>
+            <div class="admin-stat-value">@Model.ReadyToApproveTeachers</div>
+            <p class="admin-kicker">Bị chặn do Pending: @Model.BlockedTeachers</p>
         </article>
     </div>
 
@@ -96,7 +106,7 @@
                 <h2 class="admin-section-title">Trạng thái kỳ hiện tại</h2>
                 @if (!hasRecords)
                 {
-                    <p class="admin-section-subtitle">Chưa có bản ghi lương nào cho kỳ này. Hãy bấm <strong>Tạo/Cập nhật bảng lương</strong> để sinh dữ liệu.</p>
+                    <p class="admin-section-subtitle">Chưa có bản ghi lương nào cho kỳ này. Bấm Tạo/cập nhật bảng lương để sinh dữ liệu.</p>
                 }
                 else if (allApproved)
                 {
@@ -104,12 +114,13 @@
                 }
                 else
                 {
-                    <p class="admin-section-subtitle">Kỳ này đang có <strong>@draftTeachers</strong> bản nháp. Bạn có thể điều chỉnh thưởng/phạt rồi chốt khi số liệu đã ổn.</p>
+                    <p class="admin-section-subtitle">Kỳ này có <strong>@draftTeachers</strong> bản nháp. Có <strong>@Model.ReadyToApproveTeachers</strong> giáo viên có thể chốt ngay và <strong>@Model.BlockedTeachers</strong> giáo viên đang bị chặn do còn buổi Pending.</p>
                 }
             </div>
             <div class="flex flex-wrap gap-2">
                 <span class="admin-tag admin-tag--neutral">Nháp: @draftTeachers</span>
                 <span class="admin-tag admin-tag--success">Đã chốt: @Model.ApprovedTeachers</span>
+                <span class="admin-tag admin-tag--warning">Bị chặn: @Model.BlockedTeachers</span>
             </div>
         </div>
     </div>
@@ -119,7 +130,7 @@
             <div class="flex items-center justify-between gap-3">
                 <div>
                     <h2 class="admin-section-title">Chi tiết theo giáo viên</h2>
-                    <p class="admin-section-subtitle">Dữ liệu draft có thể tạo lại. Bản ghi đã chốt sẽ khóa khỏi thao tác cập nhật từ giáo viên.</p>
+                    <p class="admin-section-subtitle">Admin có thể điều chỉnh, chốt từng giáo viên, chốt hàng loạt, hoặc hủy chốt để mở khóa lại khi cần.</p>
                 </div>
                 <div class="text-sm text-[#6b7c99]">Tổng nháp chưa chốt: @Model.DraftPayout.ToString("N0") đ</div>
             </div>
@@ -127,7 +138,7 @@
             @if (!hasRecords)
             {
                 <div class="mt-6 rounded-lg border border-dashed border-[#dce6f5] bg-[#f8fbff] px-4 py-6 text-sm text-[#6b7c99]">
-                    Chưa có bản ghi lương cho kỳ này. Bấm <strong>Tạo/Cập nhật bảng lương</strong> để sinh dữ liệu.
+                    Chưa có bản ghi lương cho kỳ này. Bấm <strong>Tạo/cập nhật bảng lương</strong> để sinh dữ liệu.
                 </div>
             }
             else
@@ -145,6 +156,7 @@
                                 <th>Thực nhận</th>
                                 <th>Trạng thái</th>
                                 <th>Ghi chú điều chỉnh</th>
+                                <th>Điều kiện chốt</th>
                                 <th></th>
                             </tr>
                         </thead>
@@ -178,19 +190,59 @@
                                     <td class="text-xs text-[#6b7c99]">
                                         @(string.IsNullOrWhiteSpace(record.AdjustmentNotes) ? "-" : record.AdjustmentNotes)
                                     </td>
-                                    <td class="text-right">
-                                        @if (!isApproved)
+                                    <td class="text-xs">
+                                        @if (isApproved)
                                         {
-                                            <button type="button" class="admin-btn-secondary px-2 py-1 text-xs"
-                                                    onclick="openEditDraftModal(this)"
-                                                    data-id="@record.Id"
-                                                    data-name="@record.TeacherName"
-                                                    data-bonuses="@record.Bonuses"
-                                                    data-deductions="@record.Deductions"
-                                                    data-notes="@record.AdjustmentNotes">
-                                                Điều chỉnh
-                                            </button>
+                                            <span class="text-[#456c3f] font-medium">Đã chốt</span>
                                         }
+                                        else if (record.CanApprove)
+                                        {
+                                            <span class="text-[#456c3f] font-medium">@record.ApprovalHint</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-[#c2410c] font-medium">@record.ApprovalHint</span>
+                                        }
+                                    </td>
+                                    <td class="text-right">
+                                        <div class="flex flex-wrap justify-end gap-2">
+                                            @if (!isApproved)
+                                            {
+                                                <button type="button" class="admin-btn-secondary px-2 py-1 text-xs"
+                                                        onclick="openEditDraftModal(this)"
+                                                        data-id="@record.Id"
+                                                        data-name="@record.TeacherName"
+                                                        data-bonuses="@record.Bonuses"
+                                                        data-deductions="@record.Deductions"
+                                                        data-notes="@record.AdjustmentNotes">
+                                                    Điều chỉnh
+                                                </button>
+
+                                                <form asp-area="Admin" asp-controller="Payroll" asp-action="Approve" method="post"
+                                                      data-confirm-title="Chốt lương giáo viên"
+                                                      data-confirm-message="Giáo viên này sẽ được chuyển sang trạng thái Đã chốt nếu không còn buổi Pending."
+                                                      data-confirm-submit-text="Chốt giáo viên">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="year" value="@Model.Year" />
+                                                    <input type="hidden" name="month" value="@Model.Month" />
+                                                    <input type="hidden" name="teacherId" value="@record.TeacherId" />
+                                                    <button type="submit" class="admin-btn-secondary px-2 py-1 text-xs" disabled="@(!record.CanApprove)">Chốt GV</button>
+                                                </form>
+                                            }
+                                            else
+                                            {
+                                                <form asp-area="Admin" asp-controller="Payroll" asp-action="Unapprove" method="post"
+                                                      data-confirm-title="Hủy chốt lương giáo viên"
+                                                      data-confirm-message="Bản ghi lương của giáo viên này sẽ quay về trạng thái Nháp."
+                                                      data-confirm-submit-text="Hủy chốt giáo viên">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="year" value="@Model.Year" />
+                                                    <input type="hidden" name="month" value="@Model.Month" />
+                                                    <input type="hidden" name="teacherId" value="@record.TeacherId" />
+                                                    <button type="submit" class="admin-btn-secondary px-2 py-1 text-xs">Hủy chốt GV</button>
+                                                </form>
+                                            }
+                                        </div>
                                     </td>
                                 </tr>
                             }

@@ -54,6 +54,20 @@ public class PayrollController : Controller
         var approvedTeachers = records.Count(x =>
             string.Equals(x.Status, AttendanceWorkflowService.PayrollRecordStatusApproved, StringComparison.OrdinalIgnoreCase));
 
+        var readiness = await _payrollCalculationService.GetApprovalReadinessAsync(
+            selectedYear,
+            selectedMonth,
+            records.Select(x => x.TeacherId).ToList(),
+            cancellationToken);
+
+        foreach (var record in records)
+        {
+            var itemReadiness = readiness.GetValueOrDefault(record.TeacherId);
+            record.CanApprove = itemReadiness?.CanApprove ?? true;
+            record.PendingSessionCount = itemReadiness?.PendingSessionCount ?? 0;
+            record.ApprovalHint = itemReadiness?.Message ?? "Đủ điều kiện chốt lương.";
+        }
+
         var model = new PayrollManagementViewModel
         {
             Year = selectedYear,
@@ -61,6 +75,8 @@ public class PayrollController : Controller
             PeriodLabel = $"Tháng {selectedMonth:00}/{selectedYear}",
             TotalTeachers = records.Count,
             ApprovedTeachers = approvedTeachers,
+            ReadyToApproveTeachers = records.Count(x => !string.Equals(x.Status, AttendanceWorkflowService.PayrollRecordStatusApproved, StringComparison.OrdinalIgnoreCase) && x.CanApprove),
+            BlockedTeachers = records.Count(x => !string.Equals(x.Status, AttendanceWorkflowService.PayrollRecordStatusApproved, StringComparison.OrdinalIgnoreCase) && !x.CanApprove),
             TotalPayout = records.Sum(x => x.TotalPay),
             DraftPayout = records
                 .Where(x => !string.Equals(x.Status, AttendanceWorkflowService.PayrollRecordStatusApproved, StringComparison.OrdinalIgnoreCase))
@@ -85,12 +101,46 @@ public class PayrollController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Approve(int year, int month, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> Approve(int year, int month, int? teacherId = null, CancellationToken cancellationToken = default)
     {
-        var approvedCount = await _payrollCalculationService.ApproveMonthlyPayrollAsync(year, month, cancellationToken);
-        TempData["SuccessMessage"] = approvedCount == 0
-            ? $"Chưa có bảng lương để chốt cho tháng {month:00}/{year}."
-            : $"Đã chốt {approvedCount} bản ghi lương cho tháng {month:00}/{year}.";
+        var result = await _payrollCalculationService.ApproveMonthlyPayrollAsync(year, month, teacherId, cancellationToken);
+        var scopeLabel = teacherId.HasValue ? "giáo viên đã chọn" : $"tháng {month:00}/{year}";
+
+        if (result.ApprovedCount > 0 && result.BlockedItems.Count == 0)
+        {
+            TempData["SuccessMessage"] = $"Đã chốt {result.ApprovedCount} bản ghi lương cho {scopeLabel}.";
+        }
+        else if (result.ApprovedCount > 0)
+        {
+            TempData["SuccessMessage"] = $"Đã chốt {result.ApprovedCount} bản ghi lương cho {scopeLabel}.";
+            TempData["ErrorMessage"] = string.Join("; ", result.BlockedItems.Select(x => x.Message));
+        }
+        else if (result.BlockedItems.Count > 0)
+        {
+            TempData["ErrorMessage"] = string.Join("; ", result.BlockedItems.Select(x => x.Message));
+        }
+        else
+        {
+            TempData["SuccessMessage"] = teacherId.HasValue
+                ? "Không tìm thấy bản ghi lương của giáo viên đã chọn."
+                : $"Chưa có bảng lương để chốt cho tháng {month:00}/{year}.";
+        }
+
+        return RedirectToAction(nameof(Index), new { year, month });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Unapprove(int year, int month, int? teacherId = null, CancellationToken cancellationToken = default)
+    {
+        var unapprovedCount = await _payrollCalculationService.UnapproveMonthlyPayrollAsync(year, month, teacherId, cancellationToken);
+        TempData["SuccessMessage"] = unapprovedCount == 0
+            ? (teacherId.HasValue
+                ? "Giáo viên này hiện chưa ở trạng thái đã chốt."
+                : $"Không có bản ghi đã chốt để hủy trong tháng {month:00}/{year}.")
+            : (teacherId.HasValue
+                ? "Đã hủy chốt bảng lương của giáo viên."
+                : $"Đã hủy chốt {unapprovedCount} bản ghi lương trong tháng {month:00}/{year}.");
         return RedirectToAction(nameof(Index), new { year, month });
     }
 

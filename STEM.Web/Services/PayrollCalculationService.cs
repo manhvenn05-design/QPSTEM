@@ -126,7 +126,7 @@ public sealed class PayrollCalculationService
             targetRecord.ApprovedAt = null;
             if (teacherProfile == null)
             {
-                targetRecord.AdjustmentNotes = "Thiếu TeacherProfile hoặc cấu hình lương. Cần admin kiểm tra trước khi chốt lương.";
+                targetRecord.AdjustmentNotes = "Thieu TeacherProfile hoac cau hinh luong. Can admin kiem tra truoc khi chot luong.";
             }
 
             if (existingRecord == null)
@@ -141,10 +141,6 @@ public sealed class PayrollCalculationService
         return generatedRecords;
     }
 
-    /// <summary>
-    /// Tính ước tính lương real-time cho 1 giáo viên trong kỳ cho trước.
-    /// Không cần Admin Generate trước — chỉ cần Session và PayRateConfig trong DB.
-    /// </summary>
     public async Task<TeacherPayrollEstimate> GetTeacherEstimateAsync(
         int teacherId,
         int year,
@@ -234,38 +230,171 @@ public sealed class PayrollCalculationService
         };
     }
 
-    public async Task<int> ApproveMonthlyPayrollAsync(int year, int month, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyDictionary<int, PayrollApprovalReadiness>> GetApprovalReadinessAsync(
+        int year,
+        int month,
+        IReadOnlyCollection<int> teacherIds,
+        CancellationToken cancellationToken = default)
     {
-        var records = await _context.PayrollRecords
-            .Where(x => x.Year == year && x.Month == month)
+        if (teacherIds.Count == 0)
+        {
+            return new Dictionary<int, PayrollApprovalReadiness>();
+        }
+
+        var periodStart = new DateOnly(year, month, 1);
+        var periodEnd = periodStart.AddMonths(1);
+
+        var pendingSessions = await _context.Sessions
+            .AsNoTracking()
+            .Where(x => x.Date >= periodStart &&
+                        x.Date < periodEnd &&
+                        teacherIds.Contains(x.SubstituteTeacherId ?? x.Class.TeacherId) &&
+                        x.PayrollStatus == AttendanceIntegrityRules.PayrollStatusPending)
+            .Select(x => new PendingPayrollSession
+            {
+                TeacherId = x.SubstituteTeacherId ?? x.Class.TeacherId,
+                TeacherName = x.SubstituteTeacherId.HasValue
+                    ? x.SubstituteTeacher!.FullName
+                    : x.Class.Teacher.FullName,
+                ClassCode = x.Class.ClassCode,
+                SessionNo = x.SessionNo,
+                SessionDate = x.Date
+            })
+            .OrderBy(x => x.TeacherName)
+            .ThenBy(x => x.SessionDate)
+            .ThenBy(x => x.SessionNo)
             .ToListAsync(cancellationToken);
 
-        foreach (var record in records.Where(x => !string.Equals(x.Status, AttendanceWorkflowService.PayrollRecordStatusApproved, StringComparison.OrdinalIgnoreCase)))
+        var blockedLookup = pendingSessions
+            .GroupBy(x => x.TeacherId)
+            .ToDictionary(
+                x => x.Key,
+                x => new PayrollApprovalReadiness
+                {
+                    TeacherId = x.Key,
+                    CanApprove = false,
+                    PendingSessionCount = x.Count(),
+                    Message = BuildPendingSessionsMessage(x.ToList())
+                });
+
+        var result = new Dictionary<int, PayrollApprovalReadiness>();
+        foreach (var teacherId in teacherIds.Distinct())
+        {
+            result[teacherId] = blockedLookup.GetValueOrDefault(teacherId) ?? new PayrollApprovalReadiness
+            {
+                TeacherId = teacherId,
+                CanApprove = true,
+                PendingSessionCount = 0,
+                Message = "Du dieu kien chot luong."
+            };
+        }
+
+        return result;
+    }
+
+    public async Task<PayrollApprovalOperationResult> ApproveMonthlyPayrollAsync(
+        int year,
+        int month,
+        int? teacherId = null,
+        CancellationToken cancellationToken = default)
+    {
+        var recordsQuery = _context.PayrollRecords
+            .Where(x => x.Year == year && x.Month == month);
+
+        if (teacherId.HasValue)
+        {
+            recordsQuery = recordsQuery.Where(x => x.TeacherId == teacherId.Value);
+        }
+
+        var records = await recordsQuery.ToListAsync(cancellationToken);
+        if (records.Count == 0)
+        {
+            return new PayrollApprovalOperationResult();
+        }
+
+        var readiness = await GetApprovalReadinessAsync(year, month, records.Select(x => x.TeacherId).ToList(), cancellationToken);
+
+        var approvedCount = 0;
+        foreach (var record in records.Where(x =>
+                     !string.Equals(x.Status, AttendanceWorkflowService.PayrollRecordStatusApproved, StringComparison.OrdinalIgnoreCase) &&
+                     readiness.GetValueOrDefault(x.TeacherId)?.CanApprove == true))
         {
             record.Status = AttendanceWorkflowService.PayrollRecordStatusApproved;
             record.ApprovedAt = DateTime.UtcNow;
+            approvedCount++;
         }
 
-        await _context.SaveChangesAsync(cancellationToken);
-        return records.Count;
+        if (approvedCount > 0)
+        {
+            await _context.SaveChangesAsync(cancellationToken);
+        }
+
+        var blockedItems = records
+            .Where(x => readiness.GetValueOrDefault(x.TeacherId)?.CanApprove == false)
+            .GroupBy(x => x.TeacherId)
+            .Select(x => new PayrollApprovalBlockedItem
+            {
+                TeacherId = x.Key,
+                Message = readiness[x.Key].Message
+            })
+            .ToList();
+
+        return new PayrollApprovalOperationResult
+        {
+            ApprovedCount = approvedCount,
+            BlockedItems = blockedItems
+        };
+    }
+
+    public async Task<int> UnapproveMonthlyPayrollAsync(
+        int year,
+        int month,
+        int? teacherId = null,
+        CancellationToken cancellationToken = default)
+    {
+        var recordsQuery = _context.PayrollRecords
+            .Where(x => x.Year == year && x.Month == month);
+
+        if (teacherId.HasValue)
+        {
+            recordsQuery = recordsQuery.Where(x => x.TeacherId == teacherId.Value);
+        }
+
+        var records = await recordsQuery.ToListAsync(cancellationToken);
+        if (records.Count == 0)
+        {
+            return 0;
+        }
+
+        var unapprovedCount = 0;
+        foreach (var record in records.Where(x => string.Equals(x.Status, AttendanceWorkflowService.PayrollRecordStatusApproved, StringComparison.OrdinalIgnoreCase)))
+        {
+            record.Status = PayrollDraftStatus;
+            record.ApprovedAt = null;
+            unapprovedCount++;
+        }
+
+        if (unapprovedCount > 0)
+        {
+            await _context.SaveChangesAsync(cancellationToken);
+        }
+
+        return unapprovedCount;
     }
 
     private static decimal CalculateBonuses(IReadOnlyCollection<PayrollSessionRow> teacherSessions, IReadOnlyCollection<PayrollSessionRow> validSessions, decimal sessionEarnings)
     {
         decimal bonuses = 0m;
 
-        // Thưởng chuyên cần: 20k/buổi nếu tất cả học sinh đi học
         var fullAttendanceSessions = validSessions.Count(x => x.StudentCount > 0 && x.PresentCount == x.StudentCount);
         bonuses += fullAttendanceSessions * FullAttendanceBonusPerSession;
 
-        // Thưởng tuân thủ báo cáo: 30k/buổi nếu TẤT CẢ học sinh có mặt đều có nhận xét TỐT và có video được phân tích AI
-        var fullComplianceSessions = validSessions.Count(x => 
-            x.PresentCount > 0 && 
-            x.NoteReadyCount == x.PresentCount && 
+        var fullComplianceSessions = validSessions.Count(x =>
+            x.PresentCount > 0 &&
+            x.NoteReadyCount == x.PresentCount &&
             x.MediaReadyCount == x.PresentCount);
         bonuses += fullComplianceSessions * FullComplianceBonusPerSession;
 
-        // Thưởng thêm AI xuất sắc nếu có (giữ nguyên quy tắc cũ cho video xuất sắc)
         if (validSessions.Sum(x => x.ExcellentAiCount) >= 5)
         {
             bonuses += ExcellentAiBonus;
@@ -280,15 +409,16 @@ public sealed class PayrollCalculationService
 
         foreach (var session in validSessions)
         {
-            if (session.PresentCount == 0) continue;
+            if (session.PresentCount == 0)
+            {
+                continue;
+            }
 
-            // Phạt nếu có học sinh không được nhận xét
             if (session.NoteReadyCount < session.PresentCount)
             {
                 deductions += MissingNotePenaltyPerSession;
             }
 
-            // Phạt nếu buổi học KHÔNG có ít nhất 1 video được phân tích
             if (session.MediaReadyCount == 0)
             {
                 deductions += NoVideoPenaltyPerSession;
@@ -296,6 +426,25 @@ public sealed class PayrollCalculationService
         }
 
         return deductions;
+    }
+
+    private static string BuildPendingSessionsMessage(IReadOnlyCollection<PendingPayrollSession> pendingSessions)
+    {
+        if (pendingSessions.Count == 0)
+        {
+            return "Du dieu kien chot luong.";
+        }
+
+        var preview = string.Join(", ", pendingSessions
+            .Take(2)
+            .Select(x => $"{x.ClassCode}-B{x.SessionNo:00} ({x.SessionDate:dd/MM})"));
+
+        if (pendingSessions.Count > 2)
+        {
+            preview += $", +{pendingSessions.Count - 2} buoi";
+        }
+
+        return $"Con {pendingSessions.Count} buoi Pending: {preview}";
     }
 
     private static bool TryExtractAiScore(string? rawJson, out int score)
@@ -348,9 +497,37 @@ public sealed class PayrollCalculationService
         public int ExcellentAiCount { get; set; }
         public decimal SessionRateApplied { get; set; }
     }
+
+    private sealed class PendingPayrollSession
+    {
+        public int TeacherId { get; set; }
+        public string TeacherName { get; set; } = string.Empty;
+        public string ClassCode { get; set; } = string.Empty;
+        public int SessionNo { get; set; }
+        public DateOnly SessionDate { get; set; }
+    }
 }
 
-/// <summary>Kết quả ước tính lương real-time cho 1 giáo viên trong 1 kỳ.</summary>
+public sealed class PayrollApprovalReadiness
+{
+    public int TeacherId { get; set; }
+    public bool CanApprove { get; set; }
+    public int PendingSessionCount { get; set; }
+    public string Message { get; set; } = string.Empty;
+}
+
+public sealed class PayrollApprovalOperationResult
+{
+    public int ApprovedCount { get; set; }
+    public IReadOnlyList<PayrollApprovalBlockedItem> BlockedItems { get; set; } = [];
+}
+
+public sealed class PayrollApprovalBlockedItem
+{
+    public int TeacherId { get; set; }
+    public string Message { get; set; } = string.Empty;
+}
+
 public sealed class TeacherPayrollEstimate
 {
     public int TotalSessions { get; set; }
