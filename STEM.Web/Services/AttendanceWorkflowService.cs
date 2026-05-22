@@ -31,7 +31,8 @@ public sealed class AttendanceWorkflowService
     {
         var session = await _context.Sessions
             .AsNoTracking()
-            .Where(x => x.Id == sessionId && x.Class.TeacherId == teacherId)
+            .Where(x => x.Id == sessionId &&
+                        (x.Class.TeacherId == teacherId || x.SubstituteTeacherId == teacherId))
             .Select(x => new
             {
                 x.Date,

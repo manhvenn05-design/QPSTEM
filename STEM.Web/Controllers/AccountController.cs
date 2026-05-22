@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using STEM.Web.Data;
 using STEM.Web.Models;
+using STEM.Web.Services;
 using System.Security.Claims;
 
 namespace STEM.Web.Controllers;
@@ -70,7 +71,7 @@ public class AccountController : Controller
             new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
             new Claim(ClaimTypes.Name, user.Username),
             new Claim(ClaimTypes.GivenName, user.FullName),
-            new Claim(ClaimTypes.Role, user.Role.Name)
+            new Claim(ClaimTypes.Role, AppRoles.Canonicalize(user.Role.Name))
         };
 
         var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
@@ -90,17 +91,19 @@ public class AccountController : Controller
             return Redirect(returnUrl);
         }
 
-        if (user.Role.Name == "Admin")
+        var canonicalRole = AppRoles.Canonicalize(user.Role.Name);
+
+        if (canonicalRole == AppRoles.Admin)
         {
             return RedirectToAction("Index", "Dashboard", new { area = "Admin" });
         }
 
-        if (user.Role.Name == "Teacher")
+        if (canonicalRole == AppRoles.Teacher)
         {
             return RedirectToAction("Index", "Dashboard", new { area = "Teacher" });
         }
 
-        if (user.Role.Name == "Student")
+        if (canonicalRole == AppRoles.Student)
         {
             return RedirectToAction("Index", "StudentPortal", new { area = "Student" });
         }

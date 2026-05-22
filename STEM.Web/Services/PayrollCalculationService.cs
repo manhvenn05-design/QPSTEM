@@ -80,19 +80,22 @@ public sealed class PayrollCalculationService
 
         foreach (var teacherGroup in sessionRows.GroupBy(x => x.TeacherId))
         {
-            if (!teacherProfiles.TryGetValue(teacherGroup.Key, out var teacherProfile))
-            {
-                continue;
-            }
+            teacherProfiles.TryGetValue(teacherGroup.Key, out var teacherProfile);
 
             var validSessions = teacherGroup
                 .Where(x => string.Equals(x.PayrollStatus, AttendanceIntegrityRules.PayrollStatusValid, StringComparison.OrdinalIgnoreCase))
                 .ToList();
 
-            var sessionEarnings = validSessions.Sum(session => ResolveSessionRate(session, teacherProfile, payRates));
+            var sessionEarnings = teacherProfile == null
+                ? 0m
+                : validSessions.Sum(session => ResolveSessionRate(session, teacherProfile, payRates));
 
-            var bonuses = CalculateBonuses(teacherGroup.ToList(), validSessions, sessionEarnings);
-            var deductions = CalculateDeductions(teacherGroup.ToList(), validSessions, sessionEarnings);
+            var bonuses = teacherProfile == null
+                ? 0m
+                : CalculateBonuses(teacherGroup.ToList(), validSessions, sessionEarnings);
+            var deductions = teacherProfile == null
+                ? 0m
+                : CalculateDeductions(teacherGroup.ToList(), validSessions, sessionEarnings);
             var totalPay = Math.Max(0m, sessionEarnings + bonuses - deductions);
 
             var existingRecord = await _context.Set<PayrollRecord>()
@@ -121,6 +124,10 @@ public sealed class PayrollCalculationService
             targetRecord.TotalPay = totalPay;
             targetRecord.Status = PayrollDraftStatus;
             targetRecord.ApprovedAt = null;
+            if (teacherProfile == null)
+            {
+                targetRecord.AdjustmentNotes = "Thiếu TeacherProfile hoặc cấu hình lương. Cần admin kiểm tra trước khi chốt lương.";
+            }
 
             if (existingRecord == null)
             {

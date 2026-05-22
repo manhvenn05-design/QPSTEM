@@ -121,9 +121,27 @@ public static class AttendanceIntegrityRules
             return PayrollStatusInvalid;
         }
 
-        return attendanceCount >= studentCount
-            ? PayrollStatusValid
-            : PayrollStatusInvalid;
+        if (attendanceCount < studentCount)
+        {
+            return PayrollStatusPending;
+        }
+
+        if (presentCount <= 0)
+        {
+            return PayrollStatusInvalid;
+        }
+
+        if (notedPresentAttendanceCount < presentCount)
+        {
+            return PayrollStatusInvalid;
+        }
+
+        if (mediaReadyAttendanceCount < presentCount)
+        {
+            return PayrollStatusInvalid;
+        }
+
+        return PayrollStatusValid;
     }
 
     public static string SerializeAiResult(object? result)

@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using STEM.Web.Areas.Admin.Models;
 using STEM.Web.Data;
 using STEM.Web.Models;
+using STEM.Web.Services;
 
 namespace STEM.Web.Areas.Admin.Controllers;
 
@@ -13,6 +14,11 @@ namespace STEM.Web.Areas.Admin.Controllers;
 [Authorize(Roles = "Admin")]
 public class FinanceController : Controller
 {
+    private const byte InvoiceStatusUnpaid = 1;
+    private const byte InvoiceStatusPartial = 2;
+    private const byte InvoiceStatusPaid = 3;
+    private const byte InvoiceStatusVoided = 4;
+
     private readonly ApplicationDbContext _context;
 
     public FinanceController(ApplicationDbContext context)
@@ -25,10 +31,11 @@ public class FinanceController : Controller
     {
         var filters = new[]
         {
-            new FinanceFilterViewModel { Key = "all", Label = "Tất cả" },
-            new FinanceFilterViewModel { Key = "unpaid", Label = "Chưa thu" },
-            new FinanceFilterViewModel { Key = "partial", Label = "Thu một phần" },
-            new FinanceFilterViewModel { Key = "paid", Label = "Đã thu đủ" }
+            new FinanceFilterViewModel { Key = "all", Label = "Táº¥t cáº£" },
+            new FinanceFilterViewModel { Key = "unpaid", Label = "ChÆ°a thu" },
+            new FinanceFilterViewModel { Key = "partial", Label = "Thu má»™t pháº§n" },
+            new FinanceFilterViewModel { Key = "paid", Label = "ÄÃ£ thu Ä‘á»§" },
+            new FinanceFilterViewModel { Key = "voided", Label = "ÄÃ£ há»§y" }
         };
 
         var normalizedFilter = NormalizeFilter(filter, filters.Select(x => x.Key));
@@ -43,6 +50,7 @@ public class FinanceController : Controller
                 StudentName = x.Student.FullName,
                 StudentUsername = x.Student.Username,
                 ClassCode = x.Class != null ? x.Class.ClassCode : null,
+                Status = x.Status,
                 FinalAmount = x.FinalAmount,
                 PaidAmount = x.Payments.Sum(p => (decimal?)p.Amount) ?? 0m
             });
@@ -58,9 +66,10 @@ public class FinanceController : Controller
 
         invoicesQuery = normalizedFilter switch
         {
-            "unpaid" => invoicesQuery.Where(x => x.PaidAmount == 0),
-            "partial" => invoicesQuery.Where(x => x.PaidAmount > 0 && x.PaidAmount < x.FinalAmount),
-            "paid" => invoicesQuery.Where(x => x.PaidAmount >= x.FinalAmount),
+            "unpaid" => invoicesQuery.Where(x => x.Status != InvoiceStatusVoided && x.PaidAmount == 0),
+            "partial" => invoicesQuery.Where(x => x.Status != InvoiceStatusVoided && x.PaidAmount > 0 && x.PaidAmount < x.FinalAmount),
+            "paid" => invoicesQuery.Where(x => x.Status != InvoiceStatusVoided && x.PaidAmount >= x.FinalAmount),
+            "voided" => invoicesQuery.Where(x => x.Status == InvoiceStatusVoided),
             _ => invoicesQuery
         };
 
@@ -94,6 +103,7 @@ public class FinanceController : Controller
 
         var totalRevenue = await _context.Payments.SumAsync(x => (decimal?)x.Amount) ?? 0m;
         var totalOutstanding = await _context.Invoices
+            .Where(x => x.Status != InvoiceStatusVoided)
             .Select(x => x.FinalAmount - (x.Payments.Sum(p => (decimal?)p.Amount) ?? 0m))
             .SumAsync();
 
@@ -103,11 +113,16 @@ public class FinanceController : Controller
             SearchTerm = searchTerm,
             TotalRevenue = totalRevenue,
             TotalOutstanding = totalOutstanding,
-            OutstandingInvoiceCount = await _context.Invoices.CountAsync(x => x.FinalAmount > (x.Payments.Sum(p => (decimal?)p.Amount) ?? 0m)),
+            OutstandingInvoiceCount = await _context.Invoices.CountAsync(x =>
+                x.Status != InvoiceStatusVoided &&
+                x.FinalAmount > (x.Payments.Sum(p => (decimal?)p.Amount) ?? 0m)),
             PartialInvoiceCount = await _context.Invoices.CountAsync(x =>
+                x.Status != InvoiceStatusVoided &&
                 (x.Payments.Sum(p => (decimal?)p.Amount) ?? 0m) > 0m &&
                 (x.Payments.Sum(p => (decimal?)p.Amount) ?? 0m) < x.FinalAmount),
-            UnpaidInvoiceCount = await _context.Invoices.CountAsync(x => !x.Payments.Any()),
+            UnpaidInvoiceCount = await _context.Invoices.CountAsync(x =>
+                x.Status != InvoiceStatusVoided &&
+                !x.Payments.Any()),
             PaymentCount = await _context.Payments.CountAsync(),
             Filters = filters,
             Invoices = invoiceRows.Select(MapInvoiceItem).ToList(),
@@ -130,8 +145,9 @@ public class FinanceController : Controller
                 StudentName = x.Student.FullName,
                 StudentUsername = x.Student.Username,
                 StudentEmail = x.Student.Email,
-                ClassCode = x.Class != null ? x.Class.ClassCode : "Chưa gắn lớp",
+                ClassCode = x.Class != null ? x.Class.ClassCode : "ChÆ°a gáº¯n lá»›p",
                 FinalAmount = x.FinalAmount,
+                Status = x.Status,
                 PaidAmount = x.Payments.Sum(p => (decimal?)p.Amount) ?? 0m,
                 Payments = x.Payments
                     .OrderByDescending(p => p.TransDate)
@@ -177,22 +193,22 @@ public class FinanceController : Controller
 
         if (await _context.Invoices.AnyAsync(x => x.InvoiceNo.ToLower() == normalizedInvoiceNo.ToLower()))
         {
-            ModelState.AddModelError(nameof(model.InvoiceNo), "Số hóa đơn đã tồn tại.");
+            ModelState.AddModelError(nameof(model.InvoiceNo), "Sá»‘ hÃ³a Ä‘Æ¡n Ä‘Ã£ tá»“n táº¡i.");
         }
 
         if (!await IsValidStudentAsync(model.StudentId))
         {
-            ModelState.AddModelError(nameof(model.StudentId), "Học viên không hợp lệ.");
+            ModelState.AddModelError(nameof(model.StudentId), "Há»c viÃªn khÃ´ng há»£p lá»‡.");
         }
 
         if (model.ClassId.HasValue && !await IsValidClassAsync(model.ClassId))
         {
-            ModelState.AddModelError(nameof(model.ClassId), "Lớp học không hợp lệ.");
+            ModelState.AddModelError(nameof(model.ClassId), "Lá»›p há»c khÃ´ng há»£p lá»‡.");
         }
 
         if (model.StudentId.HasValue && model.ClassId.HasValue && !await IsStudentInClassAsync(model.StudentId.Value, model.ClassId.Value))
         {
-            ModelState.AddModelError(nameof(model.ClassId), "Học viên không thuộc lớp đã chọn.");
+            ModelState.AddModelError(nameof(model.ClassId), "Há»c viÃªn khÃ´ng thuá»™c lá»›p Ä‘Ã£ chá»n.");
         }
 
         if (!ModelState.IsValid)
@@ -206,7 +222,7 @@ public class FinanceController : Controller
             ClassId = model.ClassId,
             InvoiceNo = normalizedInvoiceNo,
             FinalAmount = model.FinalAmount,
-            Status = 1
+            Status = InvoiceStatusUnpaid
         };
 
         try
@@ -216,11 +232,11 @@ public class FinanceController : Controller
         }
         catch (DbUpdateException ex) when (IsDuplicateInvoiceNo(ex))
         {
-            ModelState.AddModelError(nameof(model.InvoiceNo), "Số hóa đơn đã tồn tại.");
+            ModelState.AddModelError(nameof(model.InvoiceNo), "Sá»‘ hÃ³a Ä‘Æ¡n Ä‘Ã£ tá»“n táº¡i.");
             return View(model);
         }
 
-        TempData["SuccessMessage"] = "Đã tạo hóa đơn mới.";
+        TempData["SuccessMessage"] = "ÄÃ£ táº¡o hÃ³a Ä‘Æ¡n má»›i.";
         return RedirectToAction(nameof(Index));
     }
 
@@ -263,28 +279,28 @@ public class FinanceController : Controller
         var normalizedInvoiceNo = model.InvoiceNo.Trim().ToUpperInvariant();
         if (await _context.Invoices.AnyAsync(x => x.Id != model.Id && x.InvoiceNo.ToLower() == normalizedInvoiceNo.ToLower()))
         {
-            ModelState.AddModelError(nameof(model.InvoiceNo), "Số hóa đơn đã tồn tại.");
+            ModelState.AddModelError(nameof(model.InvoiceNo), "Sá»‘ hÃ³a Ä‘Æ¡n Ä‘Ã£ tá»“n táº¡i.");
         }
 
         if (!await IsValidStudentAsync(model.StudentId))
         {
-            ModelState.AddModelError(nameof(model.StudentId), "Học viên không hợp lệ.");
+            ModelState.AddModelError(nameof(model.StudentId), "Há»c viÃªn khÃ´ng há»£p lá»‡.");
         }
 
         if (model.ClassId.HasValue && !await IsValidClassAsync(model.ClassId))
         {
-            ModelState.AddModelError(nameof(model.ClassId), "Lớp học không hợp lệ.");
+            ModelState.AddModelError(nameof(model.ClassId), "Lá»›p há»c khÃ´ng há»£p lá»‡.");
         }
 
         if (model.StudentId.HasValue && model.ClassId.HasValue && !await IsStudentInClassAsync(model.StudentId.Value, model.ClassId.Value))
         {
-            ModelState.AddModelError(nameof(model.ClassId), "Học viên không thuộc lớp đã chọn.");
+            ModelState.AddModelError(nameof(model.ClassId), "Há»c viÃªn khÃ´ng thuá»™c lá»›p Ä‘Ã£ chá»n.");
         }
 
         var paidAmount = entity.Payments.Sum(x => x.Amount);
         if (model.FinalAmount < paidAmount)
         {
-            ModelState.AddModelError(nameof(model.FinalAmount), "Tổng tiền không được nhỏ hơn số tiền đã thu.");
+            ModelState.AddModelError(nameof(model.FinalAmount), "Tá»•ng tiá»n khÃ´ng Ä‘Æ°á»£c nhá» hÆ¡n sá»‘ tiá»n Ä‘Ã£ thu.");
         }
 
         if (!ModelState.IsValid)
@@ -304,11 +320,11 @@ public class FinanceController : Controller
         }
         catch (DbUpdateException ex) when (IsDuplicateInvoiceNo(ex))
         {
-            ModelState.AddModelError(nameof(model.InvoiceNo), "Số hóa đơn đã tồn tại.");
+            ModelState.AddModelError(nameof(model.InvoiceNo), "Sá»‘ hÃ³a Ä‘Æ¡n Ä‘Ã£ tá»“n táº¡i.");
             return View(model);
         }
 
-        TempData["SuccessMessage"] = "Đã cập nhật hóa đơn.";
+        TempData["SuccessMessage"] = "ÄÃ£ cáº­p nháº­t hÃ³a Ä‘Æ¡n.";
         return RedirectToAction(nameof(InvoiceDetails), new { id = model.Id });
     }
 
@@ -327,21 +343,17 @@ public class FinanceController : Controller
 
         if (entity.Payments.Count > 0)
         {
-            TempData["ErrorMessage"] = $"Hóa đơn \"{entity.InvoiceNo}\" đã có {entity.Payments.Count} lần thanh toán. Không thể xóa hồ sơ tài chính. Dùng \"Hủy hóa đơn\" nếu không còn hiệu lực.";
+            TempData["ErrorMessage"] = $"HÃ³a Ä‘Æ¡n \"{entity.InvoiceNo}\" Ä‘Ã£ cÃ³ {entity.Payments.Count} láº§n thanh toÃ¡n. KhÃ´ng thá»ƒ xÃ³a há»“ sÆ¡ tÃ i chÃ­nh. DÃ¹ng \"Há»§y hÃ³a Ä‘Æ¡n\" náº¿u khÃ´ng cÃ²n hiá»‡u lá»±c.";
             return RedirectToAction(nameof(Index));
         }
 
         _context.Invoices.Remove(entity);
         await _context.SaveChangesAsync();
 
-        TempData["SuccessMessage"] = "Đã xóa hóa đơn.";
+        TempData["SuccessMessage"] = "ÄÃ£ xÃ³a hÃ³a Ä‘Æ¡n.";
         return RedirectToAction(nameof(Index));
     }
 
-    /// <summary>
-    /// Hủy hóa đơn: Đặt Status = 4 (Hủy), giữ lại record để audit trail.
-    /// Không xóa dữ liệu tài chính. Hành động an toàn, có thể hoàn tác bằng cách sửa status.
-    /// </summary>
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> VoidInvoice(int id)
@@ -350,20 +362,27 @@ public class FinanceController : Controller
 
         if (entity == null)
         {
-            TempData["ErrorMessage"] = "Không tìm thấy hóa đơn.";
+            TempData["ErrorMessage"] = "KhÃ´ng tÃ¬m tháº¥y hÃ³a Ä‘Æ¡n.";
             return RedirectToAction(nameof(Index));
         }
 
-        if (entity.Status == 4)
+        if (entity.Status == InvoiceStatusVoided)
         {
-            TempData["ErrorMessage"] = "Hóa đơn này đã ở trạng thái Hủy.";
+            TempData["ErrorMessage"] = "HÃ³a Ä‘Æ¡n nÃ y Ä‘Ã£ á»Ÿ tráº¡ng thÃ¡i Há»§y.";
             return RedirectToAction(nameof(Index));
         }
 
-        entity.Status = 4; // 4 = Đã hủy
+        var paymentCount = await _context.Payments.CountAsync(x => x.InvoiceId == id);
+        if (paymentCount > 0)
+        {
+            TempData["ErrorMessage"] = $"HÃ³a Ä‘Æ¡n \"{entity.InvoiceNo}\" Ä‘Ã£ phÃ¡t sinh thanh toÃ¡n nÃªn khÃ´ng Ä‘Æ°á»£c há»§y trá»±c tiáº¿p.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        entity.Status = InvoiceStatusVoided;
         await _context.SaveChangesAsync();
 
-        TempData["SuccessMessage"] = $"Đã hủy hóa đơn \"{entity.InvoiceNo}\". Hồ sơ vẫn được lưu lại.";
+        TempData["SuccessMessage"] = $"ÄÃ£ há»§y hÃ³a Ä‘Æ¡n \"{entity.InvoiceNo}\". Há»“ sÆ¡ váº«n Ä‘Æ°á»£c lÆ°u láº¡i.";
         return RedirectToAction(nameof(Index));
     }
 
@@ -390,12 +409,12 @@ public class FinanceController : Controller
 
         if (!await IsValidInvoiceAsync(model.InvoiceId))
         {
-            ModelState.AddModelError(nameof(model.InvoiceId), "Hóa đơn không hợp lệ.");
+            ModelState.AddModelError(nameof(model.InvoiceId), "HÃ³a Ä‘Æ¡n khÃ´ng há»£p lá»‡.");
         }
 
         if (model.Amount > model.InvoiceDueAmount)
         {
-            ModelState.AddModelError(nameof(model.Amount), "Số tiền thanh toán không được vượt quá công nợ còn lại.");
+            ModelState.AddModelError(nameof(model.Amount), "Sá»‘ tiá»n thanh toÃ¡n khÃ´ng Ä‘Æ°á»£c vÆ°á»£t quÃ¡ cÃ´ng ná»£ cÃ²n láº¡i.");
         }
 
         if (!ModelState.IsValid)
@@ -418,7 +437,7 @@ public class FinanceController : Controller
         SyncInvoiceStatus(invoice);
         await _context.SaveChangesAsync();
 
-        TempData["SuccessMessage"] = "Đã ghi nhận thanh toán.";
+        TempData["SuccessMessage"] = "ÄÃ£ ghi nháº­n thanh toÃ¡n.";
         return RedirectToAction(nameof(InvoiceDetails), new { id = entity.InvoiceId });
     }
 
@@ -460,12 +479,12 @@ public class FinanceController : Controller
 
         if (!await IsValidInvoiceAsync(model.InvoiceId))
         {
-            ModelState.AddModelError(nameof(model.InvoiceId), "Hóa đơn không hợp lệ.");
+            ModelState.AddModelError(nameof(model.InvoiceId), "HÃ³a Ä‘Æ¡n khÃ´ng há»£p lá»‡.");
         }
 
         if (model.Amount > model.InvoiceDueAmount)
         {
-            ModelState.AddModelError(nameof(model.Amount), "Số tiền thanh toán không được vượt quá công nợ còn lại.");
+            ModelState.AddModelError(nameof(model.Amount), "Sá»‘ tiá»n thanh toÃ¡n khÃ´ng Ä‘Æ°á»£c vÆ°á»£t quÃ¡ cÃ´ng ná»£ cÃ²n láº¡i.");
         }
 
         if (!ModelState.IsValid)
@@ -489,7 +508,7 @@ public class FinanceController : Controller
 
         await _context.SaveChangesAsync();
 
-        TempData["SuccessMessage"] = "Đã cập nhật thanh toán.";
+        TempData["SuccessMessage"] = "ÄÃ£ cáº­p nháº­t thanh toÃ¡n.";
         return RedirectToAction(nameof(PaymentDetails), new { id = model.Id });
     }
 
@@ -505,7 +524,7 @@ public class FinanceController : Controller
                 InvoiceId = x.InvoiceId,
                 InvoiceNo = x.Invoice.InvoiceNo,
                 StudentName = x.Invoice.Student.FullName,
-                ClassCode = x.Invoice.Class != null ? x.Invoice.Class.ClassCode : "Chưa gắn lớp",
+                ClassCode = x.Invoice.Class != null ? x.Invoice.Class.ClassCode : "ChÆ°a gáº¯n lá»›p",
                 Amount = x.Amount,
                 AmountText = FormatMoney(x.Amount),
                 PaymentMethod = GetPaymentMethodLabel(x.PaymentMethod),
@@ -540,7 +559,7 @@ public class FinanceController : Controller
         SyncInvoiceStatus(invoice);
         await _context.SaveChangesAsync();
 
-        TempData["SuccessMessage"] = "Đã xóa thanh toán.";
+        TempData["SuccessMessage"] = "ÄÃ£ xÃ³a thanh toÃ¡n.";
         return RedirectToAction(nameof(InvoiceDetails), new { id = invoiceId });
     }
 
@@ -552,19 +571,24 @@ public class FinanceController : Controller
 
     private static InvoiceManagementItemViewModel MapInvoiceItem(InvoiceListRow item)
     {
+        var dueAmount = item.Status == InvoiceStatusVoided
+            ? 0m
+            : item.FinalAmount - item.PaidAmount;
+
         var model = new InvoiceManagementItemViewModel
         {
             Id = item.Id,
             InvoiceNo = item.InvoiceNo,
             StudentName = item.StudentName,
             StudentUsername = item.StudentUsername,
-            ClassCode = item.ClassCode ?? "Chưa gắn lớp",
+            ClassCode = item.ClassCode ?? "ChÆ°a gáº¯n lá»›p",
             FinalAmount = item.FinalAmount,
             PaidAmount = item.PaidAmount,
-            DueAmount = item.FinalAmount - item.PaidAmount,
+            DueAmount = dueAmount,
             FinalAmountText = FormatMoney(item.FinalAmount),
             PaidAmountText = FormatMoney(item.PaidAmount),
-            DueAmountText = FormatMoney(item.FinalAmount - item.PaidAmount)
+            DueAmountText = FormatMoney(dueAmount),
+            Status = item.Status
         };
 
         ApplyInvoiceStatus(model, model.PaidAmount);
@@ -573,17 +597,35 @@ public class FinanceController : Controller
 
     private static void ApplyInvoiceStatus(InvoiceManagementItemViewModel model, decimal paidAmount)
     {
-        model.Status = paidAmount <= 0 ? (byte)1 : paidAmount >= model.FinalAmount ? (byte)3 : (byte)2;
+        if (model.Status == InvoiceStatusVoided)
+        {
+            model.DueAmount = 0m;
+            model.DueAmountText = FormatMoney(0m);
+            (model.StatusLabel, model.StatusBadgeClass) = GetInvoiceStatusDisplay(InvoiceStatusVoided);
+            return;
+        }
+
+        model.Status = paidAmount <= 0 ? InvoiceStatusUnpaid : paidAmount >= model.FinalAmount ? InvoiceStatusPaid : InvoiceStatusPartial;
         (model.StatusLabel, model.StatusBadgeClass) = GetInvoiceStatusDisplay(model.Status);
     }
 
     private static void ApplyInvoiceStatus(InvoiceDetailsViewModel model, decimal paidAmount)
     {
+        if (model.Status == InvoiceStatusVoided)
+        {
+            model.DueAmount = 0m;
+            model.FinalAmountText = FormatMoney(model.FinalAmount);
+            model.PaidAmountText = FormatMoney(paidAmount);
+            model.DueAmountText = FormatMoney(0m);
+            (model.StatusLabel, model.StatusBadgeClass) = GetInvoiceStatusDisplay(InvoiceStatusVoided);
+            return;
+        }
+
         model.DueAmount = model.FinalAmount - paidAmount;
         model.FinalAmountText = FormatMoney(model.FinalAmount);
         model.PaidAmountText = FormatMoney(paidAmount);
         model.DueAmountText = FormatMoney(model.DueAmount);
-        model.Status = paidAmount <= 0 ? (byte)1 : paidAmount >= model.FinalAmount ? (byte)3 : (byte)2;
+        model.Status = paidAmount <= 0 ? InvoiceStatusUnpaid : paidAmount >= model.FinalAmount ? InvoiceStatusPaid : InvoiceStatusPartial;
         (model.StatusLabel, model.StatusBadgeClass) = GetInvoiceStatusDisplay(model.Status);
     }
 
@@ -591,11 +633,11 @@ public class FinanceController : Controller
     {
         return status switch
         {
-            1 => ("Chưa thu", "bg-[#ffdad6] text-[#ba1a1a]"),
-            2 => ("Thu một phần", "bg-[#fff4e8] text-[#9b682f]"),
-            3 => ("Đã thu đủ", "bg-[#edf7e8] text-[#456c3f]"),
-            4 => ("Đã hủy", "bg-[#eeeee9] text-[#42493d]"),
-            _ => ($"Trạng thái {status}", "bg-[#eeeee9] text-[#42493d]")
+            InvoiceStatusUnpaid => ("ChÆ°a thu", "bg-[#ffdad6] text-[#ba1a1a]"),
+            InvoiceStatusPartial => ("Thu má»™t pháº§n", "bg-[#fff4e8] text-[#9b682f]"),
+            InvoiceStatusPaid => ("ÄÃ£ thu Ä‘á»§", "bg-[#edf7e8] text-[#456c3f]"),
+            InvoiceStatusVoided => ("ÄÃ£ há»§y", "bg-[#eeeee9] text-[#42493d]"),
+            _ => ($"Tráº¡ng thÃ¡i {status}", "bg-[#eeeee9] text-[#42493d]")
         };
     }
 
@@ -603,7 +645,7 @@ public class FinanceController : Controller
     {
         model.StudentOptions = await _context.Users
             .AsNoTracking()
-            .Where(x => x.Role.Name == "Student")
+            .Where(x => AppRoles.IsStudent(x.Role.Name))
             .OrderBy(x => x.FullName)
             .Select(x => new SelectListItem
             {
@@ -627,20 +669,21 @@ public class FinanceController : Controller
     {
         model.InvoiceOptions = await _context.Invoices
             .AsNoTracking()
+            .Where(x => x.Status != InvoiceStatusVoided)
             .OrderByDescending(x => x.Id)
             .Select(x => new SelectListItem
             {
                 Value = x.Id.ToString(),
-                Text = $"{x.InvoiceNo} · {x.Student.FullName}"
+                Text = $"{x.InvoiceNo} Â· {x.Student.FullName}"
             })
             .ToListAsync();
 
         model.PaymentMethodOptions =
         [
-            new SelectListItem { Value = "Cash", Text = "Tiền mặt" },
-            new SelectListItem { Value = "Banking", Text = "Chuyển khoản" },
-            new SelectListItem { Value = "Card", Text = "Thẻ" },
-            new SelectListItem { Value = "Other", Text = "Khác" }
+            new SelectListItem { Value = "Cash", Text = "Tiá»n máº·t" },
+            new SelectListItem { Value = "Banking", Text = "Chuyá»ƒn khoáº£n" },
+            new SelectListItem { Value = "Card", Text = "Tháº»" },
+            new SelectListItem { Value = "Other", Text = "KhÃ¡c" }
         ];
     }
 
@@ -656,6 +699,7 @@ public class FinanceController : Controller
             .Where(x => x.Id == model.InvoiceId.Value)
             .Select(x => new
             {
+                x.Status,
                 x.FinalAmount,
                 PaidAmount = x.Payments
                     .Where(p => !ignorePaymentId.HasValue || p.Id != ignorePaymentId.Value)
@@ -670,18 +714,26 @@ public class FinanceController : Controller
 
         model.InvoiceFinalAmount = invoice.FinalAmount;
         model.InvoicePaidAmount = invoice.PaidAmount;
-        model.InvoiceDueAmount = invoice.FinalAmount - invoice.PaidAmount;
+        model.InvoiceDueAmount = invoice.Status == InvoiceStatusVoided
+            ? 0m
+            : invoice.FinalAmount - invoice.PaidAmount;
     }
 
     private static void SyncInvoiceStatus(Invoice invoice)
     {
+        if (invoice.Status == InvoiceStatusVoided)
+        {
+            return;
+        }
+
         var paidAmount = invoice.Payments.Sum(x => x.Amount);
-        invoice.Status = paidAmount <= 0 ? (byte)1 : paidAmount >= invoice.FinalAmount ? (byte)3 : (byte)2;
+        invoice.Status = paidAmount <= 0 ? InvoiceStatusUnpaid : paidAmount >= invoice.FinalAmount ? InvoiceStatusPaid : InvoiceStatusPartial;
     }
 
     private async Task<bool> IsValidStudentAsync(int? studentId)
     {
-        return studentId.HasValue && await _context.Users.AnyAsync(x => x.Id == studentId.Value && x.Role.Name == "Student");
+        return studentId.HasValue &&
+               await _context.Users.AnyAsync(x => x.Id == studentId.Value && AppRoles.IsStudent(x.Role.Name));
     }
 
     private async Task<bool> IsValidClassAsync(int? classId)
@@ -696,22 +748,23 @@ public class FinanceController : Controller
 
     private async Task<bool> IsValidInvoiceAsync(int? invoiceId)
     {
-        return invoiceId.HasValue && await _context.Invoices.AnyAsync(x => x.Id == invoiceId.Value);
+        return invoiceId.HasValue &&
+               await _context.Invoices.AnyAsync(x => x.Id == invoiceId.Value && x.Status != InvoiceStatusVoided);
     }
 
     private static string FormatMoney(decimal amount)
     {
-        return $"{amount:N0}đ";
+        return $"{amount:N0}Ä‘";
     }
 
     private static string GetPaymentMethodLabel(string method)
     {
         return method switch
         {
-            "Cash" => "Tiền mặt",
-            "Banking" => "Chuyển khoản",
-            "Card" => "Thẻ",
-            "Other" => "Khác",
+            "Cash" => "Tiá»n máº·t",
+            "Banking" => "Chuyá»ƒn khoáº£n",
+            "Card" => "Tháº»",
+            "Other" => "KhÃ¡c",
             _ => method
         };
     }
@@ -729,9 +782,8 @@ public class FinanceController : Controller
         public string StudentName { get; init; } = string.Empty;
         public string StudentUsername { get; init; } = string.Empty;
         public string? ClassCode { get; init; }
+        public byte Status { get; init; }
         public decimal FinalAmount { get; init; }
         public decimal PaidAmount { get; init; }
     }
 }
-
-

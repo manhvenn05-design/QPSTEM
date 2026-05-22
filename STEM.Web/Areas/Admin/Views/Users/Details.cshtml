@@ -8,7 +8,7 @@
     <div class="admin-page-header">
         <div>
             <h1 class="admin-page-title">Chi tiết người dùng</h1>
-            <p class="admin-page-subtitle">Xem toàn bộ thông tin tài khoản, vai trò và dữ liệu học sinh liên quan nếu có.</p>
+            <p class="admin-page-subtitle">Xem toàn bộ thông tin tài khoản, vai trò và hồ sơ nghiệp vụ tương ứng.</p>
         </div>
 
         <div class="admin-actions">
@@ -59,45 +59,51 @@
                 </div>
             </div>
 
-            <div class="admin-card">
-                <div class="admin-card-section">
-                    <h2 class="admin-section-title">Thông tin học sinh</h2>
-                    <dl class="admin-data-grid two-col mt-6">
-                        <div class="admin-data-item md:col-span-2">
-                            <dt>Trường đang theo học</dt>
-                            <dd>@(string.IsNullOrWhiteSpace(Model.CurrentSchool) ? "Không áp dụng" : Model.CurrentSchool)</dd>
-                        </div>
-                        <div class="admin-data-item">
-                            <dt>Người giám hộ</dt>
-                            <dd>@(string.IsNullOrWhiteSpace(Model.GuardianName) ? "Không áp dụng" : Model.GuardianName)</dd>
-                        </div>
-                        <div class="admin-data-item">
-                            <dt>Số điện thoại giám hộ</dt>
-                            <dd>@(string.IsNullOrWhiteSpace(Model.GuardianPhone) ? "Không áp dụng" : Model.GuardianPhone)</dd>
-                        </div>
-                        <div class="admin-data-item md:col-span-2">
-                            <dt>Ghi chú y tế</dt>
-                            <dd>@(string.IsNullOrWhiteSpace(Model.MedicalNotes) ? "Không có" : Model.MedicalNotes)</dd>
-                        </div>
-                    </dl>
+            @if (Model.IsStudentRole)
+            {
+                <div class="admin-card">
+                    <div class="admin-card-section">
+                        <h2 class="admin-section-title">Thông tin học sinh</h2>
+                        <dl class="admin-data-grid two-col mt-6">
+                            <div class="admin-data-item md:col-span-2">
+                                <dt>Trường đang theo học</dt>
+                                <dd>@(string.IsNullOrWhiteSpace(Model.CurrentSchool) ? "Chưa cập nhật" : Model.CurrentSchool)</dd>
+                            </div>
+                            <div class="admin-data-item">
+                                <dt>Người giám hộ</dt>
+                                <dd>@(string.IsNullOrWhiteSpace(Model.GuardianName) ? "Chưa cập nhật" : Model.GuardianName)</dd>
+                            </div>
+                            <div class="admin-data-item">
+                                <dt>Số điện thoại giám hộ</dt>
+                                <dd>@(string.IsNullOrWhiteSpace(Model.GuardianPhone) ? "Chưa cập nhật" : Model.GuardianPhone)</dd>
+                            </div>
+                            <div class="admin-data-item md:col-span-2">
+                                <dt>Ghi chú y tế</dt>
+                                <dd>@(string.IsNullOrWhiteSpace(Model.MedicalNotes) ? "Không có" : Model.MedicalNotes)</dd>
+                            </div>
+                        </dl>
+                    </div>
                 </div>
-            </div>
+            }
 
-            <div class="admin-card">
-                <div class="admin-card-section">
-                    <h2 class="admin-section-title">Thông tin bảng lương giáo viên</h2>
-                    <dl class="admin-data-grid two-col mt-6">
-                        <div class="admin-data-item">
-                            <dt>Bậc lương</dt>
-                            <dd>@(Model.SalaryTier.HasValue ? $"Bậc {Model.SalaryTier.Value}" : "Không áp dụng")</dd>
-                        </div>
-                        <div class="admin-data-item">
-                            <dt>Lương khoán / ca</dt>
-                            <dd>@(Model.CustomSessionRate.HasValue ? $"{Model.CustomSessionRate.Value:N0} VNĐ" : "Tính theo Tier")</dd>
-                        </div>
-                    </dl>
+            @if (Model.IsTeacherRole)
+            {
+                <div class="admin-card">
+                    <div class="admin-card-section">
+                        <h2 class="admin-section-title">Thông tin bảng lương giáo viên</h2>
+                        <dl class="admin-data-grid two-col mt-6">
+                            <div class="admin-data-item">
+                                <dt>Bậc lương</dt>
+                                <dd>@(Model.SalaryTier.HasValue ? $"Bậc {Model.SalaryTier.Value}" : "Chưa cấu hình")</dd>
+                            </div>
+                            <div class="admin-data-item">
+                                <dt>Lương khoán / ca</dt>
+                                <dd>@(Model.CustomSessionRate.HasValue ? $"{Model.CustomSessionRate.Value:N0} VNĐ" : "Tính theo Tier")</dd>
+                            </div>
+                        </dl>
+                    </div>
                 </div>
-            </div>
+            }
         </div>
 
         <aside class="space-y-6">

@@ -38,7 +38,7 @@ public class InvoiceManagementItemViewModel
     public string PaidAmountText { get; set; } = string.Empty;
     public string DueAmountText { get; set; } = string.Empty;
     public byte Status { get; set; }
-    public bool CanCollectPayment => DueAmount > 0;
+    public bool CanCollectPayment => Status != 4 && DueAmount > 0;
     public string StatusLabel { get; set; } = string.Empty;
     public string StatusBadgeClass { get; set; } = string.Empty;
 }

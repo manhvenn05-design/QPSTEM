@@ -234,6 +234,8 @@ public class UserDetailsViewModel
     public bool IsActive { get; set; }
     public string StatusLabel { get; set; } = string.Empty;
     public string StatusBadgeClass { get; set; } = string.Empty;
+    public bool IsStudentRole { get; set; }
+    public bool IsTeacherRole { get; set; }
     public string? CurrentSchool { get; set; }
     public string? GuardianName { get; set; }
     public string? GuardianPhone { get; set; }

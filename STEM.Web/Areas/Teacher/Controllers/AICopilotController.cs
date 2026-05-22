@@ -100,12 +100,19 @@ public class AICopilotController : Controller
             .ThenInclude(x => x.Class)
             .FirstOrDefaultAsync(
                 x => x.Id == request.AttendanceId &&
-                     x.Session.Class.TeacherId == teacherId.Value,
+                     (x.Session.Class.TeacherId == teacherId.Value || x.Session.SubstituteTeacherId == teacherId.Value),
                 ct);
 
         if (attendance == null)
         {
             return NotFound(new { success = false, message = "Không tìm thấy bản ghi điểm danh cần phân tích." });
+        }
+
+        if (attendance.Session.Class.TeacherId == teacherId.Value &&
+            attendance.Session.SubstituteTeacherId.HasValue &&
+            attendance.Session.SubstituteTeacherId.Value != teacherId.Value)
+        {
+            return BadRequest(new { success = false, message = "Buổi này đã được giao cho giáo viên khác dạy thay." });
         }
 
         var editLockMessage = await _attendanceWorkflow.GetTeacherEditLockMessageAsync(

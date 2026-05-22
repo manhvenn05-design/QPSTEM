@@ -119,6 +119,8 @@ public class UsersController : Controller
             IsActive = user.IsActive,
             StatusLabel = user.IsActive ? "Hoạt động" : "Bị khóa",
             StatusBadgeClass = user.IsActive ? "bg-[#e6eef9] text-[#1a3a6e]" : "bg-[#fdeaea] text-[#ba1a1a]",
+            IsStudentRole = IsStudentRole(user.Role.Name),
+            IsTeacherRole = IsTeacherRole(user.Role.Name),
             CurrentSchool = user.StudentProfile?.CurrentSchool,
             GuardianName = user.StudentProfile?.GuardianName,
             GuardianPhone = user.StudentProfile?.GuardianPhone,
@@ -155,6 +157,7 @@ public class UsersController : Controller
         var selectedRole = roles.FirstOrDefault(x => x.Id == model.RoleId);
         model.IsStudentRoleSelected = selectedRole != null && IsStudentRole(selectedRole.Name);
         model.IsTeacherRoleSelected = selectedRole != null && IsTeacherRole(selectedRole.Name);
+        AddStudentProfileValidationErrors(model.IsStudentRoleSelected, model.GuardianName, model.GuardianPhone);
 
         if (!string.IsNullOrWhiteSpace(normalizedUsername) &&
             await _context.Users.AnyAsync(x => x.Username.ToLower() == normalizedUsername.ToLower()))
@@ -208,11 +211,16 @@ public class UsersController : Controller
 
         try
         {
+            await using var transaction = await _context.Database.BeginTransactionAsync();
+
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
 
             await UpsertStudentProfileAsync(user.Id, model.IsStudentRoleSelected, model.CurrentSchool, model.GuardianName, model.GuardianPhone, model.MedicalNotes);
             await UpsertTeacherProfileAsync(user.Id, model.IsTeacherRoleSelected, model.SalaryTier, model.CustomSessionRate);
+            await _context.SaveChangesAsync();
+
+            await transaction.CommitAsync();
         }
         catch (DbUpdateException ex) when (IsDuplicateUsername(ex))
         {
@@ -224,6 +232,15 @@ public class UsersController : Controller
             model.SuggestedUsernames = await SuggestAvailableUsernamesAsync(normalizedUsername, model.FullName);
             ModelState.AddModelError(nameof(model.Username), "Tên đăng nhập đã tồn tại. Hãy chọn tên khác hoặc dùng một trong các gợi ý bên dưới.");
             return View(model);
+        }
+        catch
+        {
+            if (uploadedAvatarUrl != null)
+            {
+                await _fileStorage.DeleteFileAsync(uploadedAvatarUrl);
+            }
+
+            throw;
         }
 
         TempData["SuccessMessage"] = "Đã tạo người dùng mới.";
@@ -297,6 +314,7 @@ public class UsersController : Controller
         var selectedRole = roles.FirstOrDefault(x => x.Id == model.RoleId);
         model.IsStudentRoleSelected = selectedRole != null && IsStudentRole(selectedRole.Name);
         model.IsTeacherRoleSelected = selectedRole != null && IsTeacherRole(selectedRole.Name);
+        AddStudentProfileValidationErrors(model.IsStudentRoleSelected, model.GuardianName, model.GuardianPhone);
 
         if (!string.IsNullOrWhiteSpace(normalizedUsername) &&
             await _context.Users.AnyAsync(x => x.Id != model.Id && x.Username.ToLower() == normalizedUsername.ToLower()))
@@ -352,9 +370,12 @@ public class UsersController : Controller
 
         try
         {
-            await _context.SaveChangesAsync();
+            await using var transaction = await _context.Database.BeginTransactionAsync();
+
             await UpsertStudentProfileAsync(user.Id, model.IsStudentRoleSelected, model.CurrentSchool, model.GuardianName, model.GuardianPhone, model.MedicalNotes);
             await UpsertTeacherProfileAsync(user.Id, model.IsTeacherRoleSelected, model.SalaryTier, model.CustomSessionRate);
+            await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
         }
         catch (DbUpdateException ex) when (IsDuplicateUsername(ex))
         {
@@ -367,6 +388,16 @@ public class UsersController : Controller
             model.SuggestedUsernames = await SuggestAvailableUsernamesAsync(normalizedUsername, model.FullName);
             ModelState.AddModelError(nameof(model.Username), "Tên đăng nhập đã tồn tại. Hãy chọn tên khác hoặc dùng một trong các gợi ý bên dưới.");
             return View(model);
+        }
+        catch
+        {
+            if (uploadedAvatarUrl != null && previousAvatarUrl != uploadedAvatarUrl)
+            {
+                await _fileStorage.DeleteFileAsync(uploadedAvatarUrl);
+                user.AvatarUrl = previousAvatarUrl;
+            }
+
+            throw;
         }
 
         if (uploadedAvatarUrl != null && previousAvatarUrl != uploadedAvatarUrl)
@@ -664,7 +695,6 @@ public class UsersController : Controller
             if (profile != null)
             {
                 _context.StudentProfiles.Remove(profile);
-                await _context.SaveChangesAsync();
             }
 
             return;
@@ -680,11 +710,9 @@ public class UsersController : Controller
         }
 
         profile.CurrentSchool = string.IsNullOrWhiteSpace(currentSchool) ? null : currentSchool.Trim();
-        profile.GuardianName = guardianName!.Trim();
-        profile.GuardianPhone = guardianPhone!.Trim();
+        profile.GuardianName = NormalizeStudentProfileRequiredValue(guardianName, profile.GuardianName);
+        profile.GuardianPhone = NormalizeStudentProfileRequiredValue(guardianPhone, profile.GuardianPhone);
         profile.MedicalNotes = string.IsNullOrWhiteSpace(medicalNotes) ? null : medicalNotes.Trim();
-
-        await _context.SaveChangesAsync();
     }
 
     private async Task UpsertTeacherProfileAsync(int userId, bool isTeacherRoleSelected, int? salaryTier, decimal? customSessionRate)
@@ -696,7 +724,6 @@ public class UsersController : Controller
             if (profile != null)
             {
                 _context.TeacherProfiles.Remove(profile);
-                await _context.SaveChangesAsync();
             }
             return;
         }
@@ -712,8 +739,34 @@ public class UsersController : Controller
 
         profile.SalaryTier = salaryTier ?? 1;
         profile.CustomSessionRate = customSessionRate;
+    }
 
-        await _context.SaveChangesAsync();
+    private void AddStudentProfileValidationErrors(bool isStudentRoleSelected, string? guardianName, string? guardianPhone)
+    {
+        if (!isStudentRoleSelected)
+        {
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(guardianName))
+        {
+            ModelState.AddModelError("GuardianName", "Vui lòng nhập người giám hộ.");
+        }
+
+        if (string.IsNullOrWhiteSpace(guardianPhone))
+        {
+            ModelState.AddModelError("GuardianPhone", "Vui lòng nhập số điện thoại giám hộ.");
+        }
+    }
+
+    private static string NormalizeStudentProfileRequiredValue(string? value, string? fallbackValue)
+    {
+        if (!string.IsNullOrWhiteSpace(value))
+        {
+            return value.Trim();
+        }
+
+        return string.IsNullOrWhiteSpace(fallbackValue) ? string.Empty : fallbackValue.Trim();
     }
 
     private static string NormalizeRoleLabel(string roleName)
