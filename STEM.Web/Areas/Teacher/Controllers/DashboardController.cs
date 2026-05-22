@@ -35,10 +35,14 @@ namespace STEM.Web.Areas.Teacher.Controllers;
         var today = DateOnly.FromDateTime(DateTime.Today);
         var nextWeek = today.AddDays(7);
         var vietnameseCulture = new CultureInfo("vi-VN");
-
-        var todaySessions = await _context.Sessions
+        var visibleSessions = _context.Sessions
             .AsNoTracking()
-            .Where(x => (x.Class.TeacherId == teacherId.Value || x.SubstituteTeacherId == teacherId.Value) && x.Date == today)
+            .Where(x =>
+                (x.Class.TeacherId == teacherId.Value && x.SubstituteTeacherId == null) ||
+                x.SubstituteTeacherId == teacherId.Value);
+
+        var todaySessions = await visibleSessions
+            .Where(x => x.Date == today)
             .OrderBy(x => x.StartTime)
             .Select(x => new TeacherDashboardSessionItemViewModel
             {
@@ -56,9 +60,8 @@ namespace STEM.Web.Areas.Teacher.Controllers;
             })
             .ToListAsync();
 
-        var upcomingSessions = await _context.Sessions
-            .AsNoTracking()
-            .Where(x => (x.Class.TeacherId == teacherId.Value || x.SubstituteTeacherId == teacherId.Value) && x.Date > today && x.Date <= nextWeek)
+        var upcomingSessions = await visibleSessions
+            .Where(x => x.Date > today && x.Date <= nextWeek)
             .OrderBy(x => x.Date)
             .ThenBy(x => x.StartTime)
             .Select(x => new TeacherDashboardSessionItemViewModel
@@ -80,7 +83,8 @@ namespace STEM.Web.Areas.Teacher.Controllers;
 
         var evidenceQueue = await _context.Attendances
             .AsNoTracking()
-            .Where(x => (x.Session.Class.TeacherId == teacherId.Value || x.Session.SubstituteTeacherId == teacherId.Value) &&
+            .Where(x => (((x.Session.Class.TeacherId == teacherId.Value) && x.Session.SubstituteTeacherId == null) ||
+                         x.Session.SubstituteTeacherId == teacherId.Value) &&
                         (string.IsNullOrWhiteSpace(x.TeacherRawNote) || string.IsNullOrWhiteSpace(x.ProductMediaUrls)))
             .OrderByDescending(x => x.Session.Date)
             .ThenBy(x => x.Student.FullName)
@@ -115,8 +119,7 @@ namespace STEM.Web.Areas.Teacher.Controllers;
             .Take(6)
             .ToListAsync();
 
-        var pendingAttendanceCount = await _context.Sessions.CountAsync(x =>
-            (x.Class.TeacherId == teacherId.Value || x.SubstituteTeacherId == teacherId.Value) &&
+        var pendingAttendanceCount = await visibleSessions.CountAsync(x =>
             x.Date <= today &&
             x.Class.Enrollments.Count > 0 &&
             x.Attendances.Count < x.Class.Enrollments.Count);
@@ -145,10 +148,11 @@ namespace STEM.Web.Areas.Teacher.Controllers;
             TotalStudentCount = await _context.Enrollments.CountAsync(x => x.Class.TeacherId == teacherId.Value),
             TodaySessionCount = todaySessions.Count,
             PendingAttendanceCount = pendingAttendanceCount,
-            UpcomingSessionCount = await _context.Sessions.CountAsync(x => (x.Class.TeacherId == teacherId.Value || x.SubstituteTeacherId == teacherId.Value) && x.Date > today),
+            UpcomingSessionCount = await visibleSessions.CountAsync(x => x.Date > today),
             ActiveBorrowCount = await _context.EquipmentBorrows.CountAsync(x => x.BorrowerId == teacherId.Value && x.ReturnTime == null),
             EvidenceReadyCount = await _context.Attendances.CountAsync(x =>
-                (x.Session.Class.TeacherId == teacherId.Value || x.Session.SubstituteTeacherId == teacherId.Value) &&
+                (((x.Session.Class.TeacherId == teacherId.Value) && x.Session.SubstituteTeacherId == null) ||
+                 x.Session.SubstituteTeacherId == teacherId.Value) &&
                 !string.IsNullOrWhiteSpace(x.TeacherRawNote) &&
                 !string.IsNullOrWhiteSpace(x.ProductMediaUrls)),
                 
