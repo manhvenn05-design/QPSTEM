@@ -176,7 +176,7 @@ public class SessionsController : Controller
         };
         await PopulateOptionsAsync(model);
 
-        // Tự động tính số buổi tiếp theo nếu đã biết lớp
+        
         if (classId.HasValue)
         {
             var nextNo = await _context.Sessions
@@ -185,7 +185,7 @@ public class SessionsController : Controller
                 .MaxAsync() ?? 0;
             model.SessionNo = nextNo + 1;
 
-            // Thông tin lớp để hiển thị hint
+            
             var classInfo = await _context.Classes
                 .AsNoTracking()
                 .Where(c => c.Id == classId.Value)
@@ -208,7 +208,7 @@ public class SessionsController : Controller
         return View(model);
     }
 
-    /// <summary>AJAX endpoint: trả về thông tin lớp để form tự động điền SessionNo</summary>
+    
     [HttpGet]
     public async Task<IActionResult> GetClassInfo(int classId)
     {
@@ -395,10 +395,7 @@ public class SessionsController : Controller
         return RedirectToAction(nameof(Index));
     }
 
-    /// <summary>
-    /// Xóa toàn bộ buổi học kèm điểm danh và mượn thiết bị.
-    /// Dành cho dữ liệu test, không có dữ liệu tài chính liên quan.
-    /// </summary>
+    
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Purge(int id)
