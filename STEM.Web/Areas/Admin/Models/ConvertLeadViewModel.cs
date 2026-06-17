@@ -20,7 +20,7 @@ public class ConvertLeadViewModel
     public string StudentName { get; set; } = null!;
 
     [Required(ErrorMessage = "Vui lòng nhập tên đăng nhập")]
-    [Display(Name = "Tên đăng nhập (Tự tạo)")]
+    [Display(Name = "Tên đăng nhập")]
     public string Username { get; set; } = null!;
 
     [Required(ErrorMessage = "Vui lòng nhập mật khẩu")]

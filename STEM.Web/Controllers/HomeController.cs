@@ -16,7 +16,6 @@ public class HomeController : Controller
 
     public async Task<IActionResult> Index()
     {
-        // Lấy danh sách banner đang active, sắp xếp theo SortOrder
         var banners = await _context.Banners
             .AsNoTracking()
             .Where(b => b.IsActive)
@@ -30,7 +29,6 @@ public class HomeController : Controller
             })
             .ToListAsync();
 
-        // Lấy 3 bài viết mới nhất cho landing page
         var latestNews = await _context.Posts
             .AsNoTracking()
             .Where(p => p.IsPublished)

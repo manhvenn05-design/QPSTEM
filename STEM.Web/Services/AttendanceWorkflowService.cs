@@ -130,7 +130,6 @@ public sealed class AttendanceWorkflowService
                 }
                 else
                 {
-                    // Extract to local var — EF Core không thể translate navigation property lồng nhau
                     var difficultyLevel = session.Class.Course?.DifficultyLevel;
                     var salaryTier = teacherProfile.SalaryTier;
 

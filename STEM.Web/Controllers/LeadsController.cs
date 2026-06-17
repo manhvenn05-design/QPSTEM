@@ -17,7 +17,6 @@ public class LeadsController : Controller
     [HttpGet]
     public async Task<IActionResult> Consultation(int? courseId)
     {
-        // Lấy danh sách khóa học để đưa vào Dropdown
         ViewBag.Courses = await _context.Courses.ToListAsync();
         
         var model = new LeadViewModel();
@@ -39,14 +38,13 @@ public class LeadsController : Controller
             return View(model);
         }
 
-        // Lưu vào bảng Leads
         var newLead = new Lead
         {
             ParentName = model.ParentName!,
             Phone = model.Phone!,
             Email = model.Email,
             InterestedId = model.InterestedId,
-            Status = 0 // 0: Chưa liên hệ (Mặc định)
+            Status = 0 
         };
 
         _context.Leads.Add(newLead);

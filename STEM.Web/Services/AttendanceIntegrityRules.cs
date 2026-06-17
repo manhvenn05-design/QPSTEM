@@ -49,7 +49,7 @@ public static class AttendanceIntegrityRules
             return false;
 
         var url = rawUrl.Trim();
-        // Local upload path: /uploads/videos/...
+        
         return url.StartsWith("/uploads/videos/", StringComparison.OrdinalIgnoreCase)
             && (url.EndsWith(".mp4", StringComparison.OrdinalIgnoreCase)
              || url.EndsWith(".webm", StringComparison.OrdinalIgnoreCase)
@@ -77,11 +77,10 @@ public static class AttendanceIntegrityRules
 
         var url = rawUrl.Trim();
 
-        // ── Ưu tiên: local storage (/uploads/videos/...) ────────────────────
+     
         if (IsValidLocalMediaUrl(url))
             return true;
 
-        // ── Legacy: Cloudinary URL ───────────────────────────────────────────
         if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
             return false;
 

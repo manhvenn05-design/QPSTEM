@@ -306,7 +306,7 @@ public class GeminiAiService : IAIService
 
         var candidate = candidates[0];
 
-        // Kiểm tra finishReason để phát hiện lỗi content filter, etc.
+        
         if (candidate.TryGetProperty("finishReason", out var finishReason))
         {
             var reason = finishReason.GetString();

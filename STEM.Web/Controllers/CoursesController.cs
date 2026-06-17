@@ -33,14 +33,12 @@ public class CoursesController : Controller
             .Take(pageSize)
             .ToListAsync();
         
-        // Chuyển đổi dữ liệu từ DB sang ViewModel để hiển thị
         var viewModels = dbCourses.Select(c => new CourseSummaryViewModel
         {
             Id = c.Id,
             Slug = c.Code.ToLower(),
             Title = c.Name,
             Summary = !string.IsNullOrEmpty(c.Summary) ? c.Summary : $"Chương trình thực hành chuyên sâu dành cho độ tuổi từ {c.TargetAgeMin} đến {c.TargetAgeMax} tuổi.",
-            // Nếu có ảnh trong CSDL thì dùng, không thì dùng ảnh mặc định
             ImageUrl = !string.IsNullOrEmpty(c.ImageUrl) ? c.ImageUrl : "/images/courses/default.jpg",
             Category = "STEM",
             Level = "Cơ bản",
@@ -57,7 +55,6 @@ public class CoursesController : Controller
 
     public async Task<IActionResult> Details(string slug)
     {
-        // Tìm khóa học trong DB theo Code (đóng vai trò như Slug)
         var dbCourse = await _context.Courses.FirstOrDefaultAsync(c => c.Code == slug);
         
         if (dbCourse == null)
@@ -78,7 +75,6 @@ public class CoursesController : Controller
             PriceText = dbCourse.Price.ToString("N0") + "đ"
         };
 
-        // Lấy 3 khóa học ngẫu nhiên làm Khóa học liên quan
         var relatedDbCourses = await _context.Courses
             .Where(c => c.Id != dbCourse.Id)
             .Take(3)

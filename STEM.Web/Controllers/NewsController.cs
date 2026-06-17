@@ -17,7 +17,6 @@ public class NewsController : Controller
         _context = context;
     }
 
-    // ─── Index ────────────────────────────────────────────────────────────────
 
     public async Task<IActionResult> Index(int page = 1, string? q = null, string? category = null)
     {
@@ -67,7 +66,6 @@ public class NewsController : Controller
             ReadTimeText = EstimateReadTime(p.Excerpt ?? string.Empty)
         }).ToList();
 
-        // Sidebar: 4 bài mới nhất (bài featured)
         var featuredPosts = await _context.Posts
             .AsNoTracking()
             .Where(p => p.IsPublished)
@@ -96,7 +94,6 @@ public class NewsController : Controller
             ReadTimeText = string.Empty
         }).ToList();
 
-        // Danh mục từ DB
         var categories = await _context.Posts
             .AsNoTracking()
             .Where(p => p.IsPublished && p.Category != null)
@@ -120,7 +117,6 @@ public class NewsController : Controller
         return View(model);
     }
 
-    // ─── Details ──────────────────────────────────────────────────────────────
 
     public async Task<IActionResult> Details(string id)
     {
@@ -158,7 +154,6 @@ public class NewsController : Controller
             ReadTimeText = EstimateReadTime(post.Content)
         };
 
-        // Bài liên quan: cùng category, khác bài hiện tại
         var relatedPosts = await _context.Posts
             .AsNoTracking()
             .Where(p => p.IsPublished && p.Id != post.Id &&
@@ -191,7 +186,6 @@ public class NewsController : Controller
             ReadTimeText = string.Empty
         }).ToList();
 
-        // Sidebar featured
         var featuredPosts = await _context.Posts
             .AsNoTracking()
             .Where(p => p.IsPublished && p.Id != post.Id)
@@ -248,9 +242,7 @@ public class NewsController : Controller
         return View(viewModel);
     }
 
-    // ─── Helper ───────────────────────────────────────────────────────────────
 
-    /// <summary>Ước tính thời gian đọc: ~200 từ/phút</summary>
     private static string EstimateReadTime(string content)
     {
         if (string.IsNullOrWhiteSpace(content)) return "1 phút đọc";
